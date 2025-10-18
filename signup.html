@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daftar - SeMart</title>
+    <link rel="stylesheet" href="css/auth-pages.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Firebase SDK -->
+    <script type="module">
+        // Import Firebase Auth System
+        import './js/firebase-auth.js';
+    </script>
+</head>
+<body class="auth-page">
+    <header class="auth-header">
+        <div class="container">
+            <a href="index.html" class="auth-logo">
+                <img src="logo2.png" alt="SeMart" width="40">
+                <span>SeMart</span>
+            </a>
+        </div>
+    </header>
+
+    <main class="auth-main">
+        <div class="auth-container">
+            <!-- Hero Section -->
+            <div class="auth-hero">
+                <div class="hero-content">
+                    <h1>Bergabung dengan SeMart!</h1>
+                    <p>Daftar sekarang dan nikmati berbagai keuntungan khusus member</p>
+                    <div class="hero-features">
+                        <div class="feature">
+                            <span>✓</span>
+                            <span>Promo member eksklusif</span>
+                        </div>
+                        <div class="feature">
+                            <span>✓</span>
+                            <span>Riwayat belanja tersimpan</span>
+                        </div>
+                        <div class="feature">
+                            <span>✓</span>
+                            <span>Pengiriman lebih cepat</span>
+                        </div>
+                        <div class="feature">
+                            <span>✓</span>
+                            <span>Point rewards</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Section -->
+            <div class="auth-form-section">
+                <div class="form-container">
+                    <h2>Buat Akun Baru</h2>
+                    <p class="form-subtitle">Isi data diri Anda untuk bergabung</p>
+
+                    <form class="auth-form" id="signup-form">
+                        <div class="form-group">
+                            <label for="signup-name">Nama Lengkap</label>
+                            <input type="text" id="signup-name" placeholder="Masukkan nama lengkap" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="signup-email">Email</label>
+                            <input type="email" id="signup-email" placeholder="email@example.com" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="signup-phone">Nomor HP</label>
+                            <input type="tel" id="signup-phone" placeholder="Contoh: 08123456789" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="signup-birthdate">Tanggal Lahir</label>
+                            <input type="date" id="signup-birthdate" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="signup-address">Alamat Lengkap</label>
+                            <textarea id="signup-address" placeholder="Masukkan alamat lengkap" rows="3"></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="signup-password">Password</label>
+                            <input type="password" id="signup-password" placeholder="Minimal 6 karakter" required>
+                            <button type="button" class="password-toggle">👁️</button>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="signup-confirm-password">Konfirmasi Password</label>
+                            <input type="password" id="signup-confirm-password" placeholder="Ulangi password" required>
+                            <button type="button" class="password-toggle">👁️</button>
+                        </div>
+
+                        <div class="form-options">
+                            <label class="checkbox">
+                                <input type="checkbox" id="newsletter" checked>
+                                <span>Ingin menerima promo dan newsletter</span>
+                            </label>
+                            <label class="checkbox">
+                                <input type="checkbox" id="agree-terms" required>
+                                <span>Saya menyetujui <a href="#">Syarat & Ketentuan</a></span>
+                            </label>
+                        </div>
+
+                        <button type="submit" class="btn-primary">Daftar Sekarang</button>
+                    </form>
+
+                    <div class="auth-divider">
+                        <span>Atau daftar dengan</span>
+                    </div>
+
+                    <div class="social-login">
+                        <button type="button" class="btn-social btn-google">
+                            <img src="https://cdn-icons-png.flaticon.com/512/2702/2702602.png" alt="Google">
+                            Google
+                        </button>
+                        <button type="button" class="btn-social btn-facebook">
+                            <img src="https://cdn-icons-png.flaticon.com/512/15047/15047435.png" alt="Facebook">
+                            Facebook
+                        </button>
+                    </div>
+
+                    <div class="auth-switch">
+                        <p>Sudah punya akun? <a href="login.html">Masuk di sini</a></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="auth-footer">
+        <div class="container">
+            <p>&copy; 2025 SeMart Store. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Loading Indicator -->
+    <div id="loading" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); z-index: 9999; justify-content: center; align-items: center;">
+        <div style="background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+            <p>Memproses...</p>
+        </div>
+    </div>
+</body>
+</html>
