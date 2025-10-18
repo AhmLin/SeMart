@@ -386,31 +386,151 @@ Dukung produk lokal, nikmati layanan digital, dan temukan promo menarik setiap h
   </script>
 
   <!-- 🔹 FIREBASE AUTH TRY-CATCH -->
-  <script type="module">
-    try {
-      // Coba import Firebase auth system
-      console.log('🔄 Loading Firebase auth system...');
-      await import('./js/firebase-auth.js');
-      console.log('✅ Firebase auth loaded successfully');
-    } catch (error) {
-      console.warn('⚠️ Firebase auth not available:', error.message);
-      console.log('🔄 Using fallback auth system');
+<!-- 🔹 FIREBASE AUTH SYSTEM -->
+<script type="module">
+    import { AuthSystem } from './js/firebase-auth.js';
+  
+    let authSystem;
+  
+    document.addEventListener('DOMContentLoaded', async () => {
+      try {
+        // Initialize auth system
+        authSystem = new AuthSystem();
+        
+        // Wait for Firebase auth to load
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Setup UI berdasarkan status auth
+        updateAuthUI();
+        
+        // Setup event listeners
+        setupAuthEventListeners();
+        
+        console.log('✅ Auth system initialized in index.html');
+        
+      } catch (error) {
+        console.error('❌ Auth system error:', error);
+        // Fallback ke sistem sederhana
+        setupFallbackAuth();
+      }
+    });
+  
+    // Function untuk update UI berdasarkan status login
+    function updateAuthUI() {
+      const navAuth = document.getElementById('nav-auth');
+      const userMenu = document.getElementById('user-menu');
+      const userGreeting = document.getElementById('user-greeting');
       
-      // Fallback: Setup basic auth functionality
-      window.semartAuth = {
-        isLoggedIn: () => localStorage.getItem('userLoggedIn') === 'true',
-        getCurrentUser: () => ({ 
-          email: localStorage.getItem('userEmail') || 'user@example.com',
-          name: localStorage.getItem('userName') || 'User'
-        }),
-        logout: () => {
+      if (!navAuth || !userMenu) return;
+  
+      const isLoggedIn = authSystem?.isLoggedIn() || 
+                        window.semartAuth?.isLoggedIn() || 
+                        localStorage.getItem('userLoggedIn') === 'true';
+      
+      if (isLoggedIn) {
+        // User sudah login
+        navAuth.style.display = 'none';
+        userMenu.style.display = 'block';
+        
+        // Set user greeting
+        const currentUser = authSystem?.getCurrentUser() || 
+                           window.semartAuth?.getCurrentUser() || 
+                           { email: localStorage.getItem('userEmail') || 'user@example.com' };
+        
+        if (userGreeting && currentUser) {
+          const userName = currentUser.email ? currentUser.email.split('@')[0] : 'User';
+          userGreeting.textContent = `Halo, ${userName}!`;
+        }
+      } else {
+        // User belum login
+        navAuth.style.display = 'flex';
+        userMenu.style.display = 'none';
+      }
+    }
+  
+    // Setup event listeners untuk auth
+    function setupAuthEventListeners() {
+      // Logout button
+      const logoutBtn = document.getElementById('logout-btn');
+      if (logoutBtn) {
+        logoutBtn.addEventListener('click', async (e) => {
+          e.preventDefault();
+          
+          try {
+            if (authSystem && typeof authSystem.logout === 'function') {
+              await authSystem.logout();
+            } else if (window.semartAuth && typeof window.semartAuth.logout === 'function') {
+              await window.semartAuth.logout();
+            } else {
+              // Fallback logout
+              localStorage.removeItem('userLoggedIn');
+              localStorage.removeItem('userName');
+              localStorage.removeItem('userEmail');
+            }
+            
+            // Update UI
+            updateAuthUI();
+            window.location.href = 'index.html';
+            
+          } catch (error) {
+            console.error('Logout error:', error);
+          }
+        });
+      }
+  
+      // Listen untuk auth state changes
+      window.addEventListener('userLogin', () => {
+        console.log('🔄 User login event detected, updating UI...');
+        updateAuthUI();
+      });
+  
+      window.addEventListener('userLogout', () => {
+        console.log('🔄 User logout event detected, updating UI...');
+        updateAuthUI();
+      });
+    }
+  
+    // Fallback auth system
+    function setupFallbackAuth() {
+      console.log('🔄 Setting up fallback auth system...');
+      
+      const navAuth = document.getElementById('nav-auth');
+      const userMenu = document.getElementById('user-menu');
+      const userGreeting = document.getElementById('user-greeting');
+      
+      if (!navAuth || !userMenu) return;
+  
+      const isLoggedIn = localStorage.getItem('userLoggedIn') === 'true';
+      
+      if (isLoggedIn) {
+        navAuth.style.display = 'none';
+        userMenu.style.display = 'block';
+        
+        if (userGreeting) {
+          const userName = localStorage.getItem('userName') || 'User';
+          userGreeting.textContent = `Halo, ${userName}!`;
+        }
+      } else {
+        navAuth.style.display = 'flex';
+        userMenu.style.display = 'none';
+      }
+  
+      // Logout functionality
+      const logoutBtn = document.getElementById('logout-btn');
+      if (logoutBtn) {
+        logoutBtn.addEventListener('click', (e) => {
+          e.preventDefault();
           localStorage.removeItem('userLoggedIn');
           localStorage.removeItem('userName');
           localStorage.removeItem('userEmail');
           window.location.href = 'index.html';
-        }
-      };
+        });
+      }
     }
+  
+    // Juga panggil updateAuthUI secara periodic untuk memastikan UI sync
+    setInterval(updateAuthUI, 2000);
   </script>
 </body>
 </html>
+
