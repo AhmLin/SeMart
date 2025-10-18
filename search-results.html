@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hasil Pencarian - SeMart</title>
+  <link rel="stylesheet" href="css/kategori.css" />
+  <link rel="stylesheet" href="css/cart.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <header class="navbar">
+      <div class="container nav-content">
+          <div class="logo">
+              <img src="logo2.png" alt="SeMart Logo" width="30px">
+              <h1>SeMart</h1>
+          </div>
+          <div class="search">
+              <div class="textinput">
+                  <input type="text" placeholder="Cari Produk" id="search-input" aria-label="Cari produk">
+              </div>
+              <button type="button" id="search-btn">Cari</button>
+          </div>
+          <nav class="right-nav">
+              <ul class="nav-links">
+                  <li><a href="index.html" class="active">Beranda</a></li>
+                  <li><a href="products.html">Produk</a></li>
+                  <li><a href="#">Tentang</a></li>
+                  <li><a href="#">Kontak</a></li>
+              </ul>
+              <div class="cart-section">
+                <a href="cart.html" class="cart-link">
+                    <div class="cart-info">
+                        <div class="cart-total-price">
+                            Rp<span id="nav-cart-total">0</span>
+                        </div>
+                        <div class="cart-icon-with-count">
+                            🛒
+                            <span class="cart-count" id="nav-cart-count">0</span>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            <div class="nav-auth">
+              <a href="login.html" class="btn-login">Login</a>
+            </div>
+          </nav>
+          
+          <!-- 🔹 CART SECTION - HARUS ADA DI SEMUA PAGE -->
+
+      </div>
+  </header>
+
+  <!-- 🔹 Breadcrumb -->
+  <div class="backpage">
+    <a href="index.html" class="back-btn">← ke Beranda</a>
+  </div>
+
+  <main>
+    <section class="featured">
+      <div class="container">
+        <!-- 🔹 Header Hasil Pencarian -->
+        <div class="search-results-header">
+          <div class="search-results-info">
+            <h1 id="search-title">Hasil Pencarian</h1>
+            <div id="results-stats" class="results-info"></div>
+          </div>
+          <button id="clear-search" class="clear-search" style="display: none;">
+            Hapus Pencarian
+          </button>
+        </div>
+
+        <!-- 🔹 Filter Section -->
+        <div class="filter-section">
+          <div class="filter-header">
+            <h2>Filter Produk</h2>
+            <button class="filter-toggle" id="filter-toggle">▼ Tampilkan Filter</button>
+          </div>
+          
+          <!-- Filter Tags Aktif -->
+          <div class="filter-tags" id="active-filters"></div>
+          
+          <!-- Grid Filter Options -->
+          <div class="filter-grid" id="filter-grid">
+            <!-- Filter Harga -->
+            <div class="filter-group">
+              <h3>Rentang Harga</h3>
+              <div class="price-inputs">
+                <input type="number" id="min-price" placeholder="Harga Min" min="0">
+                <input type="number" id="max-price" placeholder="Harga Max" min="0">
+              </div>
+            </div>
+            
+            <!-- Filter Rating -->
+            <div class="filter-group">
+              <h3>Rating Minimum</h3>
+              <div class="filter-options">
+                <label class="filter-option">
+                  <input type="radio" name="rating" value="4"> 
+                  <span>★★★★☆ & Above (4+)</span>
+                </label>
+                <label class="filter-option">
+                  <input type="radio" name="rating" value="3"> 
+                  <span>★★★☆☆ & Above (3+)</span>
+                </label>
+                <label class="filter-option">
+                  <input type="radio" name="rating" value="2"> 
+                  <span>★★☆☆☆ & Above (2+)</span>
+                </label>
+                <label class="filter-option">
+                  <input type="radio" name="rating" value="0" checked> 
+                  <span>Semua Rating</span>
+                </label>
+              </div>
+            </div>
+            
+            <!-- Filter Kategori -->
+            <div class="filter-group">
+              <h3>Kategori</h3>
+              <div class="filter-options" id="category-filters">
+                <!-- Diisi secara dinamis oleh JavaScript -->
+              </div>
+            </div>
+            
+            <!-- Filter Status -->
+            <div class="filter-group">
+              <h3>Status Produk</h3>
+              <div class="filter-options">
+                <label class="filter-option">
+                  <input type="checkbox" name="status" value="best-seller"> 
+                  <span>Terlaris</span>
+                </label>
+                <label class="filter-option">
+                  <input type="checkbox" name="status" value="new"> 
+                  <span>Baru</span>
+                </label>
+                <label class="filter-option">
+                  <input type="checkbox" name="status" value="discount"> 
+                  <span>Sedang Diskon</span>
+                </label>
+              </div>
+            </div>
+            
+            <!-- Tombol Aksi -->
+            <div class="filter-actions">
+              <button class="btn-apply" id="apply-filters">Terapkan Filter</button>
+              <button class="btn-reset" id="reset-filters">Reset Filter</button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 🔹 Sort dan Info Hasil -->
+        <div class="sort-options">
+          <span>Urutkan:</span>
+          <select id="sort-by">
+            <option value="relevance">Relevansi</option>
+            <option value="price-asc">Harga: Rendah ke Tinggi</option>
+            <option value="price-desc">Harga: Tinggi ke Rendah</option>
+            <option value="rating-desc">Rating Tertinggi</option>
+            <option value="sold-desc">Terlaris</option>
+            <option value="name-asc">Nama: A-Z</option>
+          </select>
+          <span id="results-count" class="results-count"></span>
+        </div>
+        
+        <!-- 🔹 Product Grid -->
+        <div id="loading-message" class="loading">Memuat produk...</div>
+        <div id="product-grid" class="product-grid"></div>
+        <div id="no-products" class="no-products" style="display: none;">
+          <div class="no-products-content">
+            <h3>Produk tidak ditemukan</h3>
+            <p>Maaf, tidak ada produk yang sesuai dengan pencarian dan filter Anda.</p>
+            <div class="suggestions">
+              <p><strong>Saran:</strong></p>
+              <ul>
+                <li>Periksa ejaan kata kunci</li>
+                <li>Coba kata kunci yang lebih umum</li>
+                <li>Hapus beberapa filter</li>
+                <li>Lihat <a href="products.html">semua produk</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- 🔹 Footer -->
+  <footer>
+    <div class="container">
+      <div class="footer-content">
+        <div class="footer-logo">
+          <section style="display: flex; align-items: center; gap: 10px;">
+            <img src="logo2.png" alt="SeMart" style="width: 30px;">
+            <h2 style="font-size: 20px;">SeMart</h2>
+          </section>
+          <p>Belanja cerdas, dukung produk lokal bersama SeMart.</p>
+        </div>
+        <div class="follow-me">
+          <p>Ikuti Kami</p>
+          <ul>
+            <li><a href="#" aria-label="Instagram"><img src="instagram.png" alt="Instagram"></a></li>
+            <li><a href="#" aria-label="YouTube"><img src="youtube.png" alt="YouTube"></a></li>
+            <li><a href="#" aria-label="Twitter"><img src="twitter.png" alt="Twitter"></a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-copyright">
+        <p>&copy; 2025 SeMart Store</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/search.js"></script>
+  <script src="js/cart.js"></script> <!-- 🔹 INI HARUS ADA DI SEMUA PAGE -->
+</body>
+</html>
