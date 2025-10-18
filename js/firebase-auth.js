@@ -261,7 +261,7 @@ class AuthSystem {
 
     async login(email, password) {
         console.log('🔐 Login attempt:', email);
-
+    
         try {
             const userCredential = await signInWithEmailAndPassword(
                 this.auth,
@@ -269,34 +269,26 @@ class AuthSystem {
                 password
             );
             const user = userCredential.user;
-
+    
             // Update last login in Firestore
             await this.saveUser(user.uid, {
                 lastLogin: serverTimestamp(),
                 updatedAt: serverTimestamp()
             });
-
+    
             // Set current session
             this.currentUser = user;
             
-            // Transfer cart if function exists
-            if (typeof transferCartAfterLogin === 'function') {
-                transferCartAfterLogin(user.uid);
-            }
-
             this.updateUI();
             
             console.log('✅ Login successful:', user.email);
             this.showToast(`Selamat datang kembali! 🎉`, 'success');
             
-            // Di method login - tambahkan ini sebelum return user
+            // 🔹 TRIGGER EVENT UNTUK UPDATE UI DI SEMUA PAGE
             this.triggerEvent('userLogin', user);
             
-            // Di method logout - tambahkan ini sebelum showToast
-            this.triggerEvent('userLogout');
-            
             return user;
-
+    
         } catch (error) {
             console.error('❌ Login failed:', error);
             const errorMessage = this.getFirebaseErrorMessage(error.code);
@@ -304,7 +296,7 @@ class AuthSystem {
             throw error;
         }
     }
-
+    
     async logout() {
         try {
             await signOut(this.auth);
@@ -314,8 +306,10 @@ class AuthSystem {
             
             this.updateUI();
             
-            this.showToast(`Berhasil logout! 👋`, 'info');
+            // 🔹 TRIGGER EVENT UNTUK UPDATE UI DI SEMUA PAGE
             this.triggerEvent('userLogout');
+            
+            this.showToast(`Berhasil logout! 👋`, 'info');
             
         } catch (error) {
             console.error('❌ Logout failed:', error);
