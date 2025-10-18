@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SeMart - Kategori Produk</title>
+  <link rel="stylesheet" href="css/kategori.css?v=2" />
+  <link rel="stylesheet" href="css/cart.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <header class="navbar">
+      <div class="container nav-content">
+          <div class="logo">
+              <img src="logo2.png" alt="SeMart Logo" width="30px">
+              <h1>SeMart</h1>
+          </div>
+          <div class="search">
+              <div class="textinput">
+                  <input type="text" placeholder="Cari Produk" id="search-input" aria-label="Cari produk">
+              </div>
+              <button type="button" id="search-btn">Cari</button>
+          </div>
+          <nav class="right-nav">
+              <ul class="nav-links">
+                  <li><a href="index.html" class="active">Beranda</a></li>
+                  <li><a href="products.html">Produk</a></li>
+                  <li><a href="#">Tentang</a></li>
+                  <li><a href="#">Kontak</a></li>
+              </ul>
+              <div class="cart-section">
+                <a href="cart.html" class="cart-link">
+                    <div class="cart-info">
+                        <div class="cart-total-price">
+                            Rp<span id="nav-cart-total">0</span>
+                        </div>
+                        <div class="cart-icon-with-count">
+                            🛒
+                            <span class="cart-count" id="nav-cart-count">0</span>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            <div class="nav-auth">
+              <a href="login.html" class="btn-login">Login</a>
+            </div>
+          </nav>
+          
+          <!-- 🔹 CART SECTION - HARUS ADA DI SEMUA PAGE -->
+
+      </div>
+  </header>
+
+  <div class="backpage">
+    <a href="index.html" class="back-btn">← ke Beranda</a>
+  </div>
+    
+  <main>
+    <section class="featured">
+      <div class="container">
+        <h1 id="category-title">Memuat...</h1>
+        
+        <!-- 🔹 Filter Section -->
+        <div class="filter-section">
+          <div class="filter-header">
+            <div class="text-filter"><h2><img src="https://cdn-icons-png.flaticon.com/512/7094/7094575.png" alt="" style="width: 20px; margin-right: 10px; transform: translateY(3px);">Filter Produk</h2></div>
+            <button class="filter-toggle" id="filter-toggle">▼ Tampilkan Filter</button>
+          </div>
+          
+          <!-- Filter Tags Aktif -->
+          <div class="filter-tags" id="active-filters"></div>
+          
+          <!-- Grid Filter Options -->
+          <div class="filter-grid" id="filter-grid">
+            <div class="filter-group">
+              <h3>Rentang Harga</h3>
+              <div class="price-inputs">
+                <input type="number" id="min-price" placeholder="Harga Min" min="0">
+                <input type="number" id="max-price" placeholder="Harga Max" min="0">
+              </div>
+            </div>
+            
+            <div class="filter-group">
+              <h3>Rating</h3>
+              <div class="filter-options">
+                <label class="filter-option">
+                  <input type="checkbox" name="rating" value="4"> ★★★★☆ & Above
+                </label>
+                <label class="filter-option">
+                  <input type="checkbox" name="rating" value="3"> ★★★☆☆ & Above
+                </label>
+                <label class="filter-option">
+                  <input type="checkbox" name="rating" value="2"> ★★☆☆☆ & Above
+                </label>
+              </div>
+            </div>
+            
+            <div class="filter-group">
+              <h3>Ketersediaan</h3>
+              <div class="filter-options">
+                <label class="filter-option">
+                  <input type="checkbox" name="availability" value="in-stock"> Stok Tersedia
+                </label>
+                <label class="filter-option">
+                  <input type="checkbox" name="availability" value="out-of-stock"> Stok Habis
+                </label>
+              </div>
+            </div>
+            
+            <div class="filter-group">
+              <h3>Kategori</h3>
+              <div class="filter-options" id="category-filters"></div>
+            </div>
+            
+            <div class="filter-group">
+              <h3>Fitur</h3>
+              <div class="filter-options">
+                <label class="filter-option">
+                  <input type="checkbox" name="feature" value="free-shipping"> Gratis Ongkir
+                </label>
+                <label class="filter-option">
+                  <input type="checkbox" name="feature" value="discount"> Sedang Diskon
+                </label>
+                <label class="filter-option">
+                  <input type="checkbox" name="feature" value="best-seller"> Terlaris
+                </label>
+              </div>
+            </div>
+            
+            <div class="filter-actions">
+              <button class="btn-apply" id="apply-filters">Terapkan Filter</button>
+              <button class="btn-reset" id="reset-filters">Reset Filter</button>
+            </div>
+          </div>
+        </div>
+        
+        <div class="sort-options">
+          <span>Urutkan:</span>
+          <select id="sort-by">
+            <option value="default">Default</option>
+            <option value="price-asc">Harga: Rendah ke Tinggi</option>
+            <option value="price-desc">Harga: Tinggi ke Rendah</option>
+            <option value="rating-desc">Rating Tertinggi</option>
+            <option value="sold-desc">Terlaris</option>
+            <option value="name-asc">Nama: A-Z</option>
+          </select>
+        </div>
+        
+        <div class="results-info" id="results-info"></div>
+
+        <div id="product-grid" class="product-grid"></div>
+        <div id="no-products" class="no-products" style="display: none;">
+          <p>Tidak ada produk ditemukan untuk kategori ini.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+    <footer>
+    <div class="footer-content">
+      <div class="footer-logo">
+        <section style="display: flex; align-items: center; gap: 10px;"><img src="logo2.png" alt="" style="width: 30px;"><h2 style="font-size: 20px;">SeMart</h2></section>
+        <p>Belanja cerdas, dukung produk lokal bersama SeMart.<br>
+          Hemat setiap hari, bahagia setiap belanja!</p>
+      </div>
+      <div class="follow-me">
+        <p>Ikuti Kami</p>
+          <ul>
+            <li><a href="#"><img src="instagram.png" alt="instagram"></a></li>
+            <li><a href="#"><img src="youtube.png" alt="youtube"></a></li>
+            <li><a href="#"><img src="twitter.png" alt="twitter"></a></li>
+            <li><a href="#"><img src="whatsapp.png" alt="whatsapp"></a></li>
+            <li><a href="#"><img src="facebook.png" alt="facebook"></a></li>
+          </ul>
+      </div>
+    </div>
+    <div class="container-footer-content">
+      <p>&copy; 2025 SeMart Store — Semua hak cipta dilindungi.</p>
+    </div>
+  </footer>
+  <script src="js/cart.js"></script> <!-- 🔹 INI HARUS ADA DI SEMUA PAGE -->
+  <script>
+    // seluruh JavaScript tetap disini (tidak dipisah)
+    let allProducts = [];
+    let filteredProducts = [];
+    let activeFilters = {
+      category: [],
+      priceRange: { min: null, max: null },
+      rating: [],
+      availability: [],
+      features: []
+    };
+
+    const container = document.getElementById('product-grid');
+    const loadingMessage = document.getElementById('loading-message');
+    const noProductsMessage = document.getElementById('no-products');
+    const filterToggle = document.getElementById('filter-toggle');
+    const filterGrid = document.getElementById('filter-grid');
+    const applyFiltersBtn = document.getElementById('apply-filters');
+    const resetFiltersBtn = document.getElementById('reset-filters');
+    const sortSelect = document.getElementById('sort-by');
+    const resultsInfo = document.getElementById('results-info');
+    const activeFiltersContainer = document.getElementById('active-filters');
+    const categoryFiltersContainer = document.getElementById('category-filters');
+
+    const params = new URLSearchParams(window.location.search);
+    const category = params.get('category');
+
+    const categoryTitle = document.getElementById('category-title');
+    categoryTitle.textContent = category ? `Kategori: ${decodeURIComponent(category)}` : 'Semua Produk';
+
+    filterToggle.addEventListener('click', () => {
+      filterGrid.classList.toggle('active');
+      filterToggle.textContent = filterGrid.classList.contains('active') 
+        ? '▲ Sembunyikan Filter' 
+        : '▼ Tampilkan Filter';
+    });
+
+    applyFiltersBtn.addEventListener('click', applyFilters);
+    resetFiltersBtn.addEventListener('click', resetFilters);
+    sortSelect.addEventListener('change', sortProducts);
+
+    fetch('data/product.json')
+      .then(res => {
+        if (!res.ok) throw new Error('Gagal memuat data produk');
+        return res.json();
+      })
+      .then(products => {
+        allProducts = products;
+        let initialFiltered = products;
+        if (category) {
+          initialFiltered = products.filter(p => p.category === category);
+          activeFilters.category.push(category);
+        }
+        filteredProducts = [...initialFiltered];
+        populateCategoryFilters(products);
+        displayProducts(filteredProducts);
+        updateResultsInfo();
+        updateActiveFiltersDisplay();
+      })
+      .catch(err => {
+        console.error('Error:', err);
+        loadingMessage.style.display = 'none';
+        container.innerHTML = `<p class="error">Gagal memuat produk. Silakan refresh halaman.</p>`;
+      });
+
+    function populateCategoryFilters(products) {
+      const categories = [...new Set(products.map(p => p.category))];
+      categories.forEach(cat => {
+        const label = document.createElement('label');
+        label.className = 'filter-option';
+        label.innerHTML = `<input type="checkbox" name="category" value="${cat}"> ${cat}`;
+        categoryFiltersContainer.appendChild(label);
+      });
+    }
+
+    function applyFilters() {
+      activeFilters = {
+        category: getCheckedValues('category'),
+        priceRange: {
+          min: document.getElementById('min-price').value ? parseInt(document.getElementById('min-price').value) : null,
+          max: document.getElementById('max-price').value ? parseInt(document.getElementById('max-price').value) : null
+        },
+        rating: getCheckedValues('rating'),
+        availability: getCheckedValues('availability'),
+        features: getCheckedValues('feature')
+      };
+      filterProducts();
+      updateActiveFiltersDisplay();
+      updateResultsInfo();
+    }
+
+    function resetFilters() {
+      document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+      document.getElementById('min-price').value = '';
+      document.getElementById('max-price').value = '';
+      sortSelect.value = 'default';
+      activeFilters = {
+        category: category ? [category] : [],
+        priceRange: { min: null, max: null },
+        rating: [],
+        availability: [],
+        features: []
+      };
+      filteredProducts = category ? allProducts.filter(p => p.category === category) : [...allProducts];
+      displayProducts(filteredProducts);
+      updateActiveFiltersDisplay();
+      updateResultsInfo();
+    }
+
+    function getCheckedValues(name) {
+      return [...document.querySelectorAll(`input[name="${name}"]:checked`)].map(cb => cb.value);
+    }
+
+    function filterProducts() {
+      filteredProducts = allProducts.filter(product => {
+        if (activeFilters.category.length > 0 && !activeFilters.category.includes(product.category)) return false;
+        if (activeFilters.priceRange.min !== null && product.price < activeFilters.priceRange.min) return false;
+        if (activeFilters.priceRange.max !== null && product.price > activeFilters.priceRange.max) return false;
+        if (activeFilters.rating.length > 0 && !activeFilters.rating.some(r => product.rating >= parseFloat(r))) return false;
+        if (activeFilters.availability.length > 0) {
+          const isInStock = product.stock > 0;
+          if (activeFilters.availability.includes('in-stock') && !isInStock) return false;
+          if (activeFilters.availability.includes('out-of-stock') && isInStock) return false;
+        }
+        if (activeFilters.features.length > 0) {
+          if (activeFilters.features.includes('discount') && (!product.discount || product.discount === 0)) return false;
+          if (activeFilters.features.includes('best-seller') && product.sold < 100) return false;
+          if (activeFilters.features.includes('free-shipping') && product.price < 50000) return false;
+        }
+        return true;
+      });
+      sortProducts();
+    }
+
+    function sortProducts() {
+      const sortValue = sortSelect.value;
+      switch(sortValue) {
+        case 'price-asc': filteredProducts.sort((a, b) => a.price - b.price); break;
+        case 'price-desc': filteredProducts.sort((a, b) => b.price - a.price); break;
+        case 'rating-desc': filteredProducts.sort((a, b) => b.rating - a.rating); break;
+        case 'sold-desc': filteredProducts.sort((a, b) => b.sold - a.sold); break;
+        case 'name-asc': filteredProducts.sort((a, b) => a.name.localeCompare(b.name)); break;
+      }
+      displayProducts(filteredProducts);
+    }
+
+    function displayProducts(products) {
+      container.innerHTML = '';
+      if (products.length === 0) {
+        noProductsMessage.style.display = 'block';
+        return;
+      }
+      noProductsMessage.style.display = 'none';
+      products.forEach(p => {
+        const card = document.createElement("div");
+        card.classList.add("product-card");
+        card.innerHTML = `
+          <img src="${p.image}" alt="${p.name}" loading="lazy">
+          <h3>${p.name}</h3>
+          <p>Terjual ${p.sold}</p>
+          <div class="rating">${generateStars(p.rating)} <span>${p.rating.toFixed(1)}</span></div>
+          <div class="product-bottom">
+            <p class="price">Rp${p.price.toLocaleString("id-ID")}</p>
+            <a href="product.html?id=${p.id}" class="btn-secondary">Lihat Detail</a>
+          </div>`;
+        container.appendChild(card);
+      });
+    }
+
+    function updateResultsInfo() {
+      resultsInfo.textContent = `Menampilkan ${filteredProducts.length} dari ${allProducts.length} produk`;
+    }
+
+    function updateActiveFiltersDisplay() {
+      activeFiltersContainer.innerHTML = '';
+      activeFilters.category.forEach(cat => activeFiltersContainer.appendChild(createFilterTag(cat, 'category')));
+      if (activeFilters.priceRange.min || activeFilters.priceRange.max) {
+        const min = activeFilters.priceRange.min || 'Min';
+        const max = activeFilters.priceRange.max || 'Max';
+        activeFiltersContainer.appendChild(createFilterTag(`Harga: Rp${min} - Rp${max}`, 'price'));
+      }
+      activeFilters.rating.forEach(r => activeFiltersContainer.appendChild(createFilterTag(`Rating: ${r}+`, `rating-${r}`)));
+      activeFilters.availability.forEach(a => {
+        const t = a === 'in-stock' ? 'Stok Tersedia' : 'Stok Habis';
+        activeFiltersContainer.appendChild(createFilterTag(t, `avail-${a}`));
+      });
+      activeFilters.features.forEach(f => {
+        const t = f === 'free-shipping' ? 'Gratis Ongkir' : f === 'discount' ? 'Sedang Diskon' : 'Terlaris';
+        activeFiltersContainer.appendChild(createFilterTag(t, `feature-${f}`));
+      });
+    }
+
+    function createFilterTag(text, key) {
+      const tag = document.createElement('div');
+      tag.className = 'filter-tag';
+      tag.innerHTML = `${text} <button data-key="${key}">×</button>`;
+      tag.querySelector('button').addEventListener('click', e => removeFilter(e.target.dataset.key));
+      return tag;
+    }
+
+    function removeFilter(key) {
+      if (key === 'category') activeFilters.category = [];
+      else if (key === 'price') activeFilters.priceRange = { min: null, max: null };
+      else if (key.startsWith('rating-')) activeFilters.rating = activeFilters.rating.filter(r => r !== key.split('-')[1]);
+      else if (key.startsWith('avail-')) activeFilters.availability = activeFilters.availability.filter(a => a !== key.split('-')[1]);
+      else if (key.startsWith('feature-')) activeFilters.features = activeFilters.features.filter(f => f !== key.split('-')[1]);
+      filterProducts();
+      updateActiveFiltersDisplay();
+      updateResultsInfo();
+    }
+
+    function generateStars(rating) {
+      const full = Math.floor(rating);
+      const half = rating % 1 >= 0.5 ? 1 : 0;
+      const empty = 5 - full - half;
+      return '★'.repeat(full) + (half ? '½' : '') + '☆'.repeat(empty);
+    }
+  </script>
+
+</body>
+</html>
