@@ -289,7 +289,11 @@ class AuthSystem {
             console.log('✅ Login successful:', user.email);
             this.showToast(`Selamat datang kembali! 🎉`, 'success');
             
+            // Di method login - tambahkan ini sebelum return user
             this.triggerEvent('userLogin', user);
+            
+            // Di method logout - tambahkan ini sebelum showToast
+            this.triggerEvent('userLogout');
             
             return user;
 
