@@ -10,12 +10,6 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
-  
-  <!-- Firebase SDK -->
-  <script type="module">
-      // Import Firebase Auth System
-      import './js/firebase-auth.js';
-  </script>
 </head>
 <body>
 
@@ -221,25 +215,45 @@ Dukung produk lokal, nikmati layanan digital, dan temukan promo menarik setiap h
 
   <!-- 🔹 Script -->
   <script>
-    // 🔹 UPDATE UI BERDASARKAN STATUS LOGIN
-    function updateAuthUI() {
+    // 🔹 SIMPLE AUTH CHECK (FALLBACK JIKA FIREBASE ERROR)
+    function checkAuthStatus() {
         const navAuth = document.getElementById('nav-auth');
         const userMenu = document.getElementById('user-menu');
         const userGreeting = document.getElementById('user-greeting');
         
-        if (window.semartAuth && window.semartAuth.isLoggedIn()) {
+        // Cek apakah user sudah login (simulasi sederhana)
+        // Di production, ini akan diganti dengan Firebase auth check
+        const isLoggedIn = localStorage.getItem('userLoggedIn') === 'true';
+        const userName = localStorage.getItem('userName') || 'User';
+        
+        if (isLoggedIn) {
             // User sudah login
-            const user = window.semartAuth.getCurrentUser();
             if (navAuth) navAuth.style.display = 'none';
             if (userMenu) userMenu.style.display = 'block';
             if (userGreeting) {
-                const userName = user.email.split('@')[0];
                 userGreeting.textContent = `Halo, ${userName}!`;
             }
         } else {
             // User belum login
             if (navAuth) navAuth.style.display = 'flex';
             if (userMenu) userMenu.style.display = 'none';
+        }
+    }
+
+    // 🔹 LOGOUT FUNCTION
+    function setupLogout() {
+        const logoutBtn = document.getElementById('logout-btn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                // Hapus data login dari localStorage
+                localStorage.removeItem('userLoggedIn');
+                localStorage.removeItem('userName');
+                
+                // Redirect ke halaman login
+                window.location.href = 'login.html';
+            });
         }
     }
 
@@ -280,8 +294,11 @@ Dukung produk lokal, nikmati layanan digital, dan temukan promo menarik setiap h
       // Inisialisasi search
       setupSearch();
       
-      // Update UI auth status
-      setTimeout(updateAuthUI, 100); // Tunggu sebentar untuk Firebase initialize
+      // Setup logout
+      setupLogout();
+      
+      // Check auth status
+      checkAuthStatus();
       
       const container = document.getElementById("featured-products");
 
@@ -366,10 +383,34 @@ Dukung produk lokal, nikmati layanan digital, dan temukan promo menarik setiap h
 
     // otomatis slideshow
     setInterval(() => { plusSlides(1); }, 5000);
+  </script>
 
-    // Listen untuk auth state changes
-    window.addEventListener('userLogin', updateAuthUI);
-    window.addEventListener('userLogout', updateAuthUI);
+  <!-- 🔹 FIREBASE AUTH TRY-CATCH -->
+  <script type="module">
+    try {
+      // Coba import Firebase auth system
+      console.log('🔄 Loading Firebase auth system...');
+      await import('./js/firebase-auth.js');
+      console.log('✅ Firebase auth loaded successfully');
+    } catch (error) {
+      console.warn('⚠️ Firebase auth not available:', error.message);
+      console.log('🔄 Using fallback auth system');
+      
+      // Fallback: Setup basic auth functionality
+      window.semartAuth = {
+        isLoggedIn: () => localStorage.getItem('userLoggedIn') === 'true',
+        getCurrentUser: () => ({ 
+          email: localStorage.getItem('userEmail') || 'user@example.com',
+          name: localStorage.getItem('userName') || 'User'
+        }),
+        logout: () => {
+          localStorage.removeItem('userLoggedIn');
+          localStorage.removeItem('userName');
+          localStorage.removeItem('userEmail');
+          window.location.href = 'index.html';
+        }
+      };
+    }
   </script>
 </body>
 </html>
