@@ -86,7 +86,7 @@ body {
   align-content: center;
   
 }
-
+/* 
 .nav-auth {
   text-decoration: none;
   background-color: #007b5e;
@@ -109,7 +109,7 @@ body {
 
 .nav-auth:hover a{
   color: #007b5e;
-}
+} */
 
 /* 🔹 USER PROFILE STYLES */
 .user-menu {
