@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SeMart - Belanja Hemat Produk Rakyat</title>
+  <link rel="stylesheet" href="css/style.css?v=3" />
+  <link rel="stylesheet" href="css/cart.css">
+  <link rel="stylesheet" href="css/kategori.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
+  
+  <!-- Firebase SDK -->
+  <script type="module">
+      // Import Firebase Auth System
+      import './js/firebase-auth.js';
+  </script>
+</head>
+<body>
+
+  <header class="navbar">
+      <div class="container nav-content">
+          <div class="logo">
+              <img src="logo2.png" alt="SeMart Logo" width="30px">
+              <h1>SeMart</h1>
+          </div>
+          <div class="search">
+              <div class="textinput">
+                  <input type="text" placeholder="Cari Produk" id="search-input" aria-label="Cari produk">
+              </div>
+              <button type="button" id="search-btn">Cari</button>
+          </div>
+          <nav class="right-nav">
+              <ul class="nav-links">
+                  <li><a href="index.html" class="active">Beranda</a></li>
+                  <li><a href="products.html">Produk</a></li>
+                  <li><a href="#">Tentang</a></li>
+                  <li><a href="#">Kontak</a></li>
+              </ul>
+              <div class="cart-section">
+                <a href="cart.html" class="cart-link">
+                    <div class="cart-info">
+                        <div class="cart-total-price">
+                            Rp<span id="nav-cart-total">0</span>
+                        </div>
+                        <div class="cart-icon-with-count">
+                            🛒
+                            <span class="cart-count" id="nav-cart-count">0</span>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            
+            <!-- 🔹 AUTH SECTION - BERUBAH SESUAI STATUS LOGIN -->
+            <div class="nav-auth" id="nav-auth">
+              <a href="login.html" class="btn-login">Login</a>
+            </div>
+            
+            <div class="user-menu" id="user-menu" style="display: none;">
+              <div class="user-profile">
+                <div class="user-avatar">
+                  <span>👤</span>
+                </div>
+                <div class="user-info">
+                  <span class="user-greeting" id="user-greeting">Halo, User!</span>
+                  <div class="user-dropdown">
+                    <a href="profile.html" class="dropdown-item">📋 Profil Saya</a>
+                    <a href="orders.html" class="dropdown-item">📦 Pesanan Saya</a>
+                    <a href="wishlist.html" class="dropdown-item">❤️ Wishlist</a>
+                    <div class="dropdown-divider"></div>
+                    <a href="#" id="logout-btn" class="dropdown-item logout">🚪 Logout</a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </nav>
+      </div>
+  </header>
+    
+
+  <!-- 🔹 Hero Section -->
+  <section class="hero">
+    <div class="container hero-content">
+      <div class="hero-text">
+        <h1>Selamat Datang di <span style="color: #007b5e; font-size: 50px;">SeMart</span></h1>
+        <p>Belanja hemat, produk rakyat! Temukan berbagai kebutuhan harian dan produk UMKM lokal terbaik dalam satu tempat.<br>SeMart adalah swalayan modern yang menghadirkan kenyamanan belanja dengan harga terjangkau.
+Dukung produk lokal, nikmati layanan digital, dan temukan promo menarik setiap hari!</p>
+        <a href="products.html" class="btn">Belanja Sekarang</a>
+      </div>
+      <div class="hero-image">
+        <img src="heroimg.png" alt="Berbagai produk SeMart" loading="lazy" />
+      </div>
+    </div>
+  </section>
+  
+  <div style="height: 10px;"></div>
+
+  <!-- kategori  -->
+  <section class="kategori">
+    <div class="container kategori-container">
+      <h2>Kategori</h2>
+      <div class="kategori-list">
+        <div class="kategori-item" style="background-color: #2f5d3b;">
+          <a href="katori.html?category=Makanan%20%26%20Minuman" style="color: white; text-decoration: none;">
+            <img src="kategori/food and drink.png" alt="Makanan & Minuman">
+            <p>Makanan & Minuman</p>
+          </a>
+        </div>
+        <div class="kategori-item" style="background-color: #6ca056;">
+          <a href="katori.html?category=Bahan%20Pokok" style="color: white; text-decoration: none;">
+            <img src="kategori/bahan pokok.png" alt="Bahan Pokok">
+            <p>Bahan Pokok</p>
+          </a>
+        </div>
+        <div class="kategori-item" style="background-color: #b1d25b;">
+          <a href="katori.html?category=Bumbu%20Dapur" style="color: white; text-decoration: none;">
+            <img src="kategori/bumbu dapur.png" alt="Bumbu & Sembako Kering">
+            <p>Bumbu & Sembako Kering</p>            
+          </a>
+        </div>
+        <div class="kategori-item" style="background-color: #d8d0ba;">
+          <a href="katori.html?category=Peralatan%20Rumah" style="color: white; text-decoration: none;">
+            <img src="kategori/alat rumah tangga.png" alt="Kebutuhan Rumah Tangga">
+            <p>Kebutuhan Rumah Tangga</p>            
+          </a>
+        </div>
+        <div class="kategori-item" style="background-color: #c14b4b;">
+          <a href="katori.html?category=Perawatan%20Tubuh" style="color: white; text-decoration: none;">
+            <img src="kategori/kecantikan.png" alt="Perawatan Tubuh & Kecantikan">
+            <p>Perawatan Tubuh & Kecantikan</p>
+          </a>
+        </div>
+        <div class="kategori-item" style="background-color: #c95050;">
+          <a href="katori.html?category=Alat%20Tulis" style="color: white; text-decoration: none;">
+            <img src="kategori/alat tulis.png" alt="Alat Tulis & Kantor">
+            <p>Alat Tulis & Kantor</p>
+          </a>
+        </div>
+        <div class="kategori-item" style="background-color: #ff6b50;">
+          <a href="katori.html?category=Alat%20Bayi" style="color: white; text-decoration: none;">
+            <img src="kategori/alat bayi.png" alt="Perlengkapan Bayi & Anak">
+            <p>Perlengkapan Bayi & Anak</p>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div style="height: 30px;"></div>
+
+  <!----- Promo ------>
+  <div class="promo">
+    <div class="leftpromo">
+      <div class="slideshow-container">
+        <div class="slide fade">
+          <img src="promosi/promosi2.png" alt="Promo spesial SeMart" loading="lazy">
+        </div>
+        <div class="slide fade">
+          <img src="promosi/promosi1.png" alt="Penawaran terbatas SeMart" loading="lazy">
+        </div>
+
+        <!-- tombol prev/next -->
+        <button class="prev" onclick="plusSlides(-1)" aria-label="Slide sebelumnya">❮</button>
+        <button class="next" onclick="plusSlides(1)" aria-label="Slide berikutnya">❯</button>
+      </div>
+
+      <!-- titik navigasi -->
+      <div style="text-align:center">
+        <span class="dot" onclick="currentSlide(1)" aria-label="Tampilkan slide 1"></span>
+        <span class="dot" onclick="currentSlide(2)" aria-label="Tampilkan slide 2"></span>
+      </div>
+    </div>
+    <div class="rightpromo">
+      <div class="rightup">
+        <img src="promosi/promo2.jpg" alt="Promo produk unggulan" loading="lazy">
+      </div>
+      <div class="rightup">
+        <img src="promosi/promo1.jpg" alt="Penawaran hari ini" loading="lazy">
+      </div>
+    </div>
+  </div>
+
+  <!-- 🔹 Featured Products -->
+  <section class="featured">
+    <div class="container">
+      <h2 class="section-title">Produk Unggulan</h2>
+      <div class="product-grid" id="featured-products">
+        <!-- Produk unggulan akan dimuat otomatis lewat JS -->
+      </div>
+    </div>
+  </section>
+
+  <!-- 🔹 Footer -->
+  <footer>
+    <div class="footer-content">
+      <div class="footer-logo">
+        <section style="display: flex; align-items: center; gap: 10px;">
+          <img src="logo2.png" alt="SeMart Logo" style="width: 30px;">
+          <h2 style="font-size: 20px;">SeMart</h2>
+        </section>
+        <p>Belanja cerdas, dukung produk lokal bersama SeMart.<br>
+          Hemat setiap hari, bahagia setiap belanja!</p>
+      </div>
+      <div class="follow-me">
+        <p>Ikuti Kami</p>
+          <ul>
+            <li><a href="#" aria-label="Instagram"><img src="instagram.png" alt="Instagram"></a></li>
+            <li><a href="#" aria-label="YouTube"><img src="youtube.png" alt="YouTube"></a></li>
+            <li><a href="#" aria-label="Twitter"><img src="twitter.png" alt="Twitter"></a></li>
+            <li><a href="#" aria-label="WhatsApp"><img src="whatsapp.png" alt="WhatsApp"></a></li>
+            <li><a href="#" aria-label="Facebook"><img src="facebook.png" alt="Facebook"></a></li>
+          </ul>
+      </div>
+    </div>
+    <div class="container-footer-content">
+      <p>&copy; 2025 SeMart Store — Semua hak cipta dilindungi.</p>
+    </div>
+  </footer>
+  <script src="js/cart.js"></script> <!-- 🔹 INI HARUS ADA DI SEMUA PAGE -->
+
+  <!-- 🔹 Script -->
+  <script>
+    // 🔹 UPDATE UI BERDASARKAN STATUS LOGIN
+    function updateAuthUI() {
+        const navAuth = document.getElementById('nav-auth');
+        const userMenu = document.getElementById('user-menu');
+        const userGreeting = document.getElementById('user-greeting');
+        
+        if (window.semartAuth && window.semartAuth.isLoggedIn()) {
+            // User sudah login
+            const user = window.semartAuth.getCurrentUser();
+            if (navAuth) navAuth.style.display = 'none';
+            if (userMenu) userMenu.style.display = 'block';
+            if (userGreeting) {
+                const userName = user.email.split('@')[0];
+                userGreeting.textContent = `Halo, ${userName}!`;
+            }
+        } else {
+            // User belum login
+            if (navAuth) navAuth.style.display = 'flex';
+            if (userMenu) userMenu.style.display = 'none';
+        }
+    }
+
+    // 🔹 SISTEM PENCARIAN
+    function setupSearch() {
+        const searchInput = document.getElementById('search-input');
+        const searchBtn = document.getElementById('search-btn');
+        
+        if (!searchInput || !searchBtn) return;
+        
+        // Handle Enter key
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                performSearch();
+            }
+        });
+        
+        // Handle button click
+        searchBtn.addEventListener('click', performSearch);
+    }
+
+    function performSearch() {
+        const searchInput = document.getElementById('search-input');
+        const searchTerm = searchInput.value.trim();
+        
+        if (searchTerm) {
+            // Redirect ke halaman hasil pencarian
+            window.location.href = `search-results.html?search=${encodeURIComponent(searchTerm)}`;
+        } else {
+            // Tampilkan pesan error
+            alert('Silakan masukkan kata kunci pencarian');
+            searchInput.focus();
+        }
+    }
+
+    // Ambil data dari product.json dan tampilkan produk unggulan
+    document.addEventListener("DOMContentLoaded", async () => {
+      // Inisialisasi search
+      setupSearch();
+      
+      // Update UI auth status
+      setTimeout(updateAuthUI, 100); // Tunggu sebentar untuk Firebase initialize
+      
+      const container = document.getElementById("featured-products");
+
+      try {
+        const res = await fetch("data/product.json");
+        const products = await res.json();
+
+        // Filter produk unggulan (isFeatured = true)
+        const featured = products.filter(p => p.isFeatured);
+        console.log("Jumlah produk unggulan:", featured.length);
+
+        if (featured.length === 0) {
+          container.innerHTML = "<p>Tidak ada produk unggulan saat ini.</p>";
+          return;
+        }
+
+        // Tampilkan produk unggulan (maksimal 6)
+        const limit = 6;
+        const limitedFeatured = featured.slice(0, limit);
+
+        limitedFeatured.forEach(p => {
+          const card = document.createElement("div");
+          card.classList.add("product-card");
+          card.innerHTML = `
+            <img src="${p.image}" alt="${p.name}" loading="lazy">
+            <h3>${p.name}</h3>
+            <p>Terjual ${p.sold}</p>
+            <div class="rating">
+                ${generateStars(p.rating)} <span>${p.rating.toFixed(1)}</span>
+              </div>
+            <div class="product-bottom">
+              <p class="price">Rp${p.price.toLocaleString("id-ID")}</p>
+              <a href="product.html?id=${p.id}" class="btn-secondary">Lihat Detail</a>
+            </div>
+          `;
+          container.appendChild(card);
+        });
+
+      } catch (error) {
+        console.error("Gagal memuat produk:", error);
+        container.innerHTML = "<p>Gagal memuat data produk.</p>";
+      }
+    });
+
+    function generateStars(rating) {
+      const fullStars = Math.floor(rating);
+      const halfStar = rating % 1 >= 0.5 ? 1 : 0;
+      const emptyStars = 5 - fullStars - halfStar;
+
+      return "★".repeat(fullStars) + "½".repeat(halfStar) + "☆".repeat(emptyStars);
+    }
+
+    let slideIndex = 1;
+    showSlides(slideIndex);
+
+    function plusSlides(n) {
+      showSlides(slideIndex += n);
+    }
+
+    function currentSlide(n) {
+      showSlides(slideIndex = n);
+    }
+
+    function showSlides(n) {
+      const slides = document.getElementsByClassName("slide");
+      const dots = document.getElementsByClassName("dot");
+
+      if (n > slides.length) slideIndex = 1;
+      if (n < 1) slideIndex = slides.length;
+
+      for (let i = 0; i < slides.length; i++) {
+        slides[i].style.display = "none";  
+      }
+
+      for (let i = 0; i < dots.length; i++) {
+        dots[i].className = dots[i].className.replace(" active", "");
+      }
+
+      slides[slideIndex-1].style.display = "block";  
+      dots[slideIndex-1].className += " active";
+    }
+
+    // otomatis slideshow
+    setInterval(() => { plusSlides(1); }, 5000);
+
+    // Listen untuk auth state changes
+    window.addEventListener('userLogin', updateAuthUI);
+    window.addEventListener('userLogout', updateAuthUI);
+  </script>
+</body>
+</html>
