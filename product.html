@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SeMart</title>
+  <link rel="stylesheet" href="css/style.css?v=2" />
+  <link rel="stylesheet" href="css/cart.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <header class="navbar">
+      <div class="container nav-content">
+          <div class="logo">
+              <img src="logo2.png" alt="SeMart Logo" width="30px">
+              <h1>SeMart</h1>
+          </div>
+          <div class="search">
+              <div class="textinput">
+                  <input type="text" placeholder="Cari Produk" id="search-input" aria-label="Cari produk">
+              </div>
+              <button type="button" id="search-btn">Cari</button>
+          </div>
+          <nav class="right-nav">
+              <ul class="nav-links">
+                  <li><a href="index.html" class="active">Beranda</a></li>
+                  <li><a href="products.html">Produk</a></li>
+                  <li><a href="#">Tentang</a></li>
+                  <li><a href="#">Kontak</a></li>
+              </ul>
+              <div class="cart-section">
+                <a href="cart.html" class="cart-link">
+                    <div class="cart-info">
+                        <div class="cart-total-price">
+                            Rp<span id="nav-cart-total">0</span>
+                        </div>
+                        <div class="cart-icon-with-count">
+                            🛒
+                            <span class="cart-count" id="nav-cart-count">0</span>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            <div class="nav-auth">
+              <a href="login.html" class="btn-login">Login</a>
+            </div>
+          </nav>
+          
+          <!-- 🔹 CART SECTION - HARUS ADA DI SEMUA PAGE -->
+
+      </div>
+  </header>
+
+  <div class="backpage">
+    <a href="index.html" class="back-btn">← Ke Beranda</a>
+  </div>
+    
+  <main class="product-detail">
+    <div class="product-image">
+      <img id="product-img" src="" alt="Gambar Produk">
+    </div>
+
+    <div class="product-info">
+      <h2 id="product-name"></h2>
+      <p id="product-category"></p>
+      <div class="product-rating" id="product-rating"></div>
+      <p id="product-sell"></p>
+      <h3 id="product-price"></h3>
+      <p id="product-desc"></p>
+      <div class="checkout">
+        <button id="add-to-cart">Tambah ke Keranjang</button>      
+        <input id="qty" type="number" value="1" min="1">
+      </div>
+    </div>
+  </main>
+
+  <div class="descrip_review">
+    <div class="tab-menu">
+      <a href="#" class="tab-link active" data-tab="deskripsi">Deskripsi</a>
+      <a href="#" class="tab-link" data-tab="ulasan">Ulasan</a>
+    </div>
+
+    <div class="tab-content active" id="deskripsi">
+      <h3 id="product-name-desc"></h3>
+      <div id="product-longdesc" class="longdesc"></div>
+      <button id="toggle-desc" class="toggle-btn">Lihat Selengkapnya</button>
+    </div>
+
+    <div class="tab-content" id="ulasan" style="text-align: center;height: 100px; align-content: center; color: rgb(171, 171, 171);">
+      <h3>Belum Ada Ulasan</h3>
+    </div>
+  </div>
+
+  <div class="produk-terkait">
+    <h1>Produk Terkait</h1>
+    <div class="container">
+      <div class="product-grid-terkait" id="featured-products"></div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="footer-content">
+      <div class="footer-logo">
+        <section style="display: flex; align-items: center; gap: 10px;">
+          <img src="logo2.png" alt="" style="width: 30px;">
+          <h2 style="font-size: 20px;">SeMart</h2>
+        </section>
+        <p>Belanja cerdas, dukung produk lokal bersama SeMart.<br>
+          Hemat setiap hari, bahagia setiap belanja!</p>
+      </div>
+      <div class="follow-me">
+        <p>Ikuti Kami</p>
+          <ul>
+            <li><a href="#"><img src="instagram.png" alt="instagram"></a></li>
+            <li><a href="#"><img src="youtube.png" alt="youtube"></a></li>
+            <li><a href="#"><img src="twitter.png" alt="twitter"></a></li>
+            <li><a href="#"><img src="whatsapp.png" alt="whatsapp"></a></li>
+            <li><a href="#"><img src="facebook.png" alt="facebook"></a></li>
+          </ul>
+      </div>
+    </div>
+    <div class="container-footer-content">
+      <p>&copy; 2025 SeMart Store — Semua hak cipta dilindungi.</p>
+    </div>
+  </footer>
+
+  <script src="js/cart.js"></script>
+  <script src="js/search.js"></script>
+  <script src="js/auth.js"></script>
+
+<!-- Script product detail HARUS dulu -->
+<script>
+// === FUNGSI UTAMA PRODUCT DETAIL - HARUS DULU ===
+document.addEventListener("DOMContentLoaded", () => {
+    const params = new URLSearchParams(window.location.search);
+    const productId = params.get("id");
+
+    if (!productId) {
+        document.querySelector(".product-detail").innerHTML = "<p>Produk tidak ditemukan.</p>";
+        return;
+    }
+
+    fetch("data/product.json")
+      .then(res => res.json())
+      .then(products => {
+        const product = products.find(p => p.id == productId);
+        if (!product) {
+            document.querySelector(".product-detail").innerHTML = "<p>Produk tidak ditemukan.</p>";
+            return;
+        }
+
+        // Isi data produk
+        document.getElementById("product-img").src = product.image;
+        document.getElementById("product-name").textContent = product.name;
+        document.getElementById("product-category").textContent = `Kategori: ${product.category}`;
+        document.getElementById("product-price").textContent = `Rp ${product.price.toLocaleString("id-ID")}`;
+        document.getElementById("product-desc").textContent = product.description;
+        document.getElementById("product-sell").textContent = `Terjual ${product.sold} Buah`;
+        document.getElementById("product-name-desc").textContent = product.name;
+
+        // Long Description
+        const longDescEl = document.getElementById("product-longdesc");
+        longDescEl.innerHTML = product.longdescription.replace(/\n/g, "<br>");
+
+        const toggleBtn = document.getElementById("toggle-desc");
+        if (toggleBtn) {
+            toggleBtn.addEventListener("click", () => {
+                longDescEl.classList.toggle("expanded");
+                toggleBtn.textContent = longDescEl.classList.contains("expanded")
+                ? "Sembunyikan"
+                : "Lihat Selengkapnya";
+            });
+        }
+
+        // Rating
+        const ratingContainer = document.getElementById("product-rating");
+        if (ratingContainer) {
+            const fullStars = Math.floor(product.rating);
+            const halfStar = product.rating % 1 >= 0.5;
+            const emptyStars = 5 - fullStars - (halfStar ? 1 : 0);
+            ratingContainer.innerHTML =
+                "★".repeat(fullStars) +
+                (halfStar ? "½" : "") +
+                "☆".repeat(emptyStars) +
+                ` <span>(${product.rating.toLocaleString('id-ID', { minimumFractionDigits: 1, maximumFractionDigits: 1 })})</span>`;
+        }
+
+        // Produk Terkait
+        const container = document.getElementById("featured-products");
+        if (container) {
+            const related = products
+            .filter(p => p.category === product.category && p.id !== product.id)
+            .slice(0, 6);
+
+            container.innerHTML = related.length
+            ? ""
+            : "<p>Tidak ada produk terkait saat ini.</p>";
+
+            related.forEach(p => {
+                const card = document.createElement("div");
+                card.classList.add("product-card");
+                card.innerHTML = `
+                    <img src="${p.image}" alt="${p.name}" loading="lazy">
+                    <h3>${p.name}</h3>
+                    <p>Terjual ${p.sold}</p>
+                    <div class="rating">
+                        ${generateStars(p.rating)} <span>${p.rating.toLocaleString('id-ID', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</span>
+                    </div>
+                    <div class="product-bottom">
+                        <p class="price">Rp${p.price.toLocaleString("id-ID")}</p>
+                        <div class="product-actions">
+                            <a href="product.html?id=${p.id}" class="btn-secondary">Detail</a>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // Simpan produk ke window object
+        window.currentProduct = product;
+
+        // Event listeners untuk tombol cart
+        const addBtn = document.getElementById("add-to-cart");
+        const qtyInput = document.getElementById("qty");
+
+        if (addBtn && qtyInput) {
+            addBtn.addEventListener("click", function() {
+                addToCartFromDetail();
+            });
+            
+            qtyInput.addEventListener("keypress", function(e) {
+                if (e.key === "Enter") {
+                    addToCartFromDetail();
+                }
+            });
+        }
+      })
+      .catch((error) => {
+        console.error("Error loading product:", error);
+        document.querySelector(".product-detail").innerHTML = "<p>Gagal memuat data produk.</p>";
+      });
+
+    // Tabs functionality
+    const tabs = document.querySelectorAll(".tab-link");
+    const contents = document.querySelectorAll(".tab-content");
+    tabs.forEach(tab => {
+        tab.addEventListener("click", e => {
+            e.preventDefault();
+            tabs.forEach(t => t.classList.remove("active"));
+            contents.forEach(c => c.classList.remove("active"));
+            tab.classList.add("active");
+            document.getElementById(tab.dataset.tab).classList.add("active");
+        });
+    });
+});
+
+  // 🔹 SISTEM PENCARIAN
+  function setupSearch() {
+      const searchInput = document.getElementById('search-input');
+      const searchBtn = document.getElementById('search-btn');
+      
+      if (!searchInput || !searchBtn) return;
+      
+      // Handle Enter key
+      searchInput.addEventListener('keypress', function(e) {
+          if (e.key === 'Enter') {
+              performSearch();
+          }
+      });
+      
+      // Handle button click
+      searchBtn.addEventListener('click', performSearch);
+  }
+
+  function performSearch() {
+      const searchInput = document.getElementById('search-input');
+      const searchTerm = searchInput.value.trim();
+      
+      if (searchTerm) {
+          // Redirect ke halaman hasil pencarian
+          window.location.href = `search-results.html?search=${encodeURIComponent(searchTerm)}`;
+      } else {
+          // Tampilkan pesan error
+          alert('Silakan masukkan kata kunci pencarian');
+          searchInput.focus();
+      }
+  }
+
+
+    // === FUNGSI ADD TO CART DARI DETAIL ===
+    function addToCartFromDetail() {
+        console.log("🛒 addToCartFromDetail dipanggil");
+        
+        const quantityInput = document.getElementById("qty");
+        const quantity = parseInt(quantityInput.value);
+
+        console.log("🛒 Quantity dari input:", quantity);
+        console.log("🛒 Produk saat ini:", window.currentProduct);
+
+        if (!window.currentProduct) {
+            alert("Produk tidak ditemukan. Silakan refresh halaman.");
+            return;
+        }
+        
+        if (isNaN(quantity) || quantity < 1) {
+            alert("Jumlah harus angka dan minimal 1.");
+            quantityInput.focus();
+            quantityInput.select();
+            return;
+        }
+
+        // Buat product object yang sederhana
+        const productData = {
+            id: window.currentProduct.id,
+            name: window.currentProduct.name,
+            price: window.currentProduct.price,
+            image: window.currentProduct.image
+        };
+
+        console.log("🛒 Data produk yang akan dikirim:", productData);
+        console.log("🛒 Quantity yang akan dikirim:", quantity);
+        console.log("🛒 Fungsi addToCart tersedia:", typeof addToCart === 'function');
+
+        // Coba panggil addToCart
+        if (typeof addToCart === 'function') {
+            try {
+                addToCart(productData, quantity);
+                showAddToCartSuccess(productData.name, quantity);
+            } catch (error) {
+                console.error("🛒 Error saat memanggil addToCart:", error);
+                alert("Terjadi error: " + error.message);
+            }
+        } else {
+            console.error("🛒 Fungsi addToCart tidak ditemukan");
+            
+            // Fallback: langsung simpan ke localStorage
+            const fallbackCart = JSON.parse(localStorage.getItem('semart-cart') || '[]');
+            const existingItem = fallbackCart.find(item => item.id === productData.id);
+            
+            if (existingItem) {
+                existingItem.quantity += quantity;
+            } else {
+                fallbackCart.push({
+                    ...productData,
+                    quantity: quantity
+                });
+            }
+            
+            localStorage.setItem('semart-cart', JSON.stringify(fallbackCart));
+            showAddToCartSuccess(productData.name, quantity);
+            
+            // Update navbar manually
+            updateNavbarCartManual();
+        }
+    }
+
+    // Fungsi fallback untuk update navbar
+    function updateNavbarCartManual() {
+        const cart = JSON.parse(localStorage.getItem('semart-cart') || '[]');
+        const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+        const totalPrice = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        
+        const cartCount = document.getElementById('nav-cart-count');
+        const cartTotal = document.getElementById('nav-cart-total');
+        
+        if (cartCount) cartCount.textContent = totalItems;
+        if (cartTotal) cartTotal.textContent = totalPrice.toLocaleString('id-ID');
+        
+        console.log("🛒 Navbar updated manually:", { totalItems, totalPrice });
+    }
+
+    function showAddToCartSuccess(productName, quantity) {
+        console.log("🛒 Menampilkan toast success:", quantity + "x " + productName);
+        
+        const toast = document.createElement("div");
+        toast.style.cssText = `
+            position: fixed; 
+            top: 100px; 
+            right: 20px;
+            background: #28a745; 
+            color: white;
+            padding: 1rem 1.5rem; 
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            z-index: 1000; 
+            animation: slideInRight 0.3s ease;
+            max-width: 300px;
+        `;
+        toast.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 1.2rem;">✓</span>
+                <div>
+                    <strong>Berhasil ditambahkan!</strong>
+                    <div style="font-size: 0.9rem;">${quantity}x ${productName}</div>
+                    <div style="font-size: 0.8rem; opacity: 0.9;">
+                        Lihat <a href="cart.html" style="color: white; text-decoration: underline;">keranjang</a>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.style.animation = "slideOutRight 0.3s ease";
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.parentNode.removeChild(toast);
+                }
+            }, 300);
+        }, 4000);
+    }
+
+    function generateStars(rating) {
+        const fullStars = Math.floor(rating);
+        const halfStar = rating % 1 >= 0.5 ? 1 : 0;
+        const emptyStars = 5 - fullStars - halfStar;
+        return "★".repeat(fullStars) + (halfStar ? "½" : "") + "☆".repeat(emptyStars);
+    }
+
+    // Animasi CSS
+    const style = document.createElement("style");
+    style.textContent = `
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slideOutRight {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+    `;
+    document.head.appendChild(style);
+    </script>
+
+    <!-- Script cart.js SETELAH script product -->
+    <script src="js/cart.js"></script>
+</body>
+</html>
