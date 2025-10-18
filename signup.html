@@ -6,12 +6,6 @@
     <title>Daftar - SeMart</title>
     <link rel="stylesheet" href="css/auth-pages.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
-    <!-- Firebase SDK -->
-    <script type="module">
-        // Import Firebase Auth System
-        import './js/firebase-auth.js';
-    </script>
 </head>
 <body class="auth-page">
     <header class="auth-header">
@@ -77,8 +71,8 @@
                             <label for="signup-birthdate">Tanggal Lahir</label>
                             <input type="date" id="signup-birthdate" required>
                         </div>
-
-                        <!-- <div class="form-group">
+<!-- 
+                        <div class="form-group">
                             <label for="signup-address">Alamat Lengkap</label>
                             <textarea id="signup-address" placeholder="Masukkan alamat lengkap" rows="3"></textarea>
                         </div> -->
@@ -145,10 +139,7 @@
         </div>
     </div>
 
-    <script src="js/firebase-auth.js"></script>
+    <!-- Gunakan type="module" untuk file auth -->
+    <script type="module" src="js/firebase-auth.js"></script>
 </body>
-    
-
 </html>
-
-
