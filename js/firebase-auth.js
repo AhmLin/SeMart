@@ -26,12 +26,12 @@ import {
 //  🔧 KONFIGURASI FIREBASE
 // ============================
 const firebaseConfig = {
-  apiKey: "ISI_API_KEY_KAMU_DI_SINI",
-  authDomain: "ISI_AUTH_DOMAIN_KAMU",
-  projectId: "ISI_PROJECT_ID_KAMU",
-  storageBucket: "ISI_STORAGE_BUCKET_KAMU",
-  messagingSenderId: "ISI_MESSAGING_SENDER_ID",
-  appId: "ISI_APP_ID_KAMU"
+  apiKey: "AIzaSyApFkWDpEodKPHLzePFe0cc9z5kiMZbrS4",
+  authDomain: "semart-5da85.firebaseapp.com",
+  projectId: "semart-5da85",
+  storageBucket: "semart-5da85.firebasestorage.app",
+  messagingSenderId: "77585287575",
+  appId: "1:77585287575:web:5f58edd85981264da25cd2"
 };
 
 // ============================
