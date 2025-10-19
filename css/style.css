@@ -26,7 +26,7 @@ body {
   position: sticky;
   top: 0;
   z-index: 10;
-  height: 10vh;
+  height: 12vh;
 }
 
 .nav-content {
@@ -103,7 +103,7 @@ body {
   align-items: center;
   gap: 10px;
   cursor: pointer;
-  padding: 8px 12px;
+  padding: 5px 5px;
   border-radius: 8px;
   transition: background-color 0.3s ease;
 }
@@ -919,5 +919,6 @@ footer {
 .nav-auth, .user-menu {
   transition: opacity 0.3s ease, transform 0.3s ease;
 }
+
 
 
