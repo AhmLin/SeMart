@@ -1,4 +1,4 @@
-// 🔹 UNIFIED AUTH SYSTEM - FIXED RACE CONDITION
+// 🔹 UNIFIED AUTH SYSTEM - FIXED AUTO LOGIN ISSUE
 import { 
     auth, 
     db 
@@ -10,8 +10,8 @@ import {
     signOut,
     onAuthStateChanged,
     setPersistence,
-    browserLocalPersistence,
-    browserSessionPersistence
+    browserSessionPersistence,
+    inMemoryPersistence
 } from "https://www.gstatic.com/firebasejs/9.6.0/firebase-auth.js";
 
 import {
@@ -32,7 +32,8 @@ class UnifiedAuthSystem {
         this.auth = auth;
         this.db = db;
         this.isInitialized = false;
-        this.isLoggingOut = false; // 🔹 FLAG UNTUK CEK LOGOUT PROCESS
+        this.isLoggingOut = false;
+        this.manualLogoutFlag = false; // 🔹 FLAG BARU UNTUK MANUAL LOGOUT
         this.init();
     }
 
@@ -42,7 +43,7 @@ class UnifiedAuthSystem {
         console.log('🔐 Initializing Unified Auth System...');
         
         try {
-            // Set persistence to SESSION instead of LOCAL
+            // 🔹 SET PERSISTENCE KE SESSION (bukan LOCAL)
             await setPersistence(this.auth, browserSessionPersistence);
             console.log('✅ Auth persistence set to SESSION');
             
@@ -62,39 +63,31 @@ class UnifiedAuthSystem {
 
     setupAuthStateListener() {
         onAuthStateChanged(this.auth, async (user) => {
-            // 🔹 IGNORE AUTH STATE CHANGES SELAMA LOGOUT PROCESS
-            if (this.isLoggingOut) {
-                console.log('🔐 Ignoring auth state change during logout');
+            console.log('🔄 Firebase Auth State Changed:', user ? user.email : 'NULL');
+            
+            // 🔹 JIKA SEDANG MANUAL LOGOUT, IGNORE SEMUA AUTH STATE CHANGES
+            if (this.manualLogoutFlag) {
+                console.log('🔐 Ignoring auth state change - manual logout in progress');
                 return;
             }
 
             if (user) {
                 this.currentUser = user;
-                console.log('✅ User signed in:', user.email);
+                console.log('✅ User authenticated:', user.email);
                 
                 // 🔹 CEK JIKA DI LOGIN PAGE - REDIRECT KE HOME
                 if (this.isLoginPage()) {
                     console.log('🔄 Redirecting from login to home...');
-                    this.showToast('Anda sudah login!', 'info');
+                    this.showToast('Anda sudah login! Mengarahkan ke beranda...', 'info');
                     setTimeout(() => {
                         window.location.href = 'index.html';
-                    }, 1500);
+                    }, 1000);
                     return;
                 }
                 
             } else {
                 this.currentUser = null;
-                console.log('🔐 User signed out');
-                
-                // 🔹 CEK JIKA DI PROTECTED PAGE - REDIRECT KE LOGIN
-                if (this.isProtectedPage()) {
-                    console.log('🔄 Redirecting to login from protected page...');
-                    this.showToast('Silakan login terlebih dahulu', 'info');
-                    setTimeout(() => {
-                        window.location.href = 'login.html';
-                    }, 1500);
-                    return;
-                }
+                console.log('🔐 User not authenticated');
             }
             
             // Update UI
@@ -108,117 +101,152 @@ class UnifiedAuthSystem {
             return;
         }
 
-        this.isLoggingOut = true; // 🔹 SET FLAG LOGOUT
-        console.log('🚪 Starting logout process...');
+        this.isLoggingOut = true;
+        this.manualLogoutFlag = true; // 🔹 SET FLAG MANUAL LOGOUT
+        console.log('🚪 Starting MANUAL logout process...');
 
         try {
-            // 1. CLEAR UI FIRST - sebelum Firebase logout
+            // 1. CLEAR UI IMMEDIATELY - sebelum apapun
             this.forceLogoutUI();
             
-            // 2. Firebase sign out
-            await signOut(this.auth);
-            console.log('✅ Firebase signOut successful');
+            // 2. CLEAR ALL LOCAL DATA TERLEBIH DAHULU
+            await this.nuclearDataClear();
             
-            // 3. CLEAR ALL LOCAL DATA secara manual
-            await this.clearAllAuthData();
+            // 3. FIREBASE SIGNOUT
+            await signOut(this.auth);
+            console.log('✅ Firebase signOut completed');
             
             // 4. Tampilkan success message
             this.showToast('Berhasil logout!', 'success');
             
-            // 5. Redirect ke home setelah delay
+            // 5. Redirect setelah delay
             setTimeout(() => {
-                this.isLoggingOut = false; // 🔹 RESET FLAG
+                this.isLoggingOut = false;
+                this.manualLogoutFlag = false; // 🔹 RESET FLAG
                 window.location.href = 'index.html';
-            }, 1000);
+            }, 1500);
             
         } catch (error) {
             console.error('❌ Logout failed:', error);
-            this.isLoggingOut = false; // 🔹 RESET FLAG MESKI ERROR
+            this.isLoggingOut = false;
+            this.manualLogoutFlag = false; // 🔹 RESET FLAG MESKI ERROR
             this.showToast('Gagal logout', 'error');
         }
     }
 
-    async clearAllAuthData() {
-        console.log('🧹 Clearing all auth data...');
+    async nuclearDataClear() {
+        console.log('💣 NUCLEAR data clearance...');
         
-        // A. Clear Firebase-related localStorage
-        const firebaseKeys = [];
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (key && key.includes('firebase')) {
-                firebaseKeys.push(key);
-            }
-        }
+        // A. CLEAR ALL FIREBASE LOCALSTORAGE
+        const allKeys = Object.keys(localStorage);
+        const firebaseKeys = allKeys.filter(key => 
+            key.includes('firebase') || 
+            key.includes('auth') ||
+            key.includes('user') ||
+            key.includes('token')
+        );
         
         firebaseKeys.forEach(key => {
+            console.log('🗑️ Removing:', key);
             localStorage.removeItem(key);
-            console.log('🗑️ Removed Firebase key:', key);
+            // Double removal untuk memastikan
+            localStorage.setItem(key, '');
+            localStorage.removeItem(key);
         });
 
-        // B. Clear app-specific auth data
-        const appAuthKeys = [
-            'userLoggedIn', 'userName', 'userEmail', 
-            'semart-user', 'authToken'
-        ];
-        
-        appAuthKeys.forEach(key => {
-            localStorage.removeItem(key);
-            console.log('🗑️ Removed app key:', key);
-        });
-
-        // C. Clear sessionStorage
+        // B. CLEAR SESSIONSTORAGE COMPLETELY
         sessionStorage.clear();
-        console.log('✅ sessionStorage cleared');
+        
+        // C. CLEAR COOKIES
+        document.cookie.split(';').forEach(cookie => {
+            const name = cookie.split('=')[0].trim();
+            document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+        });
 
-        // D. Clear cookies yang related to auth
-        this.clearAuthCookies();
-
-        console.log('✅ All auth data cleared');
+        // D. CLEAR INDEXEDDB FIREBASE
+        await this.clearIndexedDB();
+        
+        console.log('✅ Nuclear data clearance completed');
     }
 
-    clearAuthCookies() {
-        const cookies = document.cookie.split(';');
-        cookies.forEach(cookie => {
-            const eqPos = cookie.indexOf('=');
-            const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
+    async clearIndexedDB() {
+        try {
+            // Clear Firebase IndexedDB databases
+            const databases = await window.indexedDB.databases();
+            const firebaseDBs = databases.filter(db => 
+                db.name.includes('firebase') || 
+                db.name.includes('auth')
+            );
             
-            if (name.includes('auth') || name.includes('firebase') || name.includes('session')) {
-                document.cookie = name + '=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-                console.log('🍪 Removed cookie:', name);
+            for (const dbInfo of firebaseDBs) {
+                window.indexedDB.deleteDatabase(dbInfo.name);
+                console.log('🗑️ Removed IndexedDB:', dbInfo.name);
             }
-        });
+        } catch (error) {
+            console.warn('⚠️ Cannot clear IndexedDB:', error);
+        }
     }
 
     forceLogoutUI() {
-        // 🔹 FORCE UPDATE UI TANPA MENUNGGU FIREBASE
+        // 🔹 FORCE UI KE STATE LOGOUT TANPA MENUNGGU APAPUN
         const navAuth = document.getElementById('nav-auth');
         const userMenu = document.getElementById('user-menu');
 
         if (navAuth && userMenu) {
             navAuth.style.display = 'flex';
+            navAuth.style.opacity = '1';
+            navAuth.style.visibility = 'visible';
+            
             userMenu.style.display = 'none';
+            userMenu.style.opacity = '0';
+            userMenu.style.visibility = 'hidden';
             
             console.log('🔄 UI forced to logout state');
         }
     }
+
+    // 🔹 LOGIN METHOD YANG DISABLE AUTO-RELOGIN
+    async login(email, password) {
+        // 🔹 RESET MANUAL LOGOUT FLAG SEBELUM LOGIN
+        this.manualLogoutFlag = false;
+        
+        try {
+            const userCredential = await signInWithEmailAndPassword(this.auth, email, password);
+            const user = userCredential.user;
+
+            // Update last login
+            await this.saveUser(user.uid, {
+                lastLogin: serverTimestamp(),
+                updatedAt: serverTimestamp()
+            });
+
+            this.showToast('Login berhasil!', 'success');
+            
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 1500);
+            
+            return user;
+
+        } catch (error) {
+            console.error('❌ Login failed:', error);
+            const errorMessage = this.getFirebaseErrorMessage(error.code);
+            this.showToast(errorMessage, 'error');
+            throw error;
+        }
+    }
+
+    // ... (methods lainnya tetap sama)
 
     isLoginPage() {
         return window.location.pathname.includes('login.html') || 
                window.location.pathname.includes('signup.html');
     }
 
-    isProtectedPage() {
-        return window.location.pathname.includes('profile.html') ||
-               window.location.pathname.includes('orders.html') ||
-               window.location.pathname.includes('wishlist.html');
-    }
-
-    // ... (methods lainnya tetap sama - register, login, dll)
-
     updateNavbarUI() {
-        // 🔹 JANGAN UPDATE UI SELAMA LOGOUT PROCESS
-        if (this.isLoggingOut) {
-            console.log('⏸️ Skipping UI update during logout');
+        // 🔹 JANGAN UPDATE UI SELAMA MANUAL LOGOUT
+        if (this.manualLogoutFlag) {
+            console.log('⏸️ Skipping UI update - manual logout flag active');
             return;
         }
 
@@ -250,7 +278,7 @@ class UnifiedAuthSystem {
     }
 }
 
-// 🔹 INITIALIZATION DENGAN ERROR HANDLING
+// 🔹 ENHANCED INITIALIZATION
 let unifiedAuth;
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -260,19 +288,37 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         console.log('✅ Unified Auth System loaded');
         
-        // 🔹 MANUAL FIX: Jika di login page, force cek status
+        // 🔹 FORCE CHECK DI LOGIN PAGE
         if (window.location.pathname.includes('login.html')) {
             setTimeout(() => {
+                // Clear any residual auth state
                 if (unifiedAuth.isLoggedIn()) {
-                    console.log('🔄 Manual redirect from login page');
+                    console.log('🔄 Force redirect from login page');
                     window.location.href = 'index.html';
+                } else {
+                    // Additional cleanup for login page
+                    unifiedAuth.forceLogoutUI();
                 }
-            }, 1000);
+            }, 500);
         }
         
     } catch (error) {
         console.error('❌ Failed to load auth system:', error);
     }
 });
+
+// 🔹 MANUAL OVERRIDE FUNCTIONS
+window.forceLogout = async () => {
+    if (window.semartAuth) {
+        await window.semartAuth.logout();
+    }
+};
+
+window.clearAllAuth = async () => {
+    if (window.semartAuth) {
+        await window.semartAuth.nuclearDataClear();
+        alert('All auth data cleared!');
+    }
+};
 
 export { UnifiedAuthSystem };
