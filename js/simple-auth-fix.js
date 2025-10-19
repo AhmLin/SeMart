@@ -1,420 +1,243 @@
-// 🔹 SIMPLE AUTH FIX - VERSION 2 (FIXED LOGOUT)
+// 🔹 SIMPLE AUTH FIX - ULTRA ROBUST VERSION
 class SimpleAuthFix {
     constructor() {
-        this.isLoggingOut = false; // Flag untuk mencegah race condition
+        this.isLoggingOut = false;
         this.init();
     }
 
     init() {
-        console.log('🔐 Simple Auth Fix initialized - Enhanced Version');
+        console.log('🔐 Ultra Robust Auth Fix initialized');
         this.setupEventListeners();
-        this.updateNavbar();
-        
-        // Check every 3 seconds (kurangi frekuensi)
-        setInterval(() => this.updateNavbar(), 3000);
+        this.forceNavbarUpdate(); // FORCE UPDATE SAAT INISIALISASI
     }
 
     setupEventListeners() {
-        // Logout button - Enhanced event listener
-        const logoutBtn = document.getElementById('logout-btn');
-        if (logoutBtn) {
-            // Remove existing listeners first
-            logoutBtn.replaceWith(logoutBtn.cloneNode(true));
-            
-            // Add new listener
-            document.getElementById('logout-btn').addEventListener('click', (e) => {
+        // Logout button dengan event binding yang kuat
+        document.addEventListener('click', (e) => {
+            if (e.target.id === 'logout-btn' || e.target.closest('#logout-btn')) {
                 e.preventDefault();
                 e.stopPropagation();
-                console.log('🚪 Logout button clicked');
+                console.log('🚪 Logout triggered');
                 this.logout();
-            });
-        }
+            }
+        });
 
-        // Tambah event listener untuk user menu
-        this.setupUserMenu();
-    }
-
-    setupUserMenu() {
-        const userProfile = document.querySelector('.user-profile');
-        if (userProfile) {
-            userProfile.addEventListener('click', (e) => {
-                const dropdown = userProfile.querySelector('.user-dropdown');
-                if (dropdown) {
-                    dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
-                }
-            });
+        // Prevent dropdown close issue
+        const userMenu = document.getElementById('user-menu');
+        if (userMenu) {
+            userMenu.addEventListener('click', (e) => e.stopPropagation());
         }
     }
 
     isUserLoggedIn() {
-        // Jika sedang proses logout, return false
-        if (this.isLoggingOut) return false;
-
-        const checks = [
-            // Firebase Auth - dengan error handling lebih baik
-            () => {
-                try {
-                    if (window.firebase && window.firebase.auth) {
-                        return window.firebase.auth().currentUser !== null;
-                    }
-                    return false;
-                } catch (e) {
-                    return false;
-                }
-            },
-            
-            // SemartAuth custom
-            () => {
-                try {
-                    return window.semartAuth && 
-                           window.semartAuth.auth && 
-                           window.semartAuth.auth.currentUser !== null;
-                } catch (e) {
-                    return false;
-                }
-            },
-
-            // LocalStorage checks
-            () => localStorage.getItem('userLoggedIn') === 'true',
-            () => localStorage.getItem('userEmail') !== null,
-            () => localStorage.getItem('userName') !== null,
-            
-            // SessionStorage
-            () => sessionStorage.getItem('firebaseUser') !== null,
-            
-            // Cookie check (fallback)
-            () => document.cookie.includes('userToken') || 
-                  document.cookie.includes('firebase')
-        ];
-
-        const isLoggedIn = checks.some(check => {
-            try {
-                const result = check();
-                console.log('Auth check result:', check.toString().slice(0, 50), result);
-                return result;
-            } catch (e) {
-                console.warn('Auth check failed:', e);
-                return false;
-            }
-        });
-
-        console.log('🔐 Final login status:', isLoggedIn);
-        return isLoggedIn;
-    }
-
-    getUserInfo() {
-        // Priority 1: Firebase auth
-        try {
-            if (window.firebase?.auth().currentUser) {
-                const user = window.firebase.auth().currentUser;
-                return {
-                    name: user.displayName || (user.email ? user.email.split('@')[0] : 'User'),
-                    email: user.email
-                };
-            }
-        } catch (e) {
-            console.warn('Firebase user info failed:', e);
-        }
-
-        // Priority 2: semartAuth
-        try {
-            if (window.semartAuth?.auth?.currentUser) {
-                const user = window.semartAuth.auth.currentUser;
-                return {
-                    name: user.displayName || (user.email ? user.email.split('@')[0] : 'User'),
-                    email: user.email
-                };
-            }
-        } catch (e) {
-            console.warn('SemartAuth user info failed:', e);
-        }
-
-        // Priority 3: localStorage
-        const userName = localStorage.getItem('userName');
-        const userEmail = localStorage.getItem('userEmail');
-        
-        if (userName && userName !== 'null') {
-            return {
-                name: userName,
-                email: userEmail || 'user@example.com'
-            };
-        }
-        
-        // Default
-        return {
-            name: 'User',
-            email: 'user@example.com'
-        };
+        // SUPER SIMPLE CHECK - hanya bergantung pada 1 source of truth
+        const mainCheck = localStorage.getItem('userLoggedIn') === 'true';
+        console.log('🔐 Main auth check:', mainCheck);
+        return mainCheck;
     }
 
     async logout() {
-        if (this.isLoggingOut) {
-            console.log('⚠️ Logout already in progress');
-            return;
-        }
-
+        if (this.isLoggingOut) return;
+        
         this.isLoggingOut = true;
-        console.log('🚪 Starting enhanced logout process...');
+        console.log('🚪 ULTRA LOGOUT - Starting...');
 
-        try {
-            // 1. Clear ALL auth data secara synchronous
-            await this.clearAllAuthData();
-            
-            // 2. Update UI immediately
-            this.forceNavbarUpdate();
-            
-            // 3. Show success message
-            this.showLogoutMessage();
-            
-            // 4. Redirect setelah delay singkat
-            setTimeout(() => {
-                console.log('✅ Redirecting to home page');
-                window.location.href = 'index.html';
-            }, 1500);
-
-        } catch (error) {
-            console.error('❌ Logout error:', error);
-            this.isLoggingOut = false;
-            alert('Terjadi error saat logout. Silakan refresh halaman.');
-        }
+        // 1. CLEAR DATA FIRST - Synchronous dan aggressive
+        this.aggressiveDataClear();
+        
+        // 2. UPDATE UI IMMEDIATELY - Jangan tunggu apapun
+        this.forceNavbarUpdate();
+        
+        // 3. Tampilkan feedback
+        this.showLogoutMessage();
+        
+        // 4. Redirect
+        setTimeout(() => {
+            window.location.href = 'index.html';
+        }, 1000);
     }
 
-    async clearAllAuthData() {
-        console.log('🧹 Clearing all authentication data...');
+    aggressiveDataClear() {
+        console.log('🧹 AGGRESSIVE DATA CLEARING...');
         
-        // A. Clear localStorage - lebih comprehensive
-        const keysToRemove = [];
+        // CLEAR LOCALSTORAGE - Remove everything related to auth
+        const removeKeys = [];
         for (let i = 0; i < localStorage.length; i++) {
             const key = localStorage.key(i);
-            if (key && this.isAuthKey(key)) {
-                keysToRemove.push(key);
-                console.log('Removing localStorage:', key);
+            if (key && (
+                key.toLowerCase().includes('user') ||
+                key.toLowerCase().includes('auth') || 
+                key.toLowerCase().includes('login') ||
+                key.toLowerCase().includes('firebase') ||
+                key.toLowerCase().includes('token') ||
+                key.toLowerCase().includes('session') ||
+                key.toLowerCase().includes('profile')
+            )) {
+                removeKeys.push(key);
             }
         }
         
-        keysToRemove.forEach(key => {
+        removeKeys.forEach(key => {
+            console.log('Removing:', key);
             localStorage.removeItem(key);
-            // Double check removal
-            if (localStorage.getItem(key) !== null) {
-                localStorage.setItem(key, ''); // Set to empty string
-                localStorage.removeItem(key);
-            }
+            // Double removal untuk memastikan
+            localStorage.setItem(key, '');
+            localStorage.removeItem(key);
         });
 
-        // B. Clear sessionStorage
+        // CLEAR SESSIONSTORAGE - Remove everything
         sessionStorage.clear();
-        console.log('✅ sessionStorage cleared');
-
-        // C. Clear cookies
-        this.clearAuthCookies();
-
-        // D. Firebase logout dengan retry mechanism
-        await this.performFirebaseLogout();
-
-        // E. Clear any semartAuth instances
-        this.clearSemartAuth();
-
-        // F. Final verification
-        this.verifyDataCleared();
-    }
-
-    isAuthKey(key) {
-        const authKeywords = [
-            'user', 'auth', 'login', 'logout', 'token', 
-            'firebase', 'session', 'uid', 'email', 'password',
-            'profile', 'account', 'access', 'refresh'
-        ];
         
-        const lowerKey = key.toLowerCase();
-        return authKeywords.some(keyword => lowerKey.includes(keyword));
-    }
-
-    clearAuthCookies() {
-        const cookies = document.cookie.split(';');
-        cookies.forEach(cookie => {
-            const eqPos = cookie.indexOf('=');
-            const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
-            
-            if (this.isAuthKey(name)) {
-                document.cookie = name + '=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-                console.log('Removed cookie:', name);
-            }
+        // CLEAR COOKIES
+        document.cookie.split(";").forEach(cookie => {
+            const eqPos = cookie.indexOf("=");
+            const name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie;
+            document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
         });
-    }
 
-    async performFirebaseLogout() {
-        const firebaseLogoutMethods = [
-            // Method 1: Standard firebase
-            async () => {
-                if (window.firebase && window.firebase.auth) {
-                    console.log('Attempting Firebase auth signOut...');
-                    await window.firebase.auth().signOut();
-                    console.log('✅ Firebase signOut successful');
-                    return true;
-                }
-                return false;
-            },
-            
-            // Method 2: semartAuth logout
-            async () => {
-                if (window.semartAuth && typeof window.semartAuth.logout === 'function') {
-                    console.log('Attempting semartAuth logout...');
-                    await window.semartAuth.logout();
-                    console.log('✅ semartAuth logout successful');
-                    return true;
-                }
-                return false;
-            },
-            
-            // Method 3: Direct auth state clear
-            async () => {
-                if (window.semartAuth && window.semartAuth.auth) {
-                    console.log('Clearing semartAuth auth state...');
-                    window.semartAuth.auth.currentUser = null;
-                    return true;
-                }
-                return false;
-            }
-        ];
-
-        for (const method of firebaseLogoutMethods) {
-            try {
-                const result = await method();
-                if (result) break;
-            } catch (error) {
-                console.warn('Firebase logout method failed:', error);
-                // Continue to next method
-            }
-        }
-    }
-
-    clearSemartAuth() {
-        // Clear any global auth variables
+        // CLEAR ANY REMAINING GLOBAL VARIABLES
         if (window.semartAuth) {
             try {
                 window.semartAuth.auth = { currentUser: null };
-                window.semartAuth.isLoggedIn = () => false;
-            } catch (e) {
-                console.warn('Failed to clear semartAuth:', e);
-            }
+                window.semartAuth.isLoggedIn = false;
+            } catch (e) {}
         }
-    }
 
-    verifyDataCleared() {
-        console.log('🔍 Verifying data clearance...');
-        
-        const checks = [
-            () => localStorage.getItem('userLoggedIn') === null,
-            () => localStorage.getItem('userEmail') === null,
-            () => localStorage.getItem('userName') === null,
-            () => sessionStorage.length === 0
-        ];
-
-        const allClear = checks.every(check => {
-            try {
-                return check();
-            } catch (e) {
-                return true; // Jika error, anggap sudah clear
-            }
-        });
-
-        console.log('✅ Data clearance verified:', allClear);
+        console.log('✅ Aggressive data clear completed');
     }
 
     forceNavbarUpdate() {
         const navAuth = document.getElementById('nav-auth');
         const userMenu = document.getElementById('user-menu');
-
-        if (navAuth && userMenu) {
-            // Force hide user menu, show login
-            navAuth.style.display = 'flex';
-            userMenu.style.display = 'none';
-            
-            // Tambah class untuk visual feedback
-            navAuth.classList.add('logout-transition');
-            
-            console.log('🔄 Navbar forcefully updated to logout state');
-        }
-    }
-
-    showLogoutMessage() {
-        // Create custom notification
-        const notification = document.createElement('div');
-        notification.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: #28a745;
-            color: white;
-            padding: 15px 20px;
-            border-radius: 5px;
-            z-index: 10000;
-            font-family: 'Poppins', sans-serif;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        `;
-        notification.textContent = '✅ Berhasil logout!';
         
-        document.body.appendChild(notification);
-        
-        // Auto remove setelah 3 detik
-        setTimeout(() => {
-            if (notification.parentNode) {
-                notification.parentNode.removeChild(notification);
-            }
-        }, 3000);
-    }
-
-    updateNavbar() {
-        if (this.isLoggingOut) return; // Skip update selama logout
-
-        const navAuth = document.getElementById('nav-auth');
-        const userMenu = document.getElementById('user-menu');
-        const userGreeting = document.getElementById('user-greeting');
-
         if (!navAuth || !userMenu) {
-            console.error('❌ Navbar elements not found');
+            console.error('❌ Navbar elements missing');
             return;
         }
 
-        const isLoggedIn = this.isUserLoggedIn();
+        // FORCE THE UI UPDATE - regardless of auth state
+        const shouldShowLogin = !this.isUserLoggedIn();
         
-        console.log('🔄 Updating navbar - Logged in:', isLoggedIn);
-
-        if (isLoggedIn) {
-            navAuth.style.display = 'none';
-            userMenu.style.display = 'block';
-            
-            const userInfo = this.getUserInfo();
-            if (userGreeting) {
-                userGreeting.textContent = `Halo, ${userInfo.name}!`;
-            }
-        } else {
+        console.log('🔄 FORCE NAVBAR UPDATE - Show login:', shouldShowLogin);
+        
+        if (shouldShowLogin) {
+            // SHOW LOGIN, HIDE USER MENU
             navAuth.style.display = 'flex';
+            navAuth.style.opacity = '1';
+            navAuth.style.visibility = 'visible';
+            
             userMenu.style.display = 'none';
-            this.isLoggingOut = false; // Reset flag jika sudah logout
+            userMenu.style.opacity = '0';
+            userMenu.style.visibility = 'hidden';
+        } else {
+            // SHOW USER MENU, HIDE LOGIN
+            navAuth.style.display = 'none';
+            navAuth.style.opacity = '0';
+            navAuth.style.visibility = 'hidden';
+            
+            userMenu.style.display = 'block';
+            userMenu.style.opacity = '1';
+            userMenu.style.visibility = 'visible';
         }
+
+        // Trigger reflow untuk memastikan render
+        navAuth.offsetHeight;
+        userMenu.offsetHeight;
+    }
+
+    showLogoutMessage() {
+        // Remove existing messages
+        const existingMsg = document.querySelector('.logout-message');
+        if (existingMsg) existingMsg.remove();
+        
+        // Create new message
+        const msg = document.createElement('div');
+        msg.className = 'logout-message';
+        msg.innerHTML = `
+            <div style="
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: #28a745;
+                color: white;
+                padding: 15px 20px;
+                border-radius: 5px;
+                z-index: 10000;
+                font-family: 'Poppins', sans-serif;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                animation: slideIn 0.3s ease;
+            ">
+                ✅ Berhasil logout! Mengarahkan...
+            </div>
+        `;
+        
+        document.body.appendChild(msg);
+        
+        setTimeout(() => {
+            if (msg.parentNode) msg.parentNode.removeChild(msg);
+        }, 3000);
     }
 }
 
-// Enhanced initialization
+// 🚀 INITIALIZATION WITH FALLBACK
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('🔐 Starting Enhanced Simple Auth Fix...');
+    console.log('🚀 Starting Ultra Robust Auth Fix...');
     
-    // Tunggu sebentar untuk memastikan DOM benar-benar ready
+    // Wait for DOM to be fully ready
     setTimeout(() => {
         window.simpleAuthFix = new SimpleAuthFix();
         
-        // Debug helper
+        // FORCE INITIAL CHECK
+        window.simpleAuthFix.forceNavbarUpdate();
+        
+        // Add global debug function
         window.debugAuth = () => {
-            console.log('=== AUTH DEBUG INFO ===');
+            console.log('=== AUTH DEBUG ===');
             console.log('LocalStorage:', {
                 userLoggedIn: localStorage.getItem('userLoggedIn'),
                 userName: localStorage.getItem('userName'),
-                userEmail: localStorage.getItem('userEmail')
+                userEmail: localStorage.getItem('userEmail'),
+                allKeys: Object.keys(localStorage)
             });
-            console.log('Firebase auth:', window.firebase?.auth().currentUser);
-            console.log('semartAuth:', window.semartAuth);
-            console.log('isLoggingOut:', window.simpleAuthFix?.isLoggingOut);
+            console.log('UI State:', {
+                navAuth: document.getElementById('nav-auth')?.style.display,
+                userMenu: document.getElementById('user-menu')?.style.display
+            });
         };
-    }, 100);
+        
+        // Auto-check every 5 seconds as backup
+        setInterval(() => {
+            window.simpleAuthFix.forceNavbarUpdate();
+        }, 5000);
+        
+    }, 500);
 });
+
+// 🆘 EMERGENCY FIX - Jika semua else fails
+window.emergencyLogoutFix = function() {
+    console.log('🆘 EMERGENCY LOGOUT FIX ACTIVATED');
+    
+    // Nuclear option - clear everything
+    localStorage.clear();
+    sessionStorage.clear();
+    
+    // Force UI update
+    const navAuth = document.getElementById('nav-auth');
+    const userMenu = document.getElementById('user-menu');
+    
+    if (navAuth) {
+        navAuth.style.display = 'flex';
+        navAuth.style.opacity = '1';
+    }
+    if (userMenu) {
+        userMenu.style.display = 'none';
+        userMenu.style.opacity = '0';
+    }
+    
+    // Redirect to home
+    setTimeout(() => {
+        window.location.href = 'index.html';
+    }, 1000);
+    
+    return 'Emergency fix applied - you should be logged out now';
+};
