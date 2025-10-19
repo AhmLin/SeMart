@@ -33,6 +33,7 @@ const firebaseConfig = {
   messagingSenderId: "77585287575",
   appId: "1:77585287575:web:5f58edd85981264da25cd2"
 };
+
 // ============================
 //  🚀 INISIALISASI FIREBASE
 // ============================
@@ -89,31 +90,48 @@ class AuthSystem {
       } else {
         this.currentUser = null;
         console.log('🔐 User signed out');
-
-        // Update navbar
         this.updateNavbarUI(false);
       }
     });
   }
 
   // ============================
-  // 🧭 Update Navbar UI
+  // 🧭 Update Navbar UI - UNIVERSAL
   // ============================
   updateNavbarUI(isLoggedIn, user = null) {
     const navAuth = document.getElementById('nav-auth');
     const userMenu = document.getElementById('user-menu');
     const userEmail = document.getElementById('user-email');
+    const userName = document.getElementById('user-name');
 
-    if (!navAuth || !userMenu) return;
+    console.log('🔄 Updating navbar UI:', { isLoggedIn, user: user?.email });
+    console.log('🔍 Elements found:', { navAuth: !!navAuth, userMenu: !!userMenu });
 
-    if (isLoggedIn) {
+    if (!navAuth || !userMenu) {
+      console.log('❌ Navbar elements not found');
+      return;
+    }
+
+    if (isLoggedIn && user) {
       navAuth.style.display = 'none';
       userMenu.style.display = 'block';
+
       if (userEmail) userEmail.textContent = user.email;
+
+      if (userName) {
+        const displayName = user.displayName || user.email.split('@')[0];
+        userName.textContent = displayName;
+      }
+
+      console.log('✅ Navbar updated: User logged in');
     } else {
       navAuth.style.display = 'flex';
       userMenu.style.display = 'none';
+
       if (userEmail) userEmail.textContent = '';
+      if (userName) userName.textContent = 'User';
+
+      console.log('✅ Navbar updated: User logged out');
     }
   }
 
@@ -150,7 +168,6 @@ class AuthSystem {
     const email = document.getElementById('email').value.trim();
     const password = document.getElementById('password').value.trim();
 
-    // Validasi input
     if (!email || !password) {
       this.showCustomAlert('Harap isi email dan password!', 'error');
       return;
@@ -160,8 +177,6 @@ class AuthSystem {
       console.log('📧 Login attempt for:', email);
       const userCredential = await signInWithEmailAndPassword(this.auth, email, password);
       console.log('✅ Login successful for:', userCredential.user.email);
-      
-      // Alert akan ditampilkan di auth state listener
     } catch (error) {
       console.error("❌ Login gagal:", error);
       if (error.code === "auth/user-not-found") {
@@ -263,7 +278,6 @@ class AuthSystem {
   // 🪧 Alert Custom
   // ============================
   showCustomAlert(message, type = "info") {
-    // Hapus alert sebelumnya jika ada
     const existingAlert = document.querySelector('.custom-alert');
     if (existingAlert) {
       existingAlert.remove();
