@@ -214,6 +214,21 @@ class UnifiedAuthSystem {
     }
 }
 
+// 🔹 Fitur tampil/sembunyikan password
+document.addEventListener('DOMContentLoaded', () => {
+    const toggleBtn = document.querySelector('.password-toggle');
+    const passwordInput = document.querySelector('#password, #login-password, #signup-password');
+
+    if (toggleBtn && passwordInput) {
+        toggleBtn.addEventListener('click', () => {
+            const isPassword = passwordInput.type === 'password';
+            passwordInput.type = isPassword ? 'text' : 'password';
+            toggleBtn.textContent = isPassword ? '🙈' : '👁️';
+        });
+    }
+});
+
+
 // 🔹 Inisialisasi sistem auth
 const unifiedAuth = new UnifiedAuthSystem();
 
