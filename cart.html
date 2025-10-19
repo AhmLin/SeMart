@@ -44,13 +44,30 @@
                     </div>
                 </a>
             </div>
-            <div class="nav-auth">
+            
+            <!-- 🔹 AUTH SECTION - BERUBAH SESUAI STATUS LOGIN -->
+            <div class="nav-auth" id="nav-auth">
               <a href="login.html" class="btn-login">Login</a>
             </div>
+            
+            <div class="user-menu" id="user-menu" style="display: none;">
+              <div class="user-profile">
+                <div class="user-avatar">
+                  <span>👤</span>
+                </div>
+                <div class="user-info">
+                  <span class="user-greeting" id="user-greeting">Halo, User!</span>
+                  <div class="user-dropdown">
+                    <a href="profile.html" class="dropdown-item">📋 Profil Saya</a>
+                    <a href="orders.html" class="dropdown-item">📦 Pesanan Saya</a>
+                    <a href="wishlist.html" class="dropdown-item">❤️ Wishlist</a>
+                    <div class="dropdown-divider"></div>
+                    <a href="#" id="logout-btn" class="dropdown-item logout">🚪 Logout</a>
+                  </div>
+                </div>
+              </div>
+            </div>
           </nav>
-          
-          <!-- 🔹 CART SECTION - HARUS ADA DI SEMUA PAGE -->
-
       </div>
   </header>
     
@@ -130,4 +147,5 @@
     <script src="js/search.js"></script>
     <script src="js/auth.js"></script>
 </body>
+
 </html>
