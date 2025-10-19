@@ -36,11 +36,11 @@ class UnifiedAuthSystem {
         await this.clearFirebaseCacheIfNeeded(); // ✅ pastikan cache bersih dulu
         this.setupAuthStateListener();
         this.setupEventListeners();
+        this.setupPasswordToggle(); // 👁️ aktifkan toggle password
     }
 
     // 🔧 Bersihkan cache Firebase agar tidak auto-login pakai sesi lama
     async clearFirebaseCacheIfNeeded() {
-        // Jalankan hanya di login page agar tidak ganggu user aktif
         if (window.location.pathname.includes('login.html')) {
             try {
                 console.log('🧹 Membersihkan cache Firebase...');
@@ -62,7 +62,6 @@ class UnifiedAuthSystem {
                         }
                     }
                 }
-
                 console.log('✅ Cache Firebase dibersihkan.');
             } catch (err) {
                 console.warn('⚠️ Gagal hapus cache Firebase:', err);
@@ -77,14 +76,12 @@ class UnifiedAuthSystem {
                 this.currentUser = user;
                 console.log('✅ User signed in:', user.email);
 
-                // Jangan redirect dari login page
                 if (this.shouldRedirectToHome()) {
                     console.log('➡️ Redirect ke index.html');
                     setTimeout(() => {
                         window.location.href = 'index.html';
                     }, 800);
                 }
-
             } else {
                 this.currentUser = null;
                 console.log('🔐 User signed out');
@@ -128,6 +125,24 @@ class UnifiedAuthSystem {
                 this.resetPassword();
             });
         }
+    }
+
+    // 👁️🔒 Setup toggle show/hide password
+    setupPasswordToggle() {
+        document.querySelectorAll('.password-toggle').forEach(toggle => {
+            toggle.addEventListener('click', (e) => {
+                const input = e.target.closest('.form-group')?.querySelector('input[type="password"], input[type="text"]');
+                if (!input) return;
+
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    e.target.textContent = '🔒';
+                } else {
+                    input.type = 'password';
+                    e.target.textContent = '👁️';
+                }
+            });
+        });
     }
 
     // 🔹 Login
@@ -203,31 +218,14 @@ class UnifiedAuthSystem {
 
     // 🔹 Redirect Logic
     shouldRedirectToHome() {
-        // Hanya redirect dari halaman signup, bukan login
         return window.location.pathname.includes('signup.html');
     }
 
     shouldRedirectToLogin() {
-        // Redirect hanya dari halaman terlindung
         return !window.location.pathname.includes('login.html') &&
                !window.location.pathname.includes('signup.html');
     }
 }
-
-// 🔹 Fitur tampil/sembunyikan password
-document.addEventListener('DOMContentLoaded', () => {
-    const toggleBtn = document.querySelector('.password-toggle');
-    const passwordInput = document.querySelector('#password, #login-password, #signup-password');
-
-    if (toggleBtn && passwordInput) {
-        toggleBtn.addEventListener('click', () => {
-            const isPassword = passwordInput.type === 'password';
-            passwordInput.type = isPassword ? 'text' : 'password';
-            toggleBtn.textContent = isPassword ? '🙈' : '👁️';
-        });
-    }
-});
-
 
 // 🔹 Inisialisasi sistem auth
 const unifiedAuth = new UnifiedAuthSystem();
