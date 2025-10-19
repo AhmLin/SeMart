@@ -1042,13 +1042,14 @@ input[type=number] {
 }
 
 /* 🔹 FORCE AUTH STYLES */
-#nav-auth {
+/* #nav-auth {
     display: flex !important;
 }
 
 #user-menu {
     display: none !important;
-}
+} */
 
 /* JavaScript will override these with inline styles */
+
 
