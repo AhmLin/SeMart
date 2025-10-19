@@ -4,7 +4,6 @@ import { getAuth } from "https://www.gstatic.com/firebasejs/9.6.0/firebase-auth.
 import { getFirestore } from "https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore.js";
 
 const firebaseConfig = {
-    // your config here
   apiKey: "AIzaSyApFkWDpEodKPHLzePFe0cc9z5kiMZbrS4",
   authDomain: "semart-5da85.firebaseapp.com",
   projectId: "semart-5da85",
@@ -13,8 +12,13 @@ const firebaseConfig = {
   appId: "1:77585287575:web:5f58edd85981264da25cd2"
 };
 
+// Initialize Firebase
 const app = initializeApp(firebaseConfig);
+
+// Initialize Firebase Authentication and get a reference to the service
 const auth = getAuth(app);
+
+// Initialize Cloud Firestore and get a reference to the service
 const db = getFirestore(app);
 
 export { auth, db };
