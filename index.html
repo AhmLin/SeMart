@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>SeMart - Belanja Hemat Produk Rakyat</title>
-  <link rel="stylesheet" href="css/style.css?v=3" />
+  <link rel="stylesheet" href="css/style.css?v=4" />
   <link rel="stylesheet" href="css/cart.css">
   <link rel="stylesheet" href="css/kategori.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -211,53 +211,13 @@ Dukung produk lokal, nikmati layanan digital, dan temukan promo menarik setiap h
       <p>&copy; 2025 SeMart Store — Semua hak cipta dilindungi.</p>
     </div>
   </footer>
-  <script src="js/cart.js"></script> <!-- 🔹 INI HARUS ADA DI SEMUA PAGE -->
-  <!-- <script src="js/test-auth.js"></script> -->
-  <script src="js/auth-system.js"></script>
-  <!-- 🔹 Script -->
+
+  <!-- 🔹 SCRIPTS -->
+  <script src="js/cart.js"></script>
+  <script src="js/simple-auth-fix.js"></script>
+
+  <!-- 🔹 MAIN SCRIPT -->
   <script>
-    // 🔹 SIMPLE AUTH CHECK (FALLBACK JIKA FIREBASE ERROR)
-    function checkAuthStatus() {
-        const navAuth = document.getElementById('nav-auth');
-        const userMenu = document.getElementById('user-menu');
-        const userGreeting = document.getElementById('user-greeting');
-        
-        // Cek apakah user sudah login (simulasi sederhana)
-        // Di production, ini akan diganti dengan Firebase auth check
-        const isLoggedIn = localStorage.getItem('userLoggedIn') === 'true';
-        const userName = localStorage.getItem('userName') || 'User';
-        
-        if (isLoggedIn) {
-            // User sudah login
-            if (navAuth) navAuth.style.display = 'none';
-            if (userMenu) userMenu.style.display = 'block';
-            if (userGreeting) {
-                userGreeting.textContent = `Halo, ${userName}!`;
-            }
-        } else {
-            // User belum login
-            if (navAuth) navAuth.style.display = 'flex';
-            if (userMenu) userMenu.style.display = 'none';
-        }
-    }
-
-    // 🔹 LOGOUT FUNCTION
-    function setupLogout() {
-        const logoutBtn = document.getElementById('logout-btn');
-        if (logoutBtn) {
-            logoutBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                
-                // Hapus data login dari localStorage
-                localStorage.removeItem('userLoggedIn');
-                localStorage.removeItem('userName');
-                
-                // Redirect ke halaman login
-                window.location.href = 'login.html';
-            });
-        }
-    }
-
     // 🔹 SISTEM PENCARIAN
     function setupSearch() {
         const searchInput = document.getElementById('search-input');
@@ -281,25 +241,17 @@ Dukung produk lokal, nikmati layanan digital, dan temukan promo menarik setiap h
         const searchTerm = searchInput.value.trim();
         
         if (searchTerm) {
-            // Redirect ke halaman hasil pencarian
             window.location.href = `search-results.html?search=${encodeURIComponent(searchTerm)}`;
         } else {
-            // Tampilkan pesan error
             alert('Silakan masukkan kata kunci pencarian');
             searchInput.focus();
         }
     }
 
-    // Ambil data dari product.json dan tampilkan produk unggulan
+    // 🔹 LOAD FEATURED PRODUCTS
     document.addEventListener("DOMContentLoaded", async () => {
       // Inisialisasi search
       setupSearch();
-      
-      // Setup logout
-      setupLogout();
-      
-      // Check auth status
-      checkAuthStatus();
       
       const container = document.getElementById("featured-products");
 
@@ -312,7 +264,7 @@ Dukung produk lokal, nikmati layanan digital, dan temukan promo menarik setiap h
         console.log("Jumlah produk unggulan:", featured.length);
 
         if (featured.length === 0) {
-          container.innerHTML = "<p>Tidak ada produk unggulan saat ini.</p>";
+          container.innerHTML = "<p style='text-align: center; padding: 2rem;'>Tidak ada produk unggulan saat ini.</p>";
           return;
         }
 
@@ -324,7 +276,7 @@ Dukung produk lokal, nikmati layanan digital, dan temukan promo menarik setiap h
           const card = document.createElement("div");
           card.classList.add("product-card");
           card.innerHTML = `
-            <img src="${p.image}" alt="${p.name}" loading="lazy">
+            <img src="${p.image}" alt="${p.name}" loading="lazy" onerror="this.src='images/placeholder-product.jpg'">
             <h3>${p.name}</h3>
             <p>Terjual ${p.sold}</p>
             <div class="rating">
@@ -340,9 +292,99 @@ Dukung produk lokal, nikmati layanan digital, dan temukan promo menarik setiap h
 
       } catch (error) {
         console.error("Gagal memuat produk:", error);
-        container.innerHTML = "<p>Gagal memuat data produk.</p>";
+        container.innerHTML = `
+          <div style="text-align: center; padding: 2rem; color: #666;">
+            <p>⚠️ Gagal memuat data produk.</p>
+            <p style="font-size: 0.9rem; margin-top: 0.5rem;">${error.message}</p>
+            <button onclick="loadSampleProducts()" style="margin-top: 1rem; padding: 0.5rem 1rem; background: #007b5e; color: white; border: none; border-radius: 5px; cursor: pointer;">
+              Muat Produk Contoh
+            </button>
+          </div>
+        `;
       }
     });
+
+    // 🔹 FALLBACK PRODUCTS
+    function loadSampleProducts() {
+      const container = document.getElementById("featured-products");
+      
+      const sampleProducts = [
+        {
+          id: 1,
+          name: "Beras Premium 5kg",
+          price: 65000,
+          image: "https://via.placeholder.com/300x200?text=Beras+Premium",
+          sold: 1250,
+          rating: 4.8,
+          isFeatured: true
+        },
+        {
+          id: 2,
+          name: "Minyak Goreng 2L",
+          price: 28000,
+          image: "https://via.placeholder.com/300x200?text=Minyak+Goreng",
+          sold: 890,
+          rating: 4.5,
+          isFeatured: true
+        },
+        {
+          id: 3,
+          name: "Gula Pasir 1kg",
+          price: 15000,
+          image: "https://via.placeholder.com/300x200?text=Gula+Pasir",
+          sold: 750,
+          rating: 4.6,
+          isFeatured: true
+        },
+        {
+          id: 4,
+          name: "Telur Ayam 1kg",
+          price: 28000,
+          image: "https://via.placeholder.com/300x200?text=Telur+Ayam",
+          sold: 620,
+          rating: 4.7,
+          isFeatured: true
+        },
+        {
+          id: 5,
+          name: "Sabun Mandi 90g",
+          price: 5000,
+          image: "https://via.placeholder.com/300x200?text=Sabun+Mandi",
+          sold: 450,
+          rating: 4.4,
+          isFeatured: true
+        },
+        {
+          id: 6,
+          name: "Shampoo 200ml",
+          price: 18000,
+          image: "https://via.placeholder.com/300x200?text=Shampoo",
+          sold: 380,
+          rating: 4.5,
+          isFeatured: true
+        }
+      ];
+
+      container.innerHTML = '';
+      
+      sampleProducts.forEach(p => {
+        const card = document.createElement("div");
+        card.classList.add("product-card");
+        card.innerHTML = `
+          <img src="${p.image}" alt="${p.name}" loading="lazy">
+          <h3>${p.name}</h3>
+          <p>Terjual ${p.sold}</p>
+          <div class="rating">
+              ${generateStars(p.rating)} <span>${p.rating.toFixed(1)}</span>
+            </div>
+          <div class="product-bottom">
+            <p class="price">Rp${p.price.toLocaleString("id-ID")}</p>
+            <a href="product.html?id=${p.id}" class="btn-secondary">Lihat Detail</a>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
 
     function generateStars(rating) {
       const fullStars = Math.floor(rating);
@@ -352,6 +394,7 @@ Dukung produk lokal, nikmati layanan digital, dan temukan promo menarik setiap h
       return "★".repeat(fullStars) + "½".repeat(halfStar) + "☆".repeat(emptyStars);
     }
 
+    // 🔹 SLIDESHOW FUNCTIONS
     let slideIndex = 1;
     showSlides(slideIndex);
 
@@ -386,155 +429,48 @@ Dukung produk lokal, nikmati layanan digital, dan temukan promo menarik setiap h
     setInterval(() => { plusSlides(1); }, 5000);
   </script>
 
-  <!-- 🔹 FIREBASE AUTH TRY-CATCH -->
-<!-- 🔹 FIREBASE AUTH SYSTEM -->
-<script type="module">
-    import { AuthSystem } from './js/firebase-auth.js';
-  
-    let authSystem;
-  
-    document.addEventListener('DOMContentLoaded', async () => {
-      try {
-        // Initialize auth system
-        authSystem = new AuthSystem();
-        
-        // Wait for Firebase auth to load
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Setup UI berdasarkan status auth
-        updateAuthUI();
-        
-        // Setup event listeners
-        setupAuthEventListeners();
-        
-        console.log('✅ Auth system initialized in index.html');
-        
-      } catch (error) {
-        console.error('❌ Auth system error:', error);
-        // Fallback ke sistem sederhana
-        setupFallbackAuth();
-      }
-    });
-  
-    // Function untuk update UI berdasarkan status login
-    function updateAuthUI() {
-      const navAuth = document.getElementById('nav-auth');
-      const userMenu = document.getElementById('user-menu');
-      const userGreeting = document.getElementById('user-greeting');
-      
-      if (!navAuth || !userMenu) return;
-  
-      const isLoggedIn = authSystem?.isLoggedIn() || 
-                        window.semartAuth?.isLoggedIn() || 
-                        localStorage.getItem('userLoggedIn') === 'true';
-      
-      if (isLoggedIn) {
-        // User sudah login
-        navAuth.style.display = 'none';
-        userMenu.style.display = 'block';
-        
-        // Set user greeting
-        const currentUser = authSystem?.getCurrentUser() || 
-                           window.semartAuth?.getCurrentUser() || 
-                           { email: localStorage.getItem('userEmail') || 'user@example.com' };
-        
-        if (userGreeting && currentUser) {
-          const userName = currentUser.email ? currentUser.email.split('@')[0] : 'User';
-          userGreeting.textContent = `Halo, ${userName}!`;
-        }
-      } else {
-        // User belum login
-        navAuth.style.display = 'flex';
-        userMenu.style.display = 'none';
-      }
-    }
-  
-    // Setup event listeners untuk auth
-    function setupAuthEventListeners() {
-      // Logout button
-      const logoutBtn = document.getElementById('logout-btn');
-      if (logoutBtn) {
-        logoutBtn.addEventListener('click', async (e) => {
-          e.preventDefault();
-          
-          try {
-            if (authSystem && typeof authSystem.logout === 'function') {
-              await authSystem.logout();
-            } else if (window.semartAuth && typeof window.semartAuth.logout === 'function') {
-              await window.semartAuth.logout();
-            } else {
-              // Fallback logout
-              localStorage.removeItem('userLoggedIn');
-              localStorage.removeItem('userName');
-              localStorage.removeItem('userEmail');
-            }
-            
-            // Update UI
-            updateAuthUI();
-            window.location.href = 'index.html';
-            
-          } catch (error) {
-            console.error('Logout error:', error);
-          }
-        });
-      }
-  
-      // Listen untuk auth state changes
-      window.addEventListener('userLogin', () => {
-        console.log('🔄 User login event detected, updating UI...');
-        updateAuthUI();
+  <!-- 🔹 DEBUG SCRIPT -->
+  <script>
+    // Debug functions untuk testing
+    console.log('=== SeMart Loaded ===');
+    
+    // Manual control functions
+    window.showProfile = () => {
+      document.getElementById('nav-auth').style.display = 'none';
+      document.getElementById('user-menu').style.display = 'block';
+      console.log('🔧 Manual: Showing profile');
+    };
+    
+    window.showLogin = () => {
+      document.getElementById('nav-auth').style.display = 'flex';
+      document.getElementById('user-menu').style.display = 'none';
+      console.log('🔧 Manual: Showing login');
+    };
+    
+    window.checkAuth = () => {
+      console.log('🔍 Auth Status Check:');
+      console.log('- Navbar display:', {
+        navAuth: document.getElementById('nav-auth').style.display,
+        userMenu: document.getElementById('user-menu').style.display
       });
-  
-      window.addEventListener('userLogout', () => {
-        console.log('🔄 User logout event detected, updating UI...');
-        updateAuthUI();
+      console.log('- LocalStorage:', {
+        userLoggedIn: localStorage.getItem('userLoggedIn'),
+        userName: localStorage.getItem('userName'),
+        userEmail: localStorage.getItem('userEmail')
       });
-    }
-  
-    // Fallback auth system
-    function setupFallbackAuth() {
-      console.log('🔄 Setting up fallback auth system...');
-      
-      const navAuth = document.getElementById('nav-auth');
-      const userMenu = document.getElementById('user-menu');
-      const userGreeting = document.getElementById('user-greeting');
-      
-      if (!navAuth || !userMenu) return;
-  
-      const isLoggedIn = localStorage.getItem('userLoggedIn') === 'true';
-      
-      if (isLoggedIn) {
-        navAuth.style.display = 'none';
-        userMenu.style.display = 'block';
-        
-        if (userGreeting) {
-          const userName = localStorage.getItem('userName') || 'User';
-          userGreeting.textContent = `Halo, ${userName}!`;
-        }
-      } else {
-        navAuth.style.display = 'flex';
-        userMenu.style.display = 'none';
+      console.log('- Firebase:', {
+        semartAuth: window.semartAuth,
+        currentUser: window.semartAuth?.auth?.currentUser
+      });
+    };
+    
+    // Auto-check setelah 3 detik
+    setTimeout(() => {
+      console.log('🔄 Auto-checking system...');
+      if (window.simpleAuthFix) {
+        window.simpleAuthFix.updateNavbar();
       }
-  
-      // Logout functionality
-      const logoutBtn = document.getElementById('logout-btn');
-      if (logoutBtn) {
-        logoutBtn.addEventListener('click', (e) => {
-          e.preventDefault();
-          localStorage.removeItem('userLoggedIn');
-          localStorage.removeItem('userName');
-          localStorage.removeItem('userEmail');
-          window.location.href = 'index.html';
-        });
-      }
-    }
-  
-    // Juga panggil updateAuthUI secara periodic untuk memastikan UI sync
-    setInterval(updateAuthUI, 2000);
+    }, 3000);
   </script>
 </body>
 </html>
-
-
-
-
