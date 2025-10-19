@@ -131,6 +131,49 @@
             });
 
     </script>
+    <script>
+        // 🔹 LOGIN PAGE PROTECTION - ANTI AUTO LOGIN
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🔐 Login page protection activated');
+            
+            // Force clear any cached auth state
+            const forceClearAuth = () => {
+                // Clear localStorage
+                const keys = Object.keys(localStorage);
+                keys.forEach(key => {
+                    if (key.includes('firebase') || key.includes('auth')) {
+                        localStorage.removeItem(key);
+                    }
+                });
+                
+                // Clear sessionStorage
+                sessionStorage.clear();
+                
+                console.log('🧹 Login page: Cleared all auth cache');
+            };
+            
+            // Execute immediately
+            forceClearAuth();
+            
+            // Additional protection for login form
+            const loginForm = document.getElementById('loginForm');
+            if (loginForm) {
+                loginForm.addEventListener('submit', function(e) {
+                    console.log('🔐 Login form submitted manually');
+                    // Biarkan form proceed normally
+                });
+            }
+            
+            // Check if user is already logged in
+            setTimeout(() => {
+                if (window.semartAuth && window.semartAuth.isLoggedIn()) {
+                    console.log('🚫 User already logged in, redirecting...');
+                    window.location.href = 'index.html';
+                }
+            }, 1000);
+        });
+    </script>
 </body>
 </html>
+
 
