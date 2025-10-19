@@ -46,9 +46,10 @@
                 </a>
             </div>
             
-            <!-- 🔹 AUTH SECTION - BERUBAH SESUAI STATUS LOGIN -->
+            <!-- 🔹 AUTH SECTION - AKAN DIKONTROL OLEH FIREBASE AUTH -->
             <div class="nav-auth" id="nav-auth">
               <a href="login.html" class="btn-login">Login</a>
+              <a href="signup.html" class="btn-signup">Daftar</a>
             </div>
             
             <div class="user-menu" id="user-menu" style="display: none;">
@@ -57,7 +58,8 @@
                   <span>👤</span>
                 </div>
                 <div class="user-info">
-                  <span class="user-greeting" id="user-greeting">Halo, User!</span>
+                  <span class="user-greeting">Halo, <span id="user-name">User</span></span>
+                  <span class="user-email" id="user-email"></span>
                   <div class="user-dropdown">
                     <a href="profile.html" class="dropdown-item">📋 Profil Saya</a>
                     <a href="orders.html" class="dropdown-item">📦 Pesanan Saya</a>
@@ -212,9 +214,13 @@ Dukung produk lokal, nikmati layanan digital, dan temukan promo menarik setiap h
     </div>
   </footer>
 
-  <!-- 🔹 SCRIPTS -->
+  <!-- 🔹 FIREBASE AUTH SCRIPTS -->
+  <!-- IMPORTANT: Urutan loading HARUS seperti ini -->
+  <script type="module" src="js/firebase-auth.js"></script>
+  <script type="module" src="js/simple-auth-fix.js"></script>
+
+  <!-- 🔹 CART & MAIN SCRIPTS -->
   <script src="js/cart.js"></script>
-  <script src="js/simple-auth-fix.js"></script>
 
   <!-- 🔹 MAIN SCRIPT -->
   <script>
@@ -429,49 +435,42 @@ Dukung produk lokal, nikmati layanan digital, dan temukan promo menarik setiap h
     setInterval(() => { plusSlides(1); }, 5000);
   </script>
 
-  <!-- 🔹 DEBUG SCRIPT -->
-  <!-- <script>
-    // Debug functions untuk testing
-    console.log('=== SeMart Loaded ===');
+  <!-- 🔹 DEBUG SCRIPT (Optional) -->
+  <script>
+    // Debug functions untuk testing (bisa di-comment di production)
+    console.log('=== SeMart Index Loaded ===');
     
-    // Manual control functions
-    window.showProfile = () => {
-      document.getElementById('nav-auth').style.display = 'none';
-      document.getElementById('user-menu').style.display = 'block';
-      console.log('🔧 Manual: Showing profile');
-    };
-    
-    window.showLogin = () => {
-      document.getElementById('nav-auth').style.display = 'flex';
-      document.getElementById('user-menu').style.display = 'none';
-      console.log('🔧 Manual: Showing login');
-    };
-    
-    window.checkAuth = () => {
-      console.log('🔍 Auth Status Check:');
-      console.log('- Navbar display:', {
-        navAuth: document.getElementById('nav-auth').style.display,
-        userMenu: document.getElementById('user-menu').style.display
+    // Manual control functions untuk testing
+    window.debugAuthStatus = () => {
+      console.log('🔍 Debug Auth Status:');
+      console.log('- Navbar Elements:', {
+        navAuth: document.getElementById('nav-auth'),
+        userMenu: document.getElementById('user-menu'),
+        userEmail: document.getElementById('user-email'),
+        userName: document.getElementById('user-name')
       });
-      console.log('- LocalStorage:', {
-        userLoggedIn: localStorage.getItem('userLoggedIn'),
-        userName: localStorage.getItem('userName'),
-        userEmail: localStorage.getItem('userEmail')
+      console.log('- Display Styles:', {
+        navAuthDisplay: document.getElementById('nav-auth').style.display,
+        userMenuDisplay: document.getElementById('user-menu').style.display
       });
-      console.log('- Firebase:', {
-        semartAuth: window.semartAuth,
-        currentUser: window.semartAuth?.auth?.currentUser
-      });
-    };
-    
-    // Auto-check setelah 3 detik
-    setTimeout(() => {
-      console.log('🔄 Auto-checking system...');
-      if (window.simpleAuthFix) {
-        window.simpleAuthFix.updateNavbar();
+      
+      // Check if auth system is available
+      if (window.authSystem) {
+        console.log('- Auth System:', {
+          initialized: window.authSystem.isInitialized,
+          currentUser: window.authSystem.currentUser,
+          isLoggedIn: window.authSystem.isLoggedIn()
+        });
+      } else {
+        console.log('- Auth System: Not available yet');
       }
+    };
+    
+    // Auto debug setelah 3 detik
+    setTimeout(() => {
+      console.log('🔄 Auto-checking auth system...');
+      debugAuthStatus();
     }, 3000);
-  </script> -->
+  </script>
 </body>
 </html>
-
