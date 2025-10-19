@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>SeMart - Kategori Produk</title>
-  <link rel="stylesheet" href="css/kategori.css?v=2" />
+  <link rel="stylesheet" href="css/kategori.css?v=3" />
   <link rel="stylesheet" href="css/cart.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -25,7 +25,7 @@
             </div>
             <nav class="right-nav">
                 <ul class="nav-links">
-                    <li><a href="index.html" class="active">Beranda</a></li>
+                    <li><a href="index.html">Beranda</a></li>
                     <li><a href="products.html">Produk</a></li>
                     <li><a href="#">Tentang</a></li>
                     <li><a href="#">Kontak</a></li>
@@ -197,11 +197,44 @@
       <p>&copy; 2025 SeMart Store — Semua hak cipta dilindungi.</p>
     </div>
   </footer>
-  <script src="js/cart.js"></script> <!-- 🔹 INI HARUS ADA DI SEMUA PAGE -->
-  <!-- Load global auth system untuk semua page -->
-  <script src="js/auth-system.js"></script>
+
+  <!-- 🔹 SCRIPTS -->
+  <script src="js/cart.js"></script>
+  <script src="js/simple-auth-fix.js"></script>
+
+  <!-- 🔹 KATEGORI PAGE SCRIPT -->
   <script>
-    // seluruh JavaScript tetap disini (tidak dipisah)
+    // 🔹 SISTEM PENCARIAN
+    function setupSearch() {
+        const searchInput = document.getElementById('search-input');
+        const searchBtn = document.getElementById('search-btn');
+        
+        if (!searchInput || !searchBtn) return;
+        
+        // Handle Enter key
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                performSearch();
+            }
+        });
+        
+        // Handle button click
+        searchBtn.addEventListener('click', performSearch);
+    }
+
+    function performSearch() {
+        const searchInput = document.getElementById('search-input');
+        const searchTerm = searchInput.value.trim();
+        
+        if (searchTerm) {
+            window.location.href = `search-results.html?search=${encodeURIComponent(searchTerm)}`;
+        } else {
+            alert('Silakan masukkan kata kunci pencarian');
+            searchInput.focus();
+        }
+    }
+
+    // 🔹 KATEGORI & FILTER SYSTEM
     let allProducts = [];
     let filteredProducts = [];
     let activeFilters = {
@@ -213,7 +246,6 @@
     };
 
     const container = document.getElementById('product-grid');
-    const loadingMessage = document.getElementById('loading-message');
     const noProductsMessage = document.getElementById('no-products');
     const filterToggle = document.getElementById('filter-toggle');
     const filterGrid = document.getElementById('filter-grid');
@@ -230,40 +262,49 @@
     const categoryTitle = document.getElementById('category-title');
     categoryTitle.textContent = category ? `Kategori: ${decodeURIComponent(category)}` : 'Semua Produk';
 
-    filterToggle.addEventListener('click', () => {
-      filterGrid.classList.toggle('active');
-      filterToggle.textContent = filterGrid.classList.contains('active') 
-        ? '▲ Sembunyikan Filter' 
-        : '▼ Tampilkan Filter';
+    // Initialize page
+    document.addEventListener("DOMContentLoaded", () => {
+        console.log("🔄 Memuat halaman kategori...");
+        
+        // Setup pencarian
+        setupSearch();
+        
+        // Setup filter events
+        filterToggle.addEventListener('click', () => {
+          filterGrid.classList.toggle('active');
+          filterToggle.textContent = filterGrid.classList.contains('active') 
+            ? '▲ Sembunyikan Filter' 
+            : '▼ Tampilkan Filter';
+        });
+
+        applyFiltersBtn.addEventListener('click', applyFilters);
+        resetFiltersBtn.addEventListener('click', resetFilters);
+        sortSelect.addEventListener('change', sortProducts);
+
+        // Load products
+        fetch('data/product.json')
+          .then(res => {
+              if (!res.ok) throw new Error('Gagal memuat data produk');
+              return res.json();
+          })
+          .then(products => {
+              allProducts = products;
+              let initialFiltered = products;
+              if (category) {
+                initialFiltered = products.filter(p => p.category === category);
+                activeFilters.category.push(category);
+              }
+              filteredProducts = [...initialFiltered];
+              populateCategoryFilters(products);
+              displayProducts(filteredProducts);
+              updateResultsInfo();
+              updateActiveFiltersDisplay();
+          })
+          .catch(err => {
+              console.error('Error:', err);
+              container.innerHTML = `<p class="error">Gagal memuat produk. Silakan refresh halaman.</p>`;
+          });
     });
-
-    applyFiltersBtn.addEventListener('click', applyFilters);
-    resetFiltersBtn.addEventListener('click', resetFilters);
-    sortSelect.addEventListener('change', sortProducts);
-
-    fetch('data/product.json')
-      .then(res => {
-        if (!res.ok) throw new Error('Gagal memuat data produk');
-        return res.json();
-      })
-      .then(products => {
-        allProducts = products;
-        let initialFiltered = products;
-        if (category) {
-          initialFiltered = products.filter(p => p.category === category);
-          activeFilters.category.push(category);
-        }
-        filteredProducts = [...initialFiltered];
-        populateCategoryFilters(products);
-        displayProducts(filteredProducts);
-        updateResultsInfo();
-        updateActiveFiltersDisplay();
-      })
-      .catch(err => {
-        console.error('Error:', err);
-        loadingMessage.style.display = 'none';
-        container.innerHTML = `<p class="error">Gagal memuat produk. Silakan refresh halaman.</p>`;
-      });
 
     function populateCategoryFilters(products) {
       const categories = [...new Set(products.map(p => p.category))];
@@ -357,7 +398,7 @@
         const card = document.createElement("div");
         card.classList.add("product-card");
         card.innerHTML = `
-          <img src="${p.image}" alt="${p.name}" loading="lazy">
+          <img src="${p.image}" alt="${p.name}" loading="lazy" onerror="this.src='images/placeholder-product.jpg'">
           <h3>${p.name}</h3>
           <p>Terjual ${p.sold}</p>
           <div class="rating">${generateStars(p.rating)} <span>${p.rating.toFixed(1)}</span></div>
@@ -419,7 +460,48 @@
     }
   </script>
 
+  <!-- 🔹 DEBUG SCRIPT -->
+  <script>
+    // Debug functions untuk testing
+    console.log('=== Kategori Page Loaded ===');
+    
+    // Manual control functions
+    window.showProfile = () => {
+      document.getElementById('nav-auth').style.display = 'none';
+      document.getElementById('user-menu').style.display = 'block';
+      console.log('🔧 Manual: Showing profile');
+    };
+    
+    window.showLogin = () => {
+      document.getElementById('nav-auth').style.display = 'flex';
+      document.getElementById('user-menu').style.display = 'none';
+      console.log('🔧 Manual: Showing login');
+    };
+    
+    window.checkAuth = () => {
+      console.log('🔍 Auth Status Check:');
+      console.log('- Navbar display:', {
+        navAuth: document.getElementById('nav-auth').style.display,
+        userMenu: document.getElementById('user-menu').style.display
+      });
+      console.log('- LocalStorage:', {
+        userLoggedIn: localStorage.getItem('userLoggedIn'),
+        userName: localStorage.getItem('userName'),
+        userEmail: localStorage.getItem('userEmail')
+      });
+      console.log('- Firebase:', {
+        semartAuth: window.semartAuth,
+        currentUser: window.semartAuth?.auth?.currentUser
+      });
+    };
+    
+    // Auto-check setelah 3 detik
+    setTimeout(() => {
+      console.log('🔄 Auto-checking auth system...');
+      if (window.simpleAuthFix) {
+        window.simpleAuthFix.updateNavbar();
+      }
+    }, 3000);
+  </script>
 </body>
 </html>
-
-
