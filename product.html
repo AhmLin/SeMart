@@ -6,77 +6,78 @@
   <title>SeMart</title>
   <link rel="stylesheet" href="css/style.css?v=3" />
   <link rel="stylesheet" href="css/cart.css" />
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
 
+  <!-- 🔹 NAVBAR -->
   <header class="navbar">
-      <div class="container nav-content">
-          <div class="logo">
-              <img src="logo2.png" alt="SeMart Logo" width="30px">
-              <h1>SeMart</h1>
-          </div>
-          <div class="search">
-              <div class="textinput">
-                  <input type="text" placeholder="Cari Produk" id="search-input" aria-label="Cari produk">
-              </div>
-              <button type="button" id="search-btn">Cari</button>
-          </div>
-          <nav class="right-nav">
-              <ul class="nav-links">
-                  <li><a href="index.html" class="active">Beranda</a></li>
-                  <li><a href="products.html">Produk</a></li>
-                  <li><a href="#">Tentang</a></li>
-                  <li><a href="#">Kontak</a></li>
-              </ul>
-              <div class="cart-section">
-                <a href="cart.html" class="cart-link">
-                    <div class="cart-info">
-                        <div class="cart-total-price">
-                            Rp<span id="nav-cart-total">0</span>
-                        </div>
-                        <div class="cart-icon-with-count">
-                            🛒
-                            <span class="cart-count" id="nav-cart-count">0</span>
-                        </div>
-                    </div>
-                </a>
-            </div>
-            
-            <!-- 🔹 AUTH SECTION - AKAN DIKONTROL OLEH FIREBASE AUTH -->
-            <div class="nav-auth" id="nav-auth">
-              <a href="login.html" class="btn-login">Login</a>
-              <a href="signup.html" class="btn-signup">Daftar</a>
-            </div>
-            
-            <div class="user-menu" id="user-menu" style="display: none;">
-              <div class="user-profile">
-                <div class="user-avatar">
-                   <img src="https://cdn-icons-png.flaticon.com/512/747/747545.png" style="width:60%; filter: brightness(0) invert(1);">
-                </div>
-                <div class="user-info">
-                  <span class="user-greeting">Halo, <span id="user-name">User</span></span>
-                  <span class="user-email" id="user-email"></span>
-                  <div class="user-dropdown">
-                    <a href="profile.html" class="dropdown-item">📋 Profil Saya</a>
-                    <a href="orders.html" class="dropdown-item">📦 Pesanan Saya</a>
-                    <a href="wishlist.html" class="dropdown-item">❤️ Wishlist</a>
-                    <div class="dropdown-divider"></div>
-                    <a href="#" id="logout-btn" class="dropdown-item logout">🚪 Logout</a>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </nav>
+    <div class="container nav-content">
+      <div class="logo">
+        <img src="logo2.png" alt="SeMart Logo" width="30px">
+        <h1>SeMart</h1>
       </div>
+
+      <div class="search">
+        <div class="textinput">
+          <input type="text" placeholder="Cari Produk" id="search-input">
+        </div>
+        <button id="search-btn">Cari</button>
+      </div>
+
+      <nav class="right-nav">
+        <ul class="nav-links">
+          <li><a href="index.html">Beranda</a></li>
+          <li><a href="products.html" class="active">Produk</a></li>
+          <li><a href="#">Tentang</a></li>
+          <li><a href="#">Kontak</a></li>
+        </ul>
+
+        <div class="cart-section">
+          <a href="cart.html" class="cart-link">
+            <div class="cart-info">
+              <div class="cart-total-price">Rp<span id="nav-cart-total">0</span></div>
+              <div class="cart-icon-with-count">
+                🛒 <span class="cart-count" id="nav-cart-count">0</span>
+              </div>
+            </div>
+          </a>
+        </div>
+
+        <!-- 🔹 AUTH NAV -->
+        <div class="nav-auth" id="nav-auth">
+          <a href="login.html" class="btn-login">Login</a>
+          <a href="signup.html" class="btn-signup">Daftar</a>
+        </div>
+
+        <div class="user-menu" id="user-menu" style="display: none;">
+          <div class="user-profile">
+            <div class="user-avatar">
+              <img src="https://cdn-icons-png.flaticon.com/512/747/747545.png" style="width:60%;filter:brightness(0) invert(1);">
+            </div>
+            <div class="user-info">
+              <span class="user-greeting">Halo, <span id="user-name">User</span></span>
+              <span class="user-email" id="user-email"></span>
+              <div class="user-dropdown">
+                <a href="profile.html">📋 Profil Saya</a>
+                <a href="orders.html">📦 Pesanan Saya</a>
+                <a href="wishlist.html">❤️ Wishlist</a>
+                <div class="dropdown-divider"></div>
+                <a href="#" id="logout-btn" class="logout">🚪 Logout</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </div>
   </header>
 
+  <!-- 🔹 TOMBOL KEMBALI -->
   <div class="backpage">
     <a href="index.html" class="back-btn">← Ke Beranda</a>
   </div>
-    
+
+  <!-- 🔹 DETAIL PRODUK -->
   <main class="product-detail">
     <div class="product-image">
       <img id="product-img" src="" alt="Gambar Produk">
@@ -89,13 +90,15 @@
       <p id="product-sell"></p>
       <h3 id="product-price"></h3>
       <p id="product-desc"></p>
+
       <div class="checkout">
-        <button id="add-to-cart">Tambah ke Keranjang</button>      
+        <button id="add-to-cart">Tambah ke Keranjang</button>
         <input id="qty" type="number" value="1" min="1">
       </div>
     </div>
   </main>
 
+  <!-- 🔹 DESKRIPSI & ULASAN -->
   <div class="descrip_review">
     <div class="tab-menu">
       <a href="#" class="tab-link active" data-tab="deskripsi">Deskripsi</a>
@@ -108,11 +111,12 @@
       <button id="toggle-desc" class="toggle-btn">Lihat Selengkapnya</button>
     </div>
 
-    <div class="tab-content" id="ulasan" style="text-align: center;height: 100px; align-content: center; color: rgb(171, 171, 171);">
+    <div class="tab-content" id="ulasan" style="text-align:center;height:100px;align-content:center;color:#aaa;">
       <h3>Belum Ada Ulasan</h3>
     </div>
   </div>
 
+  <!-- 🔹 PRODUK TERKAIT -->
   <div class="produk-terkait">
     <h1>Produk Terkait</h1>
     <div class="container">
@@ -120,25 +124,25 @@
     </div>
   </div>
 
+  <!-- 🔹 FOOTER -->
   <footer>
     <div class="footer-content">
       <div class="footer-logo">
-        <section style="display: flex; align-items: center; gap: 10px;">
-          <img src="logo2.png" alt="" style="width: 30px;">
-          <h2 style="font-size: 20px;">SeMart</h2>
+        <section style="display:flex;align-items:center;gap:10px;">
+          <img src="logo2.png" alt="" style="width:30px;">
+          <h2 style="font-size:20px;">SeMart</h2>
         </section>
-        <p>Belanja cerdas, dukung produk lokal bersama SeMart.<br>
-          Hemat setiap hari, bahagia setiap belanja!</p>
+        <p>Belanja cerdas, dukung produk lokal bersama SeMart.<br>Hemat setiap hari, bahagia setiap belanja!</p>
       </div>
       <div class="follow-me">
         <p>Ikuti Kami</p>
-          <ul>
-            <li><a href="#"><img src="instagram.png" alt="instagram"></a></li>
-            <li><a href="#"><img src="youtube.png" alt="youtube"></a></li>
-            <li><a href="#"><img src="twitter.png" alt="twitter"></a></li>
-            <li><a href="#"><img src="whatsapp.png" alt="whatsapp"></a></li>
-            <li><a href="#"><img src="facebook.png" alt="facebook"></a></li>
-          </ul>
+        <ul>
+          <li><a href="#"><img src="instagram.png"></a></li>
+          <li><a href="#"><img src="youtube.png"></a></li>
+          <li><a href="#"><img src="twitter.png"></a></li>
+          <li><a href="#"><img src="whatsapp.png"></a></li>
+          <li><a href="#"><img src="facebook.png"></a></li>
+        </ul>
       </div>
     </div>
     <div class="container-footer-content">
@@ -146,419 +150,200 @@
     </div>
   </footer>
 
-  <!-- 🔹 SCRIPTS -->
-  <script src="js/cart.js"></script>
-  <script src="js/simple-auth-fix.js"></script>
+  <!-- 🔹 FIREBASE AUTH (PASTIKAN GUNAKAN JS YANG SUDAH ADA) -->
+  <script type="module" src="js/firebase-auth.js"></script>
 
-  <!-- 🔹 PRODUCT DETAIL SCRIPT -->
-  <script>
-// === FUNGSI UTAMA PRODUCT DETAIL ===
-document.addEventListener("DOMContentLoaded", () => {
-    console.log("🔄 Memuat detail produk...");
-    
+  <!-- 🔹 SCRIPT PRODUK -->
+  <script src="js/cart.js"></script>
+  <script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.0/firebase-app.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.0/firebase-auth.js";
+
+  // Konfigurasi Firebase kamu
+  const firebaseConfig = {
+    apiKey: "AIzaSyApFkWDpEodKPHLzePFe0cc9z5kiMZbrS4",
+    authDomain: "semart-5da85.firebaseapp.com",
+    projectId: "semart-5da85",
+    storageBucket: "semart-5da85.firebasestorage.app",
+    messagingSenderId: "77585287575",
+    appId: "1:77585287575:web:5f58edd85981264da25cd2"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+
+  // 🔹 Jalankan semua setelah DOM siap
+  document.addEventListener("DOMContentLoaded", () => {
+    console.log("🔄 Memuat halaman produk...");
+
+    // === CEK LOGIN ===
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        alert("⚠️ Anda harus login untuk melihat detail produk.");
+        window.location.href = "login.html";
+      } else {
+        // Tampilkan user di navbar
+        document.getElementById('nav-auth').style.display = 'none';
+        document.getElementById('user-menu').style.display = 'block';
+        document.getElementById('user-name').textContent = user.displayName || user.email.split('@')[0];
+        document.getElementById('user-email').textContent = user.email;
+      }
+    });
+
+    // === SISTEM PRODUK DETAIL ===
     const params = new URLSearchParams(window.location.search);
     const productId = params.get("id");
 
     if (!productId) {
-        document.querySelector(".product-detail").innerHTML = "<p>Produk tidak ditemukan.</p>";
-        return;
+      document.querySelector(".product-detail").innerHTML = "<p>Produk tidak ditemukan.</p>";
+      return;
     }
 
-    // Setup pencarian
     setupSearch();
 
     fetch("data/product.json")
-      .then(res => {
-          if (!res.ok) {
-              throw new Error(`HTTP error! status: ${res.status}`);
-          }
-          return res.json();
-      })
+      .then(res => res.json())
       .then(products => {
-          const product = products.find(p => p.id == productId);
-          if (!product) {
-              document.querySelector(".product-detail").innerHTML = "<p>Produk tidak ditemukan.</p>";
-              return;
-          }
+        const product = products.find(p => p.id == productId);
+        if (!product) {
+          document.querySelector(".product-detail").innerHTML = "<p>Produk tidak ditemukan.</p>";
+          return;
+        }
 
-          // Isi data produk
-          document.getElementById("product-img").src = product.image;
-          document.getElementById("product-name").textContent = product.name;
-          document.getElementById("product-category").textContent = `Kategori: ${product.category}`;
-          document.getElementById("product-price").textContent = `Rp ${product.price.toLocaleString("id-ID")}`;
-          document.getElementById("product-desc").textContent = product.description;
-          document.getElementById("product-sell").textContent = `Terjual ${product.sold} Buah`;
-          document.getElementById("product-name-desc").textContent = product.name;
+        // Isi data produk
+        document.getElementById("product-img").src = product.image;
+        document.getElementById("product-name").textContent = product.name;
+        document.getElementById("product-category").textContent = `Kategori: ${product.category}`;
+        document.getElementById("product-price").textContent = `Rp ${product.price.toLocaleString("id-ID")}`;
+        document.getElementById("product-desc").textContent = product.description;
+        document.getElementById("product-sell").textContent = `Terjual ${product.sold} Buah`;
+        document.getElementById("product-name-desc").textContent = product.name;
+        document.getElementById("product-longdesc").innerHTML = (product.longdescription || product.description).replace(/\n/g, "<br>");
 
-          // Long Description
+        // Tombol lihat selengkapnya
+        const toggleBtn = document.getElementById("toggle-desc");
+        toggleBtn.addEventListener("click", () => {
           const longDescEl = document.getElementById("product-longdesc");
-          if (product.longdescription) {
-              longDescEl.innerHTML = product.longdescription.replace(/\n/g, "<br>");
-          } else {
-              longDescEl.innerHTML = product.description;
-          }
+          longDescEl.classList.toggle("expanded");
+          toggleBtn.textContent = longDescEl.classList.contains("expanded") ? "Sembunyikan" : "Lihat Selengkapnya";
+        });
 
-          const toggleBtn = document.getElementById("toggle-desc");
-          if (toggleBtn) {
-              toggleBtn.addEventListener("click", () => {
-                  longDescEl.classList.toggle("expanded");
-                  toggleBtn.textContent = longDescEl.classList.contains("expanded")
-                  ? "Sembunyikan"
-                  : "Lihat Selengkapnya";
-              });
-          }
+        // Rating
+        const ratingContainer = document.getElementById("product-rating");
+        const fullStars = Math.floor(product.rating);
+        const halfStar = product.rating % 1 >= 0.5;
+        const emptyStars = 5 - fullStars - (halfStar ? 1 : 0);
+        ratingContainer.innerHTML =
+          "★".repeat(fullStars) +
+          (halfStar ? "½" : "") +
+          "☆".repeat(emptyStars) +
+          ` <span>(${product.rating.toFixed(1)})</span>`;
 
-          // Rating
-          const ratingContainer = document.getElementById("product-rating");
-          if (ratingContainer) {
-              const fullStars = Math.floor(product.rating);
-              const halfStar = product.rating % 1 >= 0.5;
-              const emptyStars = 5 - fullStars - (halfStar ? 1 : 0);
-              ratingContainer.innerHTML =
-                  "★".repeat(fullStars) +
-                  (halfStar ? "½" : "") +
-                  "☆".repeat(emptyStars) +
-                  ` <span>(${product.rating.toLocaleString('id-ID', { minimumFractionDigits: 1, maximumFractionDigits: 1 })})</span>`;
-          }
+        // Produk terkait
+        const container = document.getElementById("featured-products");
+        const related = products.filter(p => p.category === product.category && p.id != product.id).slice(0, 6);
 
-          // Produk Terkait
-          const container = document.getElementById("featured-products");
-          if (container) {
-              const related = products
-              .filter(p => p.category === product.category && p.id != product.id)
-              .slice(0, 6);
+        if (related.length === 0) {
+          container.innerHTML = "<p style='text-align:center;padding:2rem;'>Tidak ada produk terkait.</p>";
+        } else {
+          related.forEach(p => {
+            const card = document.createElement("div");
+            card.classList.add("product-card");
+            card.innerHTML = `
+              <img src="${p.image}" alt="${p.name}" loading="lazy">
+              <h3>${p.name}</h3>
+              <p>Terjual ${p.sold}</p>
+              <div class="rating">${generateStars(p.rating)} <span>${p.rating.toFixed(1)}</span></div>
+              <div class="product-bottom">
+                <p class="price">Rp${p.price.toLocaleString("id-ID")}</p>
+                <div class="product-actions">
+                  <a href="product.html?id=${p.id}" class="btn-secondary">Detail</a>
+                </div>
+              </div>`;
+            container.appendChild(card);
+          });
+        }
 
-              if (related.length === 0) {
-                  container.innerHTML = "<p style='text-align: center; padding: 2rem;'>Tidak ada produk terkait saat ini.</p>";
-              } else {
-                  related.forEach(p => {
-                      const card = document.createElement("div");
-                      card.classList.add("product-card");
-                      card.innerHTML = `
-                          <img src="${p.image}" alt="${p.name}" loading="lazy" onerror="this.src='images/placeholder-product.jpg'">
-                          <h3>${p.name}</h3>
-                          <p>Terjual ${p.sold}</p>
-                          <div class="rating">
-                              ${generateStars(p.rating)} <span>${p.rating.toLocaleString('id-ID', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</span>
-                          </div>
-                          <div class="product-bottom">
-                              <p class="price">Rp${p.price.toLocaleString("id-ID")}</p>
-                              <div class="product-actions">
-                                  <a href="product.html?id=${p.id}" class="btn-secondary">Detail</a>
-                              </div>
-                          </div>
-                      `;
-                      container.appendChild(card);
-                  });
-              }
-          }
+        // Simpan data produk global
+        window.currentProduct = product;
 
-          // Simpan produk ke window object
-          window.currentProduct = product;
-
-          // Event listeners untuk tombol cart
-          const addBtn = document.getElementById("add-to-cart");
-          const qtyInput = document.getElementById("qty");
-
-          if (addBtn && qtyInput) {
-              addBtn.addEventListener("click", function() {
-                  addToCartFromDetail();
-              });
-              
-              qtyInput.addEventListener("keypress", function(e) {
-                  if (e.key === "Enter") {
-                      addToCartFromDetail();
-                  }
-              });
-          }
-
-          console.log("✅ Detail produk berhasil dimuat:", product.name);
+        // Tombol tambah ke keranjang
+        const addBtn = document.getElementById("add-to-cart");
+        addBtn.addEventListener("click", addToCartFromDetail);
       })
-      .catch((error) => {
-          console.error("❌ Error loading product:", error);
-          document.querySelector(".product-detail").innerHTML = `
-              <div style="text-align: center; padding: 2rem;">
-                  <p>Gagal memuat data produk.</p>
-                  <p style="font-size: 0.9rem; color: #666;">${error.message}</p>
-              </div>
-          `;
+      .catch(err => {
+        console.error("❌ Gagal memuat produk:", err);
+        document.querySelector(".product-detail").innerHTML = "<p>Terjadi kesalahan memuat data produk.</p>";
       });
 
-    // Tabs functionality
+    // Tabs Deskripsi & Ulasan
     const tabs = document.querySelectorAll(".tab-link");
     const contents = document.querySelectorAll(".tab-content");
     tabs.forEach(tab => {
-        tab.addEventListener("click", e => {
-            e.preventDefault();
-            tabs.forEach(t => t.classList.remove("active"));
-            contents.forEach(c => c.classList.remove("active"));
-            tab.classList.add("active");
-            document.getElementById(tab.dataset.tab).classList.add("active");
-        });
+      tab.addEventListener("click", e => {
+        e.preventDefault();
+        tabs.forEach(t => t.classList.remove("active"));
+        contents.forEach(c => c.classList.remove("active"));
+        tab.classList.add("active");
+        document.getElementById(tab.dataset.tab).classList.add("active");
+      });
     });
-});
+  });
 
-// === FUNGSI ADD TO CART DARI DETAIL ===
-function addToCartFromDetail() {
-    console.log("🛒 addToCartFromDetail dipanggil");
-    
-    const quantityInput = document.getElementById("qty");
-    const quantity = parseInt(quantityInput.value);
+  // 🔹 Fungsi Tambahan
+  function addToCartFromDetail() {
+    const qty = parseInt(document.getElementById("qty").value);
+    if (!window.currentProduct || qty < 1) return alert("Jumlah minimal 1");
 
-    console.log("🛒 Quantity dari input:", quantity);
-    console.log("🛒 Produk saat ini:", window.currentProduct);
+    const cart = JSON.parse(localStorage.getItem("semart-cart") || "[]");
+    const existing = cart.find(p => p.id === window.currentProduct.id);
+    if (existing) existing.quantity += qty;
+    else cart.push({ ...window.currentProduct, quantity: qty });
 
-    if (!window.currentProduct) {
-        alert("Produk tidak ditemukan. Silakan refresh halaman.");
-        return;
-    }
-    
-    if (isNaN(quantity) || quantity < 1) {
-        alert("Jumlah harus angka dan minimal 1.");
-        quantityInput.focus();
-        quantityInput.select();
-        return;
-    }
+    localStorage.setItem("semart-cart", JSON.stringify(cart));
+    showAddToCartSuccess(window.currentProduct.name, qty);
+    updateNavbarCart();
+  }
 
-    // Buat product object yang sesuai dengan format cart.js
-    const productData = {
-        id: window.currentProduct.id,
-        name: window.currentProduct.name,
-        price: window.currentProduct.price,
-        image: window.currentProduct.image
-    };
-
-    console.log("🛒 Data produk yang akan dikirim:", productData);
-    console.log("🛒 Quantity yang akan dikirim:", quantity);
-    
-    // Debug cart system availability
-    console.log("🛒 window.shoppingCart:", window.shoppingCart);
-    console.log("🛒 typeof window.shoppingCart.addToCart:", typeof window.shoppingCart?.addToCart);
-    console.log("🛒 typeof addToCart:", typeof addToCart);
-
-    // Priority 1: Gunakan shoppingCart instance dari cart.js
-    if (window.shoppingCart && typeof window.shoppingCart.addToCart === 'function') {
-        try {
-            console.log("🛒 Menggunakan shoppingCart.addToCart");
-            window.shoppingCart.addToCart(productData, quantity);
-            showAddToCartSuccess(productData.name, quantity);
-            return;
-        } catch (error) {
-            console.error("🛒 Error saat memanggil shoppingCart.addToCart:", error);
-        }
-    }
-    
-    // Priority 2: Gunakan global addToCart function
-    if (typeof addToCart === 'function') {
-        try {
-            console.log("🛒 Menggunakan global addToCart function");
-            addToCart(productData, quantity);
-            showAddToCartSuccess(productData.name, quantity);
-            return;
-        } catch (error) {
-            console.error("🛒 Error saat memanggil addToCart:", error);
-        }
-    }
-    
-    // Priority 3: Fallback ke localStorage langsung
-    console.warn("🛒 Tidak ada cart system yang tersedia, menggunakan fallback");
-    fallbackAddToCart(productData, quantity);
-}
-
-// Fallback function jika cart system tidak tersedia
-function fallbackAddToCart(productData, quantity) {
-    console.log("🛒 Menggunakan fallback cart system");
-    
-    try {
-        const cart = JSON.parse(localStorage.getItem('semart-cart') || '[]');
-        const existingItem = cart.find(item => item.id == productData.id);
-        
-        if (existingItem) {
-            existingItem.quantity += quantity;
-        } else {
-            cart.push({
-                ...productData,
-                quantity: quantity
-            });
-        }
-        
-        localStorage.setItem('semart-cart', JSON.stringify(cart));
-        showAddToCartSuccess(productData.name, quantity);
-        
-        // Update navbar
-        updateNavbarCart();
-    } catch (error) {
-        console.error("🛒 Error dalam fallbackAddToCart:", error);
-        alert("Terjadi kesalahan saat menambahkan ke keranjang: " + error.message);
-    }
-}
-
-// Fungsi untuk update navbar cart
-function updateNavbarCart() {
-    try {
-        const cart = JSON.parse(localStorage.getItem('semart-cart') || '[]');
-        const totalItems = cart.reduce((sum, item) => sum + (item.quantity || 0), 0);
-        const totalPrice = cart.reduce((sum, item) => sum + ((item.price || 0) * (item.quantity || 0)), 0);
-        
-        const cartCount = document.getElementById('nav-cart-count');
-        const cartTotal = document.getElementById('nav-cart-total');
-        
-        if (cartCount) cartCount.textContent = totalItems;
-        if (cartTotal) cartTotal.textContent = totalPrice.toLocaleString('id-ID');
-        
-        console.log("🛒 Navbar updated:", { totalItems, totalPrice });
-    } catch (error) {
-        console.error("🛒 Error updating navbar:", error);
-    }
-}
-
-function showAddToCartSuccess(productName, quantity) {
-    console.log("🛒 Menampilkan toast success:", quantity + "x " + productName);
-    
+  function showAddToCartSuccess(name, qty) {
     const toast = document.createElement("div");
     toast.style.cssText = `
-        position: fixed; 
-        top: 100px; 
-        right: 20px;
-        background: #28a745; 
-        color: white;
-        padding: 1rem 1.5rem; 
-        border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-        z-index: 1000; 
-        animation: slideInRight 0.3s ease;
-        max-width: 300px;
-        font-family: 'Poppins', sans-serif;
+      position:fixed;top:100px;right:20px;background:#28a745;color:#fff;
+      padding:1rem 1.5rem;border-radius:8px;z-index:1000;box-shadow:0 4px 12px rgba(0,0,0,0.2);
     `;
-    toast.innerHTML = `
-        <div style="display: flex; align-items: center; gap: 10px;">
-            <span style="font-size: 1.2rem;">✓</span>
-            <div>
-                <strong>Berhasil ditambahkan!</strong>
-                <div style="font-size: 0.9rem;">${quantity}x ${productName}</div>
-                <div style="font-size: 0.8rem; opacity: 0.9;">
-                    Lihat <a href="cart.html" style="color: white; text-decoration: underline;">keranjang</a>
-                </div>
-            </div>
-        </div>
-    `;
-    
+    toast.innerHTML = `<b>✓ ${qty}x ${name}</b> ditambahkan ke keranjang`;
     document.body.appendChild(toast);
-    
-    setTimeout(() => {
-        toast.style.animation = "slideOutRight 0.3s ease";
-        setTimeout(() => {
-            if (toast.parentNode) {
-                toast.parentNode.removeChild(toast);
-            }
-        }, 300);
-    }, 4000);
-}
+    setTimeout(() => toast.remove(), 3500);
+  }
 
-function generateStars(rating) {
-    const fullStars = Math.floor(rating);
-    const halfStar = rating % 1 >= 0.5 ? 1 : 0;
-    const emptyStars = 5 - fullStars - halfStar;
-    return "★".repeat(fullStars) + (halfStar ? "½" : "") + "☆".repeat(emptyStars);
-}
+  function updateNavbarCart() {
+    const cart = JSON.parse(localStorage.getItem("semart-cart") || "[]");
+    const totalItems = cart.reduce((a, b) => a + b.quantity, 0);
+    const totalPrice = cart.reduce((a, b) => a + b.price * b.quantity, 0);
+    document.getElementById("nav-cart-count").textContent = totalItems;
+    document.getElementById("nav-cart-total").textContent = totalPrice.toLocaleString("id-ID");
+  }
 
-// 🔹 SISTEM PENCARIAN
-function setupSearch() {
-    const searchInput = document.getElementById('search-input');
-    const searchBtn = document.getElementById('search-btn');
-    
-    if (!searchInput || !searchBtn) return;
-    
-    // Handle Enter key
-    searchInput.addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            performSearch();
-        }
-    });
-    
-    // Handle button click
-    searchBtn.addEventListener('click', performSearch);
-}
+  function generateStars(rating) {
+    const full = Math.floor(rating);
+    const half = rating % 1 >= 0.5 ? 1 : 0;
+    const empty = 5 - full - half;
+    return "★".repeat(full) + (half ? "½" : "") + "☆".repeat(empty);
+  }
 
-function performSearch() {
-    const searchInput = document.getElementById('search-input');
-    const searchTerm = searchInput.value.trim();
-    
-    if (searchTerm) {
-        window.location.href = `search-results.html?search=${encodeURIComponent(searchTerm)}`;
-    } else {
-        alert('Silakan masukkan kata kunci pencarian');
-        searchInput.focus();
-    }
-}
-
-// Animasi CSS
-const style = document.createElement("style");
-style.textContent = `
-    @keyframes slideInRight {
-        from { transform: translateX(100%); opacity: 0; }
-        to { transform: translateX(0); opacity: 1; }
-    }
-    @keyframes slideOutRight {
-        from { transform: translateX(0); opacity: 1; }
-        to { transform: translateX(100%); opacity: 0; }
-    }
-    
-    .longdesc {
-        max-height: 100px;
-        overflow: hidden;
-        transition: max-height 0.3s ease;
-    }
-    
-    .longdesc.expanded {
-        max-height: 1000px;
-    }
-`;
-document.head.appendChild(style);
-  </script>
-
-  <!-- 🔹 DEBUG SCRIPT -->
-  <script>
-    // Debug functions untuk testing
-    console.log('=== Product Page Loaded ===');
-    
-    // Manual control functions
-    window.showProfile = () => {
-      document.getElementById('nav-auth').style.display = 'none';
-      document.getElementById('user-menu').style.display = 'block';
-      console.log('🔧 Manual: Showing profile');
+  function setupSearch() {
+    const input = document.getElementById("search-input");
+    const btn = document.getElementById("search-btn");
+    const go = () => {
+      const q = input.value.trim();
+      if (q) window.location.href = `search-results.html?search=${encodeURIComponent(q)}`;
+      else alert("Masukkan kata kunci pencarian");
     };
-    
-    window.showLogin = () => {
-      document.getElementById('nav-auth').style.display = 'flex';
-      document.getElementById('user-menu').style.display = 'none';
-      console.log('🔧 Manual: Showing login');
-    };
-    
-    window.checkAuth = () => {
-      console.log('🔍 Auth Status Check:');
-      console.log('- Navbar display:', {
-        navAuth: document.getElementById('nav-auth').style.display,
-        userMenu: document.getElementById('user-menu').style.display
-      });
-      console.log('- LocalStorage:', {
-        userLoggedIn: localStorage.getItem('userLoggedIn'),
-        userName: localStorage.getItem('userName'),
-        userEmail: localStorage.getItem('userEmail')
-      });
-      console.log('- Firebase:', {
-        semartAuth: window.semartAuth,
-        currentUser: window.semartAuth?.auth?.currentUser
-      });
-    };
-    
-    // Auto-check setelah 3 detik
-    setTimeout(() => {
-      console.log('🔄 Auto-checking auth system...');
-      if (window.simpleAuthFix) {
-        window.simpleAuthFix.updateNavbar();
-      }
-    }, 3000);
-  </script>
+    input.addEventListener("keypress", e => e.key === "Enter" && go());
+    btn.addEventListener("click", go);
+  }
+</script>
+
 </body>
 </html>
+
