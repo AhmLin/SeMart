@@ -316,6 +316,7 @@ body {
 .nav-links a:hover,
 .nav-links a.active {
   color: #739D21;
+  background-color: #fff;
 }
 
 /* ========== RESPONSIVE DESIGN ========== */
@@ -918,3 +919,4 @@ footer {
 .nav-auth, .user-menu {
   transition: opacity 0.3s ease, transform 0.3s ease;
 }
+
