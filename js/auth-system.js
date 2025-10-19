@@ -1,36 +1,51 @@
-// 🔹 GLOBAL AUTH SYSTEM UNTUK SEMUA PAGE - FIXED VERSION
+// 🔹 GLOBAL AUTH SYSTEM - FIXED VERSION
 class GlobalAuthSystem {
     constructor() {
+        this.initialized = false;
         this.init();
     }
 
     init() {
-        console.log('🔐 Initializing global auth system...');
+        if (this.initialized) return;
         
-        // Delay sedikit untuk memastikan semua script sudah load
-        setTimeout(() => {
-            this.setupAuthListeners();
-            this.forceUpdateNavbarAuth();
-        }, 500);
+        console.log('🔐 Initializing global auth system...');
+        this.initialized = true;
+        
+        // Wait for DOM to be ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                this.setupAuthListeners();
+                this.forceUpdateNavbarAuth();
+            });
+        } else {
+            // DOM already ready
+            setTimeout(() => {
+                this.setupAuthListeners();
+                this.forceUpdateNavbarAuth();
+            }, 100);
+        }
         
         // Check auth status periodically
-        setInterval(() => this.forceUpdateNavbarAuth(), 2000);
+        setInterval(() => this.forceUpdateNavbarAuth(), 3000);
     }
 
     setupAuthListeners() {
-        // Logout functionality
-        const logoutBtn = document.getElementById('logout-btn');
-        if (logoutBtn) {
-            logoutBtn.addEventListener('click', (e) => {
+        // Logout functionality - MORE ROBUST
+        document.addEventListener('click', (e) => {
+            if (e.target.id === 'logout-btn' || e.target.closest('#logout-btn')) {
                 e.preventDefault();
+                e.stopPropagation();
+                console.log('🚪 Logout button clicked');
                 this.handleLogout();
-            });
-        }
+            }
+        });
 
         // Manual trigger untuk update auth
-        window.addEventListener('updateAuthUI', () => {
-            console.log('🔄 Manual auth UI update triggered');
-            this.forceUpdateNavbarAuth();
+        window.addEventListener('storage', (e) => {
+            if (e.key && (e.key.includes('user') || e.key.includes('auth'))) {
+                console.log('🔄 Storage changed, updating auth UI');
+                setTimeout(() => this.forceUpdateNavbarAuth(), 100);
+            }
         });
     }
 
@@ -40,9 +55,7 @@ class GlobalAuthSystem {
         const userGreeting = document.getElementById('user-greeting');
 
         if (!navAuth || !userMenu) {
-            console.error('❌ Navbar auth elements not found!');
-            console.log('navAuth:', navAuth);
-            console.log('userMenu:', userMenu);
+            console.log('⚠️ Navbar auth elements not found, retrying...');
             return;
         }
 
@@ -50,141 +63,133 @@ class GlobalAuthSystem {
         const userData = this.getUserData();
         
         console.log('🔐 Auth Status:', isLoggedIn);
-        console.log('🔐 User Data:', userData);
         console.log('🔐 Current Display - navAuth:', navAuth.style.display, 'userMenu:', userMenu.style.display);
 
+        // HAPUS SEMUA !important - gunakan approach yang benar
         if (isLoggedIn) {
-            // User sudah login - SEMUANYA PAKAI !important
-            navAuth.style.display = 'none !important';
-            userMenu.style.display = 'block !important';
-            navAuth.style.cssText = 'display: none !important';
-            userMenu.style.cssText = 'display: flex !important';
+            // User logged in - SHOW USER MENU
+            this.hideElementCompletely(navAuth);
+            this.showElementCompletely(userMenu);
             
             // Update user greeting
             if (userGreeting) {
                 userGreeting.textContent = `Halo, ${userData.name}!`;
             }
             
-            console.log('✅ User logged in, showing profile menu');
+            console.log('✅ Showing user menu, hiding login');
         } else {
-            // User belum login - SEMUANYA PAKAI !important
-            navAuth.style.display = 'flex !important';
-            userMenu.style.display = 'none !important';
-            navAuth.style.cssText = 'display: flex !important';
-            userMenu.style.cssText = 'display: none !important';
+            // User not logged in - SHOW LOGIN
+            this.showElementCompletely(navAuth);
+            this.hideElementCompletely(userMenu);
             
-            console.log('❌ User not logged in, showing login button');
+            console.log('✅ Showing login, hiding user menu');
         }
 
-        // Force reflow
-        navAuth.offsetHeight;
-        userMenu.offsetHeight;
+        // Force reflow dan verifikasi
+        this.verifyUIState(navAuth, userMenu, isLoggedIn);
+    }
+
+    // METHOD BARU: Handle CSS specificity issues
+    hideElementCompletely(element) {
+        if (!element) return;
+        
+        // Multiple methods untuk memastikan element benar-benar hidden
+        element.style.display = 'none';
+        element.style.visibility = 'hidden';
+        element.style.opacity = '0';
+        element.style.position = 'absolute';
+        element.style.left = '-9999px';
+        element.setAttribute('aria-hidden', 'true');
+        element.classList.add('force-hidden');
+    }
+
+    showElementCompletely(element) {
+        if (!element) return;
+        
+        // Reset semua hiding properties
+        element.style.display = 'flex';
+        element.style.visibility = 'visible';
+        element.style.opacity = '1';
+        element.style.position = '';
+        element.style.left = '';
+        element.removeAttribute('aria-hidden');
+        element.classList.remove('force-hidden');
+        element.classList.add('force-visible');
+    }
+
+    verifyUIState(navAuth, userMenu, expectedLoggedIn) {
+        setTimeout(() => {
+            const navAuthVisible = navAuth.style.display !== 'none' && 
+                                 navAuth.style.visibility !== 'hidden';
+            const userMenuVisible = userMenu.style.display !== 'none' && 
+                                  userMenu.style.visibility !== 'hidden';
+            
+            console.log('🔍 UI Verification:', {
+                expected: expectedLoggedIn ? 'user-menu' : 'login',
+                actual: {
+                    navAuth: navAuthVisible ? 'visible' : 'hidden',
+                    userMenu: userMenuVisible ? 'visible' : 'hidden'
+                },
+                match: (expectedLoggedIn && userMenuVisible && !navAuthVisible) || 
+                       (!expectedLoggedIn && navAuthVisible && !userMenuVisible)
+            });
+            
+            if (!((expectedLoggedIn && userMenuVisible && !navAuthVisible) || 
+                  (!expectedLoggedIn && navAuthVisible && !userMenuVisible))) {
+                console.warn('❌ UI STATE MISMATCH - Retrying...');
+                this.forceUpdateNavbarAuth(); // Retry
+            }
+        }, 50);
     }
 
     checkAuthStatus() {
-        // Method 1: Check Firebase Auth langsung
-        if (this.checkFirebaseAuth()) {
-            console.log('🔐 Firebase auth: LOGGED IN');
-            return true;
-        }
+        // SINGLE SOURCE OF TRUTH - Simplify checks
+        const checks = [
+            // 1. Firebase primary
+            () => window.semartAuth?.auth?.currentUser !== null && 
+                  window.semartAuth?.auth?.currentUser !== undefined,
+            
+            // 2. Firebase function
+            () => window.semartAuth?.isLoggedIn?.() === true,
+            
+            // 3. Firebase global
+            () => window.firebase?.auth?.().currentUser !== null,
+            
+            // 4. LocalStorage primary
+            () => localStorage.getItem('userLoggedIn') === 'true',
+            
+            // 5. Any user data
+            () => {
+                const userEmail = localStorage.getItem('userEmail');
+                const userName = localStorage.getItem('userName');
+                return !!(userEmail && userName);
+            },
+            
+            // 6. Session storage
+            () => sessionStorage.getItem('firebaseUser') !== null
+        ];
 
-        // Method 2: Check localStorage
-        if (this.checkLocalStorageAuth()) {
-            console.log('🔐 LocalStorage auth: LOGGED IN');
-            return true;
+        for (let check of checks) {
+            try {
+                if (check()) {
+                    console.log('🔐 Auth check passed:', check.toString().slice(0, 80));
+                    return true;
+                }
+            } catch (e) {
+                // Continue to next check
+            }
         }
-
-        // Method 3: Check sessionStorage  
-        if (this.checkSessionStorageAuth()) {
-            console.log('🔐 SessionStorage auth: LOGGED IN');
-            return true;
-        }
-
-        console.log('🔐 No auth method: NOT LOGGED IN');
+        
         return false;
-    }
-
-    checkFirebaseAuth() {
-        try {
-            // Method 1A: Firebase Auth instance
-            if (window.semartAuth && window.semartAuth.auth) {
-                const user = window.semartAuth.auth.currentUser;
-                if (user) {
-                    console.log('🔥 Firebase user found:', user.email);
-                    return true;
-                }
-            }
-
-            // Method 1B: Firebase Auth methods
-            if (window.semartAuth && typeof window.semartAuth.isLoggedIn === 'function') {
-                const status = window.semartAuth.isLoggedIn();
-                if (status) {
-                    console.log('🔥 Firebase isLoggedIn(): true');
-                    return true;
-                }
-            }
-
-            // Method 1C: Check Firebase auth state
-            if (window.firebase && window.firebase.auth) {
-                const user = window.firebase.auth().currentUser;
-                if (user) {
-                    console.log('🔥 Firebase auth() user found:', user.email);
-                    return true;
-                }
-            }
-
-            return false;
-        } catch (error) {
-            console.warn('🔐 Firebase auth check error:', error);
-            return false;
-        }
-    }
-
-    checkLocalStorageAuth() {
-        try {
-            const userLoggedIn = localStorage.getItem('userLoggedIn');
-            const userEmail = localStorage.getItem('userEmail');
-            
-            if (userLoggedIn === 'true' && userEmail) {
-                console.log('💾 LocalStorage auth found:', userEmail);
-                return true;
-            }
-            
-            // Check for any user data in localStorage
-            const keys = Object.keys(localStorage);
-            const userKeys = keys.filter(key => key.includes('user') || key.includes('auth'));
-            if (userKeys.length > 0) {
-                console.log('💾 User keys found in localStorage:', userKeys);
-            }
-            
-            return false;
-        } catch (error) {
-            console.warn('🔐 LocalStorage auth check error:', error);
-            return false;
-        }
-    }
-
-    checkSessionStorageAuth() {
-        try {
-            const firebaseUser = sessionStorage.getItem('firebaseUser');
-            if (firebaseUser) {
-                console.log('💾 SessionStorage auth found');
-                return true;
-            }
-            return false;
-        } catch (error) {
-            console.warn('🔐 SessionStorage auth check error:', error);
-            return false;
-        }
     }
 
     getUserData() {
         // Priority 1: Firebase Auth
-        if (window.semartAuth && window.semartAuth.auth && window.semartAuth.auth.currentUser) {
+        if (window.semartAuth?.auth?.currentUser) {
             const user = window.semartAuth.auth.currentUser;
             return {
                 name: user.displayName || (user.email ? user.email.split('@')[0] : 'User'),
-                email: user.email || 'user@example.com'
+                email: user.email
             };
         }
 
@@ -192,18 +197,10 @@ class GlobalAuthSystem {
         const userName = localStorage.getItem('userName');
         const userEmail = localStorage.getItem('userEmail');
         
-        if (userName) {
+        if (userName && userEmail) {
             return {
                 name: userName,
-                email: userEmail || 'user@example.com'
-            };
-        }
-
-        // Priority 3: Try to get from any available source
-        if (localStorage.getItem('userLoggedIn') === 'true') {
-            return {
-                name: 'User',
-                email: 'user@example.com'
+                email: userEmail
             };
         }
 
@@ -216,113 +213,151 @@ class GlobalAuthSystem {
 
     async handleLogout() {
         try {
-            console.log('🚪 Logging out from all systems...');
+            console.log('🚪 Starting comprehensive logout...');
             
-            // Clear semua auth methods
+            // 1. Clear data FIRST
             await this.clearAllAuth();
             
-            // Force UI update
+            // 2. Force UI update MULTIPLE TIMES
             this.forceUpdateNavbarAuth();
+            setTimeout(() => this.forceUpdateNavbarAuth(), 100);
+            setTimeout(() => this.forceUpdateNavbarAuth(), 500);
             
-            // Show success message
+            // 3. Show success
             this.showLogoutSuccess();
             
-            // Redirect to home
+            // 4. Redirect
             setTimeout(() => {
                 window.location.href = 'index.html';
-            }, 1500);
+            }, 2000);
             
         } catch (error) {
             console.error('❌ Logout error:', error);
-            alert('Gagal logout. Silakan coba lagi.');
+            // Still try to update UI
+            this.forceUpdateNavbarAuth();
         }
     }
 
     async clearAllAuth() {
+        console.log('🧹 Nuclear auth cleanup...');
+        
+        // A. Firebase logout
         try {
-            // Firebase logout
-            if (window.semartAuth && typeof window.semartAuth.logout === 'function') {
+            if (window.semartAuth?.logout) {
                 await window.semartAuth.logout();
             }
-            
-            if (window.firebase && window.firebase.auth) {
+            if (window.firebase?.auth) {
                 await window.firebase.auth().signOut();
             }
-            
-            // Clear storage
-            localStorage.removeItem('userLoggedIn');
-            localStorage.removeItem('userName');
-            localStorage.removeItem('userEmail');
-            localStorage.removeItem('semart-user');
-            
-            sessionStorage.removeItem('firebaseUser');
-            sessionStorage.removeItem('userData');
-            
-            // Clear all user-related localStorage
-            Object.keys(localStorage).forEach(key => {
-                if (key.includes('user') || key.includes('auth') || key.includes('firebase')) {
-                    localStorage.removeItem(key);
-                }
-            });
-            
-            console.log('✅ All auth data cleared');
-        } catch (error) {
-            console.warn('⚠️ Some auth clear operations failed:', error);
+        } catch (e) {
+            console.warn('Firebase logout failed:', e);
         }
+        
+        // B. Clear ALL storage aggressively
+        const keysToRemove = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && this.isAuthRelated(key)) {
+                keysToRemove.push(key);
+            }
+        }
+        
+        keysToRemove.forEach(key => {
+            localStorage.removeItem(key);
+            console.log('🗑️ Removed:', key);
+        });
+        
+        // C. Clear session storage
+        sessionStorage.clear();
+        
+        // D. Clear cookies
+        document.cookie.split(';').forEach(cookie => {
+            const name = cookie.split('=')[0].trim();
+            if (this.isAuthRelated(name)) {
+                document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+            }
+        });
+        
+        console.log('✅ Auth cleanup completed');
+    }
+
+    isAuthRelated(key) {
+        const authKeywords = ['user', 'auth', 'login', 'token', 'firebase', 'session', 'profile'];
+        const lowerKey = key.toLowerCase();
+        return authKeywords.some(keyword => lowerKey.includes(keyword));
     }
 
     showLogoutSuccess() {
-        const toast = document.createElement('div');
-        toast.style.cssText = `
-            position: fixed;
-            top: 100px;
-            right: 20px;
-            background: #17a2b8;
-            color: white;
-            padding: 1rem 1.5rem;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-            z-index: 1000;
-            animation: slideInRight 0.3s ease;
-            max-width: 250px;
-            font-family: 'Poppins', sans-serif;
-        `;
-        toast.innerHTML = `
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <span style="font-size: 1.2rem;">👋</span>
-                <div>
-                    <strong>Berhasil logout!</strong>
-                    <div style="font-size: 0.9rem;">Sampai jumpa kembali</div>
-                </div>
+        // Remove existing messages
+        const existing = document.querySelector('.logout-message');
+        if (existing) existing.remove();
+        
+        const message = document.createElement('div');
+        message.className = 'logout-message';
+        message.innerHTML = `
+            <div style="
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: #28a745;
+                color: white;
+                padding: 15px 20px;
+                border-radius: 8px;
+                z-index: 10000;
+                font-family: 'Poppins', sans-serif;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+                animation: slideIn 0.3s ease;
+            ">
+                ✅ Berhasil logout! Mengarahkan ke beranda...
             </div>
         `;
         
-        document.body.appendChild(toast);
+        document.body.appendChild(message);
         
         setTimeout(() => {
-            toast.remove();
+            if (message.parentNode) {
+                message.parentNode.removeChild(message);
+            }
         }, 3000);
     }
 }
 
-// Initialize IMMEDIATELY tanpa menunggu DOMContentLoaded
+// 🚀 INITIALIZATION - HANYA SATU KALI
 console.log('🔐 Loading global auth system...');
-window.globalAuth = new GlobalAuthSystem();
 
-// Juga initialize ketika DOM ready
-document.addEventListener('DOMContentLoaded', () => {
-    console.log('🔐 DOM ready, re-initializing auth system...');
-    
-    // Force update setelah semua element pasti tersedia
+// Wait untuk memastikan DOM tersedia
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        setTimeout(() => {
+            window.globalAuth = new GlobalAuthSystem();
+        }, 100);
+    });
+} else {
     setTimeout(() => {
-        if (window.globalAuth) {
-            window.globalAuth.forceUpdateNavbarAuth();
-        }
-    }, 1000);
-});
+        window.globalAuth = new GlobalAuthSystem();
+    }, 100);
+}
 
-// Export untuk manual trigger
-window.updateAuthUI = () => {
+// 🔧 MANUAL DEBUG FUNCTIONS
+window.debugAuth = () => {
+    console.log('=== AUTH DEBUG ===');
+    console.log('System:', window.globalAuth ? 'Loaded' : 'Not loaded');
+    console.log('LocalStorage:', Object.keys(localStorage).filter(k => 
+        k.includes('user') || k.includes('auth') || k.includes('firebase')
+    ));
+    console.log('UI State:', {
+        navAuth: {
+            display: document.getElementById('nav-auth')?.style.display,
+            visibility: document.getElementById('nav-auth')?.style.visibility
+        },
+        userMenu: {
+            display: document.getElementById('user-menu')?.style.display,
+            visibility: document.getElementById('user-menu')?.style.visibility
+        }
+    });
+};
+
+window.forceAuthUpdate = () => {
     if (window.globalAuth) {
         window.globalAuth.forceUpdateNavbarAuth();
     }
