@@ -108,5 +108,29 @@
 
     <!-- Gunakan type="module" untuk file auth -->
     <script type="module" src="js/firebase-auth.js"></script>
+    <script>
+            // 🔹 FORCE CLEAR AUTH CACHE DI LOGIN PAGE
+            document.addEventListener('DOMContentLoaded', function() {
+                console.log('🔐 Login page loaded - checking auth state');
+                
+                // Jika sudah login, redirect ke home
+                if (window.semartAuth && window.semartAuth.isLoggedIn()) {
+                    console.log('🔄 Already logged in, redirecting to home...');
+                    window.location.href = 'index.html';
+                    return;
+                }
+                
+                // Clear any residual auth data
+                const clearResidualData = () => {
+                    const keys = ['userLoggedIn', 'userName', 'userEmail'];
+                    keys.forEach(key => localStorage.removeItem(key));
+                    console.log('🧹 Cleared residual auth data');
+                };
+                
+                clearResidualData();
+            });
+
+    </script>
 </body>
 </html>
+
