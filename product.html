@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>SeMart</title>
-  <link rel="stylesheet" href="css/style.css?v=2" />
+  <link rel="stylesheet" href="css/style.css?v=3" />
   <link rel="stylesheet" href="css/cart.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -26,7 +26,7 @@
             </div>
             <nav class="right-nav">
                 <ul class="nav-links">
-                    <li><a href="index.html" class="active">Beranda</a></li>
+                    <li><a href="index.html">Beranda</a></li>
                     <li><a href="products.html">Produk</a></li>
                     <li><a href="#">Tentang</a></li>
                     <li><a href="#">Kontak</a></li>
@@ -144,17 +144,11 @@
     </div>
   </footer>
 
-  <!-- Script harus di-load SEBELUM script product detail -->
-  <!-- HAPUS BARIS INI -->
-  <!-- <script src="js/auth.js"></script> -->
-  
-  <!-- TINGGALKAN INI SAJA -->
+  <!-- 🔹 SCRIPTS -->
   <script src="js/cart.js"></script>
-  <script src="js/search.js"></script>
-  <script src="js/test-auth.js"></script>
-  <script src="js/auth-system.js"></script>
+  <script src="js/simple-auth-fix.js"></script>
 
-  <!-- Script product detail -->
+  <!-- 🔹 PRODUCT DETAIL SCRIPT -->
   <script>
 // === FUNGSI UTAMA PRODUCT DETAIL ===
 document.addEventListener("DOMContentLoaded", () => {
@@ -520,10 +514,49 @@ style.textContent = `
 `;
 document.head.appendChild(style);
   </script>
+
+  <!-- 🔹 DEBUG SCRIPT -->
+  <script>
+    // Debug functions untuk testing
+    console.log('=== Product Page Loaded ===');
+    
+    // Manual control functions
+    window.showProfile = () => {
+      document.getElementById('nav-auth').style.display = 'none';
+      document.getElementById('user-menu').style.display = 'block';
+      console.log('🔧 Manual: Showing profile');
+    };
+    
+    window.showLogin = () => {
+      document.getElementById('nav-auth').style.display = 'flex';
+      document.getElementById('user-menu').style.display = 'none';
+      console.log('🔧 Manual: Showing login');
+    };
+    
+    window.checkAuth = () => {
+      console.log('🔍 Auth Status Check:');
+      console.log('- Navbar display:', {
+        navAuth: document.getElementById('nav-auth').style.display,
+        userMenu: document.getElementById('user-menu').style.display
+      });
+      console.log('- LocalStorage:', {
+        userLoggedIn: localStorage.getItem('userLoggedIn'),
+        userName: localStorage.getItem('userName'),
+        userEmail: localStorage.getItem('userEmail')
+      });
+      console.log('- Firebase:', {
+        semartAuth: window.semartAuth,
+        currentUser: window.semartAuth?.auth?.currentUser
+      });
+    };
+    
+    // Auto-check setelah 3 detik
+    setTimeout(() => {
+      console.log('🔄 Auto-checking auth system...');
+      if (window.simpleAuthFix) {
+        window.simpleAuthFix.updateNavbar();
+      }
+    }, 3000);
+  </script>
 </body>
 </html>
-
-
-
-
-
