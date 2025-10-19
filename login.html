@@ -95,8 +95,8 @@
         </div>
     </div>
 
-    <!-- 🔹 Gunakan hanya SATU file auth utama -->
-    <script type="module" src="js/auth.js"></script>
+    <!-- 🔹 Gunakan file auth yang sudah diperbaiki -->
+    <script type="module" src="js/firebase-auth.js"></script>
 
     <script>
         // 🔒 Clear cache auth saat halaman login dibuka
@@ -106,24 +106,6 @@
             localStorage.removeItem('userName');
             localStorage.removeItem('userEmail');
             sessionStorage.clear();
-        });
-    </script>
-
-    <script>
-        // 👁️ Toggle password visibility
-        document.addEventListener('DOMContentLoaded', () => {
-            document.querySelectorAll('.password-toggle').forEach(toggle => {
-                toggle.addEventListener('click', e => {
-                    const input = e.target.closest('.password-wrapper').querySelector('input');
-                    if (input.type === 'password') {
-                        input.type = 'text';
-                        e.target.textContent = '🔒';
-                    } else {
-                        input.type = 'password';
-                        e.target.textContent = '👁️';
-                    }
-                });
-            });
         });
     </script>
 </body>
