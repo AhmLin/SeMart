@@ -1040,3 +1040,15 @@ input[type=number] {
     background-color: white;
     color: #007b5e;
 }
+
+/* 🔹 FORCE AUTH STYLES */
+#nav-auth {
+    display: flex !important;
+}
+
+#user-menu {
+    display: none !important;
+}
+
+/* JavaScript will override these with inline styles */
+
