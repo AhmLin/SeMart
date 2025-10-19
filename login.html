@@ -25,18 +25,9 @@
                     <h1>Selamat Datang Kembali!</h1>
                     <p>Login untuk melanjutkan belanja dan nikmati promo spesial</p>
                     <div class="hero-features">
-                        <div class="feature">
-                            <span>✓</span>
-                            <span>Riwayat belanja tersimpan</span>
-                        </div>
-                        <div class="feature">
-                            <span>✓</span>
-                            <span>Promo member eksklusif</span>
-                        </div>
-                        <div class="feature">
-                            <span>✓</span>
-                            <span>Checkout lebih cepat</span>
-                        </div>
+                        <div class="feature"><span>✓</span><span>Riwayat belanja tersimpan</span></div>
+                        <div class="feature"><span>✓</span><span>Promo member eksklusif</span></div>
+                        <div class="feature"><span>✓</span><span>Checkout lebih cepat</span></div>
                     </div>
                 </div>
             </div>
@@ -55,8 +46,10 @@
 
                         <div class="form-group">
                             <label for="password">Password</label>
-                            <input type="password" id="password" placeholder="Masukkan password" required>
-                            <button type="button" class="password-toggle">👁️</button>
+                            <div class="password-wrapper">
+                                <input type="password" id="password" placeholder="Masukkan password" required>
+                                <button type="button" class="password-toggle">👁️</button>
+                            </div>
                         </div>
 
                         <div class="form-options">
@@ -70,18 +63,14 @@
                         <button type="submit" class="btn-primary">Masuk</button>
                     </form>
 
-                    <div class="auth-divider">
-                        <span>Atau lanjutkan dengan</span>
-                    </div>
+                    <div class="auth-divider"><span>Atau lanjutkan dengan</span></div>
 
                     <div class="social-login">
                         <button type="button" class="btn-social btn-google">
-                            <img src="https://cdn-icons-png.flaticon.com/512/2702/2702602.png" alt="Google">
-                            Google
+                            <img src="https://cdn-icons-png.flaticon.com/512/2702/2702602.png" alt="Google"> Google
                         </button>
                         <button type="button" class="btn-social btn-facebook">
-                            <img src="https://cdn-icons-png.flaticon.com/512/15047/15047435.png" alt="Facebook">
-                            Facebook
+                            <img src="https://cdn-icons-png.flaticon.com/512/15047/15047435.png" alt="Facebook"> Facebook
                         </button>
                     </div>
 
@@ -100,85 +89,42 @@
     </footer>
 
     <!-- Loading Indicator -->
-    <div id="loading" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); z-index: 9999; justify-content: center; align-items: center;">
-        <div style="background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+    <div id="loading" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(255,255,255,0.8);z-index:9999;justify-content:center;align-items:center;">
+        <div style="background:white;padding:20px;border-radius:10px;box-shadow:0 4px 12px rgba(0,0,0,0.1);">
             <p>Memproses...</p>
         </div>
     </div>
 
-    <!-- Gunakan type="module" untuk file auth -->
-    <script type="module" src="js/firebase-auth.js"></script>
-    <!-- <script type="module" src="js/auth.js"></script> -->
-    <script>
-            // 🔹 FORCE CLEAR AUTH CACHE DI LOGIN PAGE
-            document.addEventListener('DOMContentLoaded', function() {
-                console.log('🔐 Login page loaded - checking auth state');
-                
-                // Jika sudah login, redirect ke home
-                if (window.semartAuth && window.semartAuth.isLoggedIn()) {
-                    console.log('🔄 Already logged in, redirecting to home...');
-                    window.location.href = 'index.html';
-                    return;
-                }
-                
-                // Clear any residual auth data
-                const clearResidualData = () => {
-                    const keys = ['userLoggedIn', 'userName', 'userEmail'];
-                    keys.forEach(key => localStorage.removeItem(key));
-                    console.log('🧹 Cleared residual auth data');
-                };
-                
-                clearResidualData();
-            });
+    <!-- 🔹 Gunakan hanya SATU file auth utama -->
+    <script type="module" src="js/auth.js"></script>
 
-    </script>
     <script>
-        // 🔹 LOGIN PAGE PROTECTION - ANTI AUTO LOGIN
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('🔐 Login page protection activated');
-            
-            // Force clear any cached auth state
-            const forceClearAuth = () => {
-                // Clear localStorage
-                const keys = Object.keys(localStorage);
-                keys.forEach(key => {
-                    if (key.includes('firebase') || key.includes('auth')) {
-                        localStorage.removeItem(key);
+        // 🔒 Clear cache auth saat halaman login dibuka
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🧹 Membersihkan data login lama...');
+            localStorage.removeItem('userLoggedIn');
+            localStorage.removeItem('userName');
+            localStorage.removeItem('userEmail');
+            sessionStorage.clear();
+        });
+    </script>
+
+    <script>
+        // 👁️ Toggle password visibility
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('.password-toggle').forEach(toggle => {
+                toggle.addEventListener('click', e => {
+                    const input = e.target.closest('.password-wrapper').querySelector('input');
+                    if (input.type === 'password') {
+                        input.type = 'text';
+                        e.target.textContent = '🔒';
+                    } else {
+                        input.type = 'password';
+                        e.target.textContent = '👁️';
                     }
                 });
-                
-                // Clear sessionStorage
-                sessionStorage.clear();
-                
-                console.log('🧹 Login page: Cleared all auth cache');
-            };
-            
-            // Execute immediately
-            forceClearAuth();
-            
-            // Additional protection for login form
-            const loginForm = document.getElementById('loginForm');
-            if (loginForm) {
-                loginForm.addEventListener('submit', function(e) {
-                    console.log('🔐 Login form submitted manually');
-                    // Biarkan form proceed normally
-                });
-            }
-            
-            // Check if user is already logged in
-            setTimeout(() => {
-                if (window.semartAuth && window.semartAuth.isLoggedIn()) {
-                    console.log('🚫 User already logged in, redirecting...');
-                    window.location.href = 'index.html';
-                }
-            }, 1000);
+            });
         });
     </script>
 </body>
 </html>
-
-
-
-
-
-
