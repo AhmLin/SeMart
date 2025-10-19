@@ -13,63 +13,65 @@
 <body>
 
   <header class="navbar">
-        <div class="container nav-content">
-            <div class="logo">
-                <img src="logo2.png" alt="SeMart Logo" width="30px">
-                <h1>SeMart</h1>
-            </div>
-            <div class="search">
-                <div class="textinput">
-                    <input type="text" placeholder="Cari Produk" id="search-input" aria-label="Cari produk">
-                </div>
-                <button type="button" id="search-btn">Cari</button>
-            </div>
-            <nav class="right-nav">
-                <ul class="nav-links">
-                    <li><a href="index.html">Beranda</a></li>
-                    <li><a href="products.html">Produk</a></li>
-                    <li><a href="#">Tentang</a></li>
-                    <li><a href="#">Kontak</a></li>
-                </ul>
-                <div class="cart-section">
-                  <a href="cart.html" class="cart-link">
-                      <div class="cart-info">
-                          <div class="cart-total-price">
-                              Rp<span id="nav-cart-total">0</span>
-                          </div>
-                          <div class="cart-icon-with-count">
-                              🛒
-                              <span class="cart-count" id="nav-cart-count">0</span>
-                          </div>
-                      </div>
-                  </a>
+      <div class="container nav-content">
+          <div class="logo">
+              <img src="logo2.png" alt="SeMart Logo" width="30px">
+              <h1>SeMart</h1>
+          </div>
+          <div class="search">
+              <div class="textinput">
+                  <input type="text" placeholder="Cari Produk" id="search-input" aria-label="Cari produk">
               </div>
-              
-              <!-- 🔹 AUTH SECTION - BERUBAH SESUAI STATUS LOGIN -->
-              <div class="nav-auth" id="nav-auth">
-                <a href="login.html" class="btn-login">Login</a>
-              </div>
-              
-              <div class="user-menu" id="user-menu" style="display: none;">
-                <div class="user-profile">
-                  <div class="user-avatar">
-                    <span>👤</span>
-                  </div>
-                  <div class="user-info">
-                    <span class="user-greeting" id="user-greeting">Halo, User!</span>
-                    <div class="user-dropdown">
-                      <a href="profile.html" class="dropdown-item">📋 Profil Saya</a>
-                      <a href="orders.html" class="dropdown-item">📦 Pesanan Saya</a>
-                      <a href="wishlist.html" class="dropdown-item">❤️ Wishlist</a>
-                      <div class="dropdown-divider"></div>
-                      <a href="#" id="logout-btn" class="dropdown-item logout">🚪 Logout</a>
+              <button type="button" id="search-btn">Cari</button>
+          </div>
+          <nav class="right-nav">
+              <ul class="nav-links">
+                  <li><a href="index.html" class="active">Beranda</a></li>
+                  <li><a href="products.html">Produk</a></li>
+                  <li><a href="#">Tentang</a></li>
+                  <li><a href="#">Kontak</a></li>
+              </ul>
+              <div class="cart-section">
+                <a href="cart.html" class="cart-link">
+                    <div class="cart-info">
+                        <div class="cart-total-price">
+                            Rp<span id="nav-cart-total">0</span>
+                        </div>
+                        <div class="cart-icon-with-count">
+                            🛒
+                            <span class="cart-count" id="nav-cart-count">0</span>
+                        </div>
                     </div>
+                </a>
+            </div>
+            
+            <!-- 🔹 AUTH SECTION - AKAN DIKONTROL OLEH FIREBASE AUTH -->
+            <div class="nav-auth" id="nav-auth">
+              <a href="login.html" class="btn-login">Login</a>
+              <a href="signup.html" class="btn-signup">Daftar</a>
+            </div>
+            
+            <div class="user-menu" id="user-menu" style="display: none;">
+              <div class="user-profile">
+                <div class="user-avatar">
+                   <img src="https://cdn-icons-png.flaticon.com/512/747/747545.png" style="width:60%; filter: brightness(0) invert(1);">
+                </div>
+                <div class="user-info">
+                  <span class="user-greeting">Halo, <span id="user-name">User</span></span>
+                  <span class="user-email" id="user-email"></span>
+                  <div class="user-dropdown">
+                    <a href="profile.html" class="dropdown-item">📋 Profil Saya</a>
+                    <a href="orders.html" class="dropdown-item">📦 Pesanan Saya</a>
+                    <a href="wishlist.html" class="dropdown-item">❤️ Wishlist</a>
+                    <div class="dropdown-divider"></div>
+                    <a href="#" id="logout-btn" class="dropdown-item logout">🚪 Logout</a>
                   </div>
                 </div>
               </div>
-            </nav>
-        </div>
-    </header>
+            </div>
+          </nav>
+      </div>
+  </header>
 
   <!-- 🔹 Breadcrumb -->
   <div class="backpage">
@@ -281,3 +283,4 @@
   </script>
 </body>
 </html>
+
