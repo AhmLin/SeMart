@@ -1,4 +1,4 @@
-// 🔹 GLOBAL AUTH SYSTEM UNTUK SEMUA PAGE
+// 🔹 GLOBAL AUTH SYSTEM UNTUK SEMUA PAGE - FIXED VERSION
 class GlobalAuthSystem {
     constructor() {
         this.init();
@@ -6,14 +6,15 @@ class GlobalAuthSystem {
 
     init() {
         console.log('🔐 Initializing global auth system...');
-        this.setupAuthListeners();
-        this.updateNavbarAuth();
         
-        // Setup Firebase auth listener jika tersedia
-        this.setupFirebaseAuthListener();
+        // Delay sedikit untuk memastikan semua script sudah load
+        setTimeout(() => {
+            this.setupAuthListeners();
+            this.forceUpdateNavbarAuth();
+        }, 500);
         
-        // Check auth status periodically untuk real-time update
-        setInterval(() => this.updateNavbarAuth(), 3000);
+        // Check auth status periodically
+        setInterval(() => this.forceUpdateNavbarAuth(), 2000);
     }
 
     setupAuthListeners() {
@@ -26,119 +27,159 @@ class GlobalAuthSystem {
             });
         }
 
-        // Listen untuk custom auth events
-        window.addEventListener('userLogin', () => {
-            console.log('🔄 User login event detected');
-            this.updateNavbarAuth();
-        });
-
-        window.addEventListener('userLogout', () => {
-            console.log('🔄 User logout event detected');
-            this.updateNavbarAuth();
-        });
-
-        // Juga listen untuk storage changes (jika login dari tab lain)
-        window.addEventListener('storage', (e) => {
-            if (e.key === 'userLoggedIn' || e.key === 'userName') {
-                console.log('🔄 Storage change detected, updating auth UI');
-                this.updateNavbarAuth();
-            }
+        // Manual trigger untuk update auth
+        window.addEventListener('updateAuthUI', () => {
+            console.log('🔄 Manual auth UI update triggered');
+            this.forceUpdateNavbarAuth();
         });
     }
 
-    setupFirebaseAuthListener() {
-        // Jika Firebase auth tersedia, setup listener
-        if (window.semartAuth && typeof window.semartAuth.auth !== 'undefined') {
-            console.log('🔐 Setting up Firebase auth listener');
-            
-            // Listen untuk Firebase auth state changes
-            window.semartAuth.auth.onAuthStateChanged((user) => {
-                console.log('🔥 Firebase auth state changed:', user ? 'logged in' : 'logged out');
-                this.updateNavbarAuth();
-            });
-        }
-    }
-
-    updateNavbarAuth() {
+    forceUpdateNavbarAuth() {
         const navAuth = document.getElementById('nav-auth');
         const userMenu = document.getElementById('user-menu');
         const userGreeting = document.getElementById('user-greeting');
 
         if (!navAuth || !userMenu) {
-            console.warn('🔐 Navbar auth elements not found');
+            console.error('❌ Navbar auth elements not found!');
+            console.log('navAuth:', navAuth);
+            console.log('userMenu:', userMenu);
             return;
         }
 
         const isLoggedIn = this.checkAuthStatus();
+        const userData = this.getUserData();
         
-        console.log('🔐 Auth status:', isLoggedIn ? 'LOGGED IN' : 'NOT LOGGED IN');
-        
+        console.log('🔐 Auth Status:', isLoggedIn);
+        console.log('🔐 User Data:', userData);
+        console.log('🔐 Current Display - navAuth:', navAuth.style.display, 'userMenu:', userMenu.style.display);
+
         if (isLoggedIn) {
-            // User sudah login
-            navAuth.style.display = 'none';
-            userMenu.style.display = 'block';
+            // User sudah login - SEMUANYA PAKAI !important
+            navAuth.style.display = 'none !important';
+            userMenu.style.display = 'block !important';
+            navAuth.style.cssText = 'display: none !important';
+            userMenu.style.cssText = 'display: flex !important';
             
             // Update user greeting
-            const userData = this.getUserData();
             if (userGreeting) {
                 userGreeting.textContent = `Halo, ${userData.name}!`;
-                userGreeting.title = userData.email;
             }
             
-            console.log('🔐 User data:', userData);
+            console.log('✅ User logged in, showing profile menu');
         } else {
-            // User belum login
-            navAuth.style.display = 'flex';
-            userMenu.style.display = 'none';
+            // User belum login - SEMUANYA PAKAI !important
+            navAuth.style.display = 'flex !important';
+            userMenu.style.display = 'none !important';
+            navAuth.style.cssText = 'display: flex !important';
+            userMenu.style.cssText = 'display: none !important';
             
-            console.log('🔐 User not logged in, showing login button');
+            console.log('❌ User not logged in, showing login button');
         }
+
+        // Force reflow
+        navAuth.offsetHeight;
+        userMenu.offsetHeight;
     }
 
     checkAuthStatus() {
-        // Priority 1: Firebase Auth System
-        if (window.semartAuth && typeof window.semartAuth.isLoggedIn === 'function') {
-            const firebaseStatus = window.semartAuth.isLoggedIn();
-            console.log('🔐 Firebase auth status:', firebaseStatus);
-            return firebaseStatus;
-        }
-        
-        // Priority 2: Check Firebase auth langsung
-        if (window.semartAuth && window.semartAuth.auth && window.semartAuth.auth.currentUser) {
-            console.log('🔐 Firebase currentUser exists');
+        // Method 1: Check Firebase Auth langsung
+        if (this.checkFirebaseAuth()) {
+            console.log('🔐 Firebase auth: LOGGED IN');
             return true;
         }
-        
-        // Priority 3: LocalStorage fallback
-        if (localStorage.getItem('userLoggedIn') === 'true') {
-            console.log('🔐 LocalStorage auth status: true');
+
+        // Method 2: Check localStorage
+        if (this.checkLocalStorageAuth()) {
+            console.log('🔐 LocalStorage auth: LOGGED IN');
             return true;
         }
-        
-        // Priority 4: Session storage
-        if (sessionStorage.getItem('firebaseUser')) {
-            console.log('🔐 SessionStorage auth status: true');
+
+        // Method 3: Check sessionStorage  
+        if (this.checkSessionStorageAuth()) {
+            console.log('🔐 SessionStorage auth: LOGGED IN');
             return true;
         }
-        
-        console.log('🔐 No auth method found, user not logged in');
+
+        console.log('🔐 No auth method: NOT LOGGED IN');
         return false;
     }
 
-    getUserData() {
-        // Priority 1: Firebase Auth System
-        if (window.semartAuth && typeof window.semartAuth.getCurrentUser === 'function') {
-            const user = window.semartAuth.getCurrentUser();
-            if (user) {
-                console.log('🔐 Firebase user data:', user);
-                return {
-                    name: user.displayName || (user.email ? user.email.split('@')[0] : 'User'),
-                    email: user.email || 'user@example.com'
-                };
+    checkFirebaseAuth() {
+        try {
+            // Method 1A: Firebase Auth instance
+            if (window.semartAuth && window.semartAuth.auth) {
+                const user = window.semartAuth.auth.currentUser;
+                if (user) {
+                    console.log('🔥 Firebase user found:', user.email);
+                    return true;
+                }
             }
+
+            // Method 1B: Firebase Auth methods
+            if (window.semartAuth && typeof window.semartAuth.isLoggedIn === 'function') {
+                const status = window.semartAuth.isLoggedIn();
+                if (status) {
+                    console.log('🔥 Firebase isLoggedIn(): true');
+                    return true;
+                }
+            }
+
+            // Method 1C: Check Firebase auth state
+            if (window.firebase && window.firebase.auth) {
+                const user = window.firebase.auth().currentUser;
+                if (user) {
+                    console.log('🔥 Firebase auth() user found:', user.email);
+                    return true;
+                }
+            }
+
+            return false;
+        } catch (error) {
+            console.warn('🔐 Firebase auth check error:', error);
+            return false;
         }
-        
-        // Priority 2: Firebase auth langsung
+    }
+
+    checkLocalStorageAuth() {
+        try {
+            const userLoggedIn = localStorage.getItem('userLoggedIn');
+            const userEmail = localStorage.getItem('userEmail');
+            
+            if (userLoggedIn === 'true' && userEmail) {
+                console.log('💾 LocalStorage auth found:', userEmail);
+                return true;
+            }
+            
+            // Check for any user data in localStorage
+            const keys = Object.keys(localStorage);
+            const userKeys = keys.filter(key => key.includes('user') || key.includes('auth'));
+            if (userKeys.length > 0) {
+                console.log('💾 User keys found in localStorage:', userKeys);
+            }
+            
+            return false;
+        } catch (error) {
+            console.warn('🔐 LocalStorage auth check error:', error);
+            return false;
+        }
+    }
+
+    checkSessionStorageAuth() {
+        try {
+            const firebaseUser = sessionStorage.getItem('firebaseUser');
+            if (firebaseUser) {
+                console.log('💾 SessionStorage auth found');
+                return true;
+            }
+            return false;
+        } catch (error) {
+            console.warn('🔐 SessionStorage auth check error:', error);
+            return false;
+        }
+    }
+
+    getUserData() {
+        // Priority 1: Firebase Auth
         if (window.semartAuth && window.semartAuth.auth && window.semartAuth.auth.currentUser) {
             const user = window.semartAuth.auth.currentUser;
             return {
@@ -146,8 +187,8 @@ class GlobalAuthSystem {
                 email: user.email || 'user@example.com'
             };
         }
-        
-        // Priority 3: LocalStorage fallback
+
+        // Priority 2: LocalStorage
         const userName = localStorage.getItem('userName');
         const userEmail = localStorage.getItem('userEmail');
         
@@ -157,7 +198,15 @@ class GlobalAuthSystem {
                 email: userEmail || 'user@example.com'
             };
         }
-        
+
+        // Priority 3: Try to get from any available source
+        if (localStorage.getItem('userLoggedIn') === 'true') {
+            return {
+                name: 'User',
+                email: 'user@example.com'
+            };
+        }
+
         // Default
         return {
             name: 'User',
@@ -167,37 +216,18 @@ class GlobalAuthSystem {
 
     async handleLogout() {
         try {
-            console.log('🚪 Logging out...');
+            console.log('🚪 Logging out from all systems...');
             
-            // Priority 1: Firebase Auth System
-            if (window.semartAuth && typeof window.semartAuth.logout === 'function') {
-                console.log('🚪 Using Firebase logout');
-                await window.semartAuth.logout();
-            } 
-            // Priority 2: Firebase auth langsung
-            else if (window.semartAuth && window.semartAuth.auth) {
-                console.log('🚪 Using Firebase auth directly');
-                await window.semartAuth.auth.signOut();
-            }
-            else {
-                // Fallback logout
-                console.log('🚪 Using fallback logout');
-                localStorage.removeItem('userLoggedIn');
-                localStorage.removeItem('userName');
-                localStorage.removeItem('userEmail');
-                sessionStorage.removeItem('firebaseUser');
-            }
+            // Clear semua auth methods
+            await this.clearAllAuth();
             
-            // Trigger custom event
-            window.dispatchEvent(new CustomEvent('userLogout'));
-            
-            // Update UI
-            this.updateNavbarAuth();
+            // Force UI update
+            this.forceUpdateNavbarAuth();
             
             // Show success message
             this.showLogoutSuccess();
             
-            // Redirect to home after delay
+            // Redirect to home
             setTimeout(() => {
                 window.location.href = 'index.html';
             }, 1500);
@@ -205,6 +235,39 @@ class GlobalAuthSystem {
         } catch (error) {
             console.error('❌ Logout error:', error);
             alert('Gagal logout. Silakan coba lagi.');
+        }
+    }
+
+    async clearAllAuth() {
+        try {
+            // Firebase logout
+            if (window.semartAuth && typeof window.semartAuth.logout === 'function') {
+                await window.semartAuth.logout();
+            }
+            
+            if (window.firebase && window.firebase.auth) {
+                await window.firebase.auth().signOut();
+            }
+            
+            // Clear storage
+            localStorage.removeItem('userLoggedIn');
+            localStorage.removeItem('userName');
+            localStorage.removeItem('userEmail');
+            localStorage.removeItem('semart-user');
+            
+            sessionStorage.removeItem('firebaseUser');
+            sessionStorage.removeItem('userData');
+            
+            // Clear all user-related localStorage
+            Object.keys(localStorage).forEach(key => {
+                if (key.includes('user') || key.includes('auth') || key.includes('firebase')) {
+                    localStorage.removeItem(key);
+                }
+            });
+            
+            console.log('✅ All auth data cleared');
+        } catch (error) {
+            console.warn('⚠️ Some auth clear operations failed:', error);
         }
     }
 
@@ -237,43 +300,30 @@ class GlobalAuthSystem {
         document.body.appendChild(toast);
         
         setTimeout(() => {
-            toast.style.animation = "slideOutRight 0.3s ease";
-            setTimeout(() => {
-                if (toast.parentNode) {
-                    toast.parentNode.removeChild(toast);
-                }
-            }, 300);
+            toast.remove();
         }, 3000);
     }
 }
 
-// Initialize global auth system
-let globalAuth;
+// Initialize IMMEDIATELY tanpa menunggu DOMContentLoaded
+console.log('🔐 Loading global auth system...');
+window.globalAuth = new GlobalAuthSystem();
 
+// Juga initialize ketika DOM ready
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('🔐 Initializing global auth system for all pages...');
-    globalAuth = new GlobalAuthSystem();
-    window.globalAuth = globalAuth;
+    console.log('🔐 DOM ready, re-initializing auth system...');
     
-    // Juga update auth status setelah semua script loaded
+    // Force update setelah semua element pasti tersedia
     setTimeout(() => {
-        globalAuth.updateNavbarAuth();
+        if (window.globalAuth) {
+            window.globalAuth.forceUpdateNavbarAuth();
+        }
     }, 1000);
 });
 
-// Add CSS animations jika belum ada
-if (!document.querySelector('#auth-animations')) {
-    const style = document.createElement('style');
-    style.id = 'auth-animations';
-    style.textContent = `
-        @keyframes slideInRight {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-        @keyframes slideOutRight {
-            from { transform: translateX(0); opacity: 1; }
-            to { transform: translateX(100%); opacity: 0; }
-        }
-    `;
-    document.head.appendChild(style);
-}
+// Export untuk manual trigger
+window.updateAuthUI = () => {
+    if (window.globalAuth) {
+        window.globalAuth.forceUpdateNavbarAuth();
+    }
+};
