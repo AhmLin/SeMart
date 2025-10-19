@@ -11,6 +11,15 @@ import {
     sendPasswordResetEmail
 } from "https://www.gstatic.com/firebasejs/9.6.0/firebase-auth.js";
 
+// 🔥 IMPORT FIRESTORE
+import {
+    getFirestore,
+    doc,
+    setDoc,
+    getDoc,
+    updateDoc
+} from "https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore.js";
+
 // 🔹 Konfigurasi Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyApFkWDpEodKPHLzePFe0cc9z5kiMZbrS4",
@@ -24,19 +33,21 @@ const firebaseConfig = {
 // 🔹 Inisialisasi Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+const db = getFirestore(app); // 🔥 INIT FIRESTORE
 
 class UnifiedAuthSystem {
     constructor() {
         this.auth = auth;
+        this.db = db; // 🔥 SIMPAN REFERENSI FIRESTORE
         this.currentUser = null;
         this.init();
     }
 
     async init() {
-        await this.clearFirebaseCacheIfNeeded(); // ✅ pastikan cache bersih dulu
+        await this.clearFirebaseCacheIfNeeded();
         this.setupAuthStateListener();
         this.setupEventListeners();
-        this.setupPasswordToggle(); // 👁️ aktifkan toggle password
+        this.setupPasswordToggle();
     }
 
     // 🔧 Bersihkan cache Firebase agar tidak auto-login pakai sesi lama
@@ -76,6 +87,9 @@ class UnifiedAuthSystem {
                 this.currentUser = user;
                 console.log('✅ User signed in:', user.email);
 
+                // 🔥 CEK DAN BUAT USER PROFILE DI FIRESTORE
+                await this.checkAndCreateUserProfile(user);
+
                 if (this.shouldRedirectToHome()) {
                     console.log('➡️ Redirect ke index.html');
                     setTimeout(() => {
@@ -92,6 +106,85 @@ class UnifiedAuthSystem {
                 }
             }
         });
+    }
+
+    // 🔥 METHOD BARU: Cek dan buat profile user di Firestore
+    async checkAndCreateUserProfile(user) {
+        try {
+            const userDocRef = doc(this.db, "users", user.uid);
+            const userDoc = await getDoc(userDocRef);
+            
+            if (!userDoc.exists()) {
+                // User ada di Auth tapi tidak di Firestore, buat sekarang
+                console.log('🔄 Creating user profile in Firestore...');
+                
+                const userData = {
+                    uid: user.uid,
+                    email: user.email,
+                    displayName: user.displayName || '',
+                    photoURL: user.photoURL || '',
+                    createdAt: new Date().toISOString(),
+                    lastLoginAt: new Date().toISOString(),
+                    role: 'user',
+                    isActive: true,
+                    profileCompleted: false,
+                    emailVerified: user.emailVerified,
+                    preferences: {
+                        theme: 'light',
+                        notifications: true,
+                        language: 'id'
+                    },
+                    statistics: {
+                        loginCount: 1,
+                        ordersCount: 0,
+                        totalSpent: 0
+                    }
+                };
+                
+                await setDoc(userDocRef, userData);
+                console.log('✅ User profile created in Firestore');
+            } else {
+                // Update last login time dan increment login count
+                const currentData = userDoc.data();
+                await updateDoc(userDocRef, {
+                    lastLoginAt: new Date().toISOString(),
+                    'statistics.loginCount': (currentData.statistics?.loginCount || 0) + 1
+                });
+                console.log('✅ Last login updated');
+            }
+        } catch (error) {
+            console.error('❌ Error managing user profile:', error);
+        }
+    }
+
+    // 🔥 METHOD: Buat user profile di Firestore (untuk signup)
+    async createUserProfile(user, additionalData = {}) {
+        const userData = {
+            uid: user.uid,
+            email: user.email,
+            displayName: additionalData.displayName || '',
+            photoURL: additionalData.photoURL || '',
+            phoneNumber: additionalData.phoneNumber || '',
+            createdAt: new Date().toISOString(),
+            lastLoginAt: new Date().toISOString(),
+            emailVerified: user.emailVerified,
+            role: additionalData.role || 'user',
+            isActive: true,
+            profileCompleted: false,
+            preferences: {
+                theme: 'light',
+                notifications: true,
+                language: 'id'
+            },
+            statistics: {
+                loginCount: 1,
+                ordersCount: 0,
+                totalSpent: 0
+            }
+        };
+        
+        await setDoc(doc(this.db, "users", user.uid), userData);
+        return userData;
     }
 
     // 🔹 Setup semua event handler UI
@@ -149,21 +242,36 @@ class UnifiedAuthSystem {
     async handleLoginForm() {
         const email = document.getElementById('login-email')?.value.trim();
         const password = document.getElementById('login-password')?.value.trim();
+        const loginButton = document.querySelector('#login-form button[type="submit"]');
 
-        if (!email || !password) {
-            this.showCustomAlert('Masukkan email dan password!', 'error');
-            return;
-        }
+        const originalButtonText = loginButton?.textContent;
 
         try {
+            // Show loading state
+            if (loginButton) {
+                loginButton.innerHTML = '🔄 Logging in...';
+                loginButton.disabled = true;
+            }
+
+            if (!email || !password) {
+                this.showCustomAlert('Masukkan email dan password!', 'error');
+                return;
+            }
+
             const userCredential = await signInWithEmailAndPassword(this.auth, email, password);
-            console.log('✅ Login berhasil:', userCredential.user.email);
+            const user = userCredential.user;
+            
+            console.log('✅ Login berhasil:', user.email);
+
+            // 🔥 UPDATE USER PROFILE DI FIRESTORE
+            await this.checkAndCreateUserProfile(user);
+
             this.showCustomAlert('Login berhasil! 🎉', 'success');
             setTimeout(() => (window.location.href = 'index.html'), 1500);
+            
         } catch (error) {
             console.error('❌ Login gagal:', error.code, error.message);
             
-            // 🔹 PESAN ERROR YANG LEBIH SPECIFIC
             let errorMessage = 'Terjadi kesalahan saat login';
             
             switch (error.code) {
@@ -193,47 +301,122 @@ class UnifiedAuthSystem {
             }
             
             this.showCustomAlert(errorMessage, 'error');
+        } finally {
+            // Reset button state
+            if (loginButton) {
+                loginButton.textContent = originalButtonText;
+                loginButton.disabled = false;
+            }
         }
     }
 
-    // 🔹 Daftar akun baru
+    // 🔹 Daftar akun baru dengan save ke Firestore
     async handleSignupForm() {
         const email = document.getElementById('signup-email')?.value.trim();
         const password = document.getElementById('signup-password')?.value.trim();
+        const signupButton = document.querySelector('#signup-form button[type="submit"]');
 
-        if (!email || !password) {
-            this.showCustomAlert('Masukkan email dan password!', 'error');
-            return;
-        }
+        const originalButtonText = signupButton?.textContent;
 
         try {
-            const userCredential = await createUserWithEmailAndPassword(this.auth, email, password);
-            console.log('✅ Akun dibuat:', userCredential.user.email);
-            this.showCustomAlert('Akun berhasil dibuat! 🎉\nSilakan login dengan akun baru Anda.', 'success');
-            setTimeout(() => (window.location.href = 'login.html'), 2000);
-        } catch (error) {
-            console.error('❌ Signup gagal:', error.code, error.message);
-            
-            let errorMessage = 'Terjadi kesalahan saat mendaftar';
-            
-            switch (error.code) {
-                case 'auth/email-already-in-use':
-                    errorMessage = '❌ Email sudah terdaftar\nEmail ini sudah digunakan. Silakan gunakan email lain atau login.';
-                    break;
-                case 'auth/weak-password':
-                    errorMessage = '❌ Password terlalu lemah\nPassword harus minimal 6 karakter.';
-                    break;
-                case 'auth/invalid-email':
-                    errorMessage = '❌ Format email tidak valid\nPastikan email ditulis dengan benar.';
-                    break;
-                case 'auth/operation-not-allowed':
-                    errorMessage = '❌ Pendaftaran dinonaktifkan\nHubungi administrator untuk bantuan.';
-                    break;
-                default:
-                    errorMessage = `❌ Pendaftaran gagal: ${error.message}`;
+            // Show loading state
+            if (signupButton) {
+                signupButton.innerHTML = '🔄 Membuat Akun...';
+                signupButton.disabled = true;
             }
+
+            if (!email || !password) {
+                this.showCustomAlert('Masukkan email dan password!', 'error');
+                return;
+            }
+
+            // Validasi email format
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                this.showCustomAlert('Format email tidak valid!', 'error');
+                return;
+            }
+
+            if (password.length < 6) {
+                this.showCustomAlert('Password harus minimal 6 karakter!', 'error');
+                return;
+            }
+
+            console.log('🔄 Creating user in Firebase Auth...');
             
-            this.showCustomAlert(errorMessage, 'error');
+            // 1. BUAT USER DI AUTHENTICATION
+            const userCredential = await createUserWithEmailAndPassword(this.auth, email, password);
+            const user = userCredential.user;
+            
+            console.log('✅ Auth user created:', user.uid);
+
+            // 2. SIMPAN DATA USER KE FIRESTORE
+            console.log('💾 Saving user data to Firestore...');
+            await this.createUserProfile(user);
+            console.log('✅ User data saved to Firestore');
+
+            this.showCustomAlert(
+                '🎉 Akun berhasil dibuat!\n\n' +
+                '✅ Email: ' + email + '\n' +
+                '✅ User ID: ' + user.uid + '\n' +
+                '✅ Data tersimpan di database\n\n' +
+                'Mengarahkan ke login...',
+                'success'
+            );
+
+            // Redirect ke login dengan auto-fill email
+            setTimeout(() => {
+                window.location.href = `login.html?prefill=${encodeURIComponent(email)}`;
+            }, 3000);
+
+        } catch (error) {
+            console.error('❌ Signup error:', error.code, error.message);
+
+            if (error.code === 'auth/email-already-in-use') {
+                this.showCustomAlert(
+                    '📧 Email sudah terdaftar!\n\n' +
+                    'Silakan login atau gunakan email lain.',
+                    'info'
+                );
+
+                // Tampilkan opsi untuk langsung login
+                setTimeout(() => {
+                    const goToLogin = confirm(
+                        'Email sudah terdaftar. Mau langsung ke halaman login?'
+                    );
+                    if (goToLogin) {
+                        window.location.href = `login.html?prefill=${encodeURIComponent(email)}`;
+                    }
+                }, 1500);
+
+            } else {
+                let errorMessage = 'Terjadi kesalahan saat mendaftar';
+                
+                switch (error.code) {
+                    case 'auth/weak-password':
+                        errorMessage = '❌ Password terlalu lemah\nPassword harus minimal 6 karakter.';
+                        break;
+                    case 'auth/invalid-email':
+                        errorMessage = '❌ Format email tidak valid\nContoh: email@domain.com';
+                        break;
+                    case 'auth/network-request-failed':
+                        errorMessage = '❌ Gagal terhubung ke internet\nPeriksa koneksi Anda.';
+                        break;
+                    case 'auth/operation-not-allowed':
+                        errorMessage = '❌ Pendaftaran dinonaktifkan\nHubungi administrator untuk bantuan.';
+                        break;
+                    default:
+                        errorMessage = `❌ Gagal mendaftar: ${error.message}`;
+                }
+                
+                this.showCustomAlert(errorMessage, 'error');
+            }
+        } finally {
+            // Reset button state
+            if (signupButton) {
+                signupButton.textContent = originalButtonText;
+                signupButton.disabled = false;
+            }
         }
     }
 
@@ -391,9 +574,53 @@ class UnifiedAuthSystem {
                window.location.pathname.includes('orders.html') ||
                window.location.pathname.includes('wishlist.html');
     }
+
+    // 🔥 METHOD TAMBAHAN: Get user data from Firestore
+    async getUserData(uid) {
+        try {
+            const userDoc = await getDoc(doc(this.db, "users", uid));
+            if (userDoc.exists()) {
+                return userDoc.data();
+            }
+            return null;
+        } catch (error) {
+            console.error('Error getting user data:', error);
+            return null;
+        }
+    }
+
+    // 🔥 METHOD TAMBAHAN: Update user profile
+    async updateUserProfile(uid, updateData) {
+        try {
+            await updateDoc(doc(this.db, "users", uid), updateData);
+            console.log('✅ User profile updated');
+            return true;
+        } catch (error) {
+            console.error('Error updating user profile:', error);
+            return false;
+        }
+    }
 }
 
 // 🔹 Inisialisasi sistem auth
 const unifiedAuth = new UnifiedAuthSystem();
 
-export { unifiedAuth, auth };
+// 🔥 AUTO-FILL EMAIL DI LOGIN PAGE
+function autoFillEmailFromURL() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const prefillEmail = urlParams.get('prefill');
+    
+    if (prefillEmail) {
+        const emailInput = document.getElementById('login-email');
+        if (emailInput) {
+            emailInput.value = decodeURIComponent(prefillEmail);
+            // Focus ke password field
+            document.getElementById('login-password')?.focus();
+        }
+    }
+}
+
+// Jalakan auto-fill ketika halaman dimuat
+document.addEventListener('DOMContentLoaded', autoFillEmailFromURL);
+
+export { unifiedAuth, auth, db };
