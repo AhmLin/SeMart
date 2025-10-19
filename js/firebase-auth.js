@@ -13,12 +13,12 @@ import {
 
 // 🔹 Konfigurasi Firebase
 const firebaseConfig = {
-    apiKey: "AIzaSyCBVu1zFvBaFbItZYci9-R5mHzQkuEGadI",
-    authDomain: "semart-login.firebaseapp.com",
-    projectId: "semart-login",
-    storageBucket: "semart-login.appspot.com",
-    messagingSenderId: "986479825983",
-    appId: "1:986479825983:web:cdb10a260e9d250a59a6ab"
+  apiKey: "AIzaSyApFkWDpEodKPHLzePFe0cc9z5kiMZbrS4",
+  authDomain: "semart-5da85.firebaseapp.com",
+  projectId: "semart-5da85",
+  storageBucket: "semart-5da85.firebasestorage.app",
+  messagingSenderId: "77585287575",
+  appId: "1:77585287575:web:5f58edd85981264da25cd2"
 };
 
 // 🔹 Inisialisasi Firebase
