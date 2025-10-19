@@ -773,7 +773,7 @@ body {
 
 /* ========== FOOTER ========== */
 footer {
-  background: linear-gradient(to right, rgba(0, 95, 70, 1), rgba(0, 95, 70, 0.8)), url(/bckfooter.jpg);
+  background: linear-gradient(to right, rgba(0, 95, 70, 1), rgba(0, 95, 70, 0.8)), url(bckfooter.jpg);
   color: #fff;
   text-align: center;
   padding: 1rem 0;
@@ -919,4 +919,5 @@ footer {
 .nav-auth, .user-menu {
   transition: opacity 0.3s ease, transform 0.3s ease;
 }
+
 
