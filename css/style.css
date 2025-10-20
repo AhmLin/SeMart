@@ -435,14 +435,20 @@ body {
 
 /* ========== HERO SECTION ========== */
 .hero {
+  display: flex;
+  flex-direction: column; /* jika isi diatur vertikal */
+  align-items: center;    /* horizontal centering */
+  justify-content: space-between; /* atau center, tergantung layout */
+  
   background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.8)), url("/bckhero.png");
   background-repeat: no-repeat;
   background-size: cover;
+  background-position: center;
+  
   padding: 3rem 0;
   height: 70vh;
-  align-content: center;
-  justify-content: space-between;
 }
+
 
 .hero-content {
   display: flex;
@@ -1174,6 +1180,7 @@ input[type=number] {
         opacity: 0;
     }
 }
+
 
 
 
