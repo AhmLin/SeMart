@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SeMart</title>
+  <title>Product Detail - SeMart</title>
   <link rel="stylesheet" href="css/style.css?v=3" />
   <link rel="stylesheet" href="css/cart.css" />
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -150,45 +150,23 @@
     </div>
   </footer>
 
-  <!-- 🔹 FIREBASE AUTH (PASTIKAN GUNAKAN JS YANG SUDAH ADA) -->
+  <!-- 🔹 FIREBASE AUTH -->
   <script type="module" src="js/firebase-auth.js"></script>
 
   <!-- 🔹 SCRIPT PRODUK -->
   <script src="js/cart.js"></script>
-  <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.0/firebase-app.js";
-  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.0/firebase-auth.js";
-
-  // Konfigurasi Firebase kamu
-  const firebaseConfig = {
-    apiKey: "AIzaSyApFkWDpEodKPHLzePFe0cc9z5kiMZbrS4",
-    authDomain: "semart-5da85.firebaseapp.com",
-    projectId: "semart-5da85",
-    storageBucket: "semart-5da85.firebasestorage.app",
-    messagingSenderId: "77585287575",
-    appId: "1:77585287575:web:5f58edd85981264da25cd2"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-
+  
+  <script>
   // 🔹 Jalankan semua setelah DOM siap
   document.addEventListener("DOMContentLoaded", () => {
     console.log("🔄 Memuat halaman produk...");
 
-    // === CEK LOGIN ===
-    onAuthStateChanged(auth, (user) => {
-      if (!user) {
-        alert("⚠️ Anda harus login untuk melihat detail produk.");
-        window.location.href = "login.html";
-      } else {
-        // Tampilkan user di navbar
-        document.getElementById('nav-auth').style.display = 'none';
-        document.getElementById('user-menu').style.display = 'block';
-        document.getElementById('user-name').textContent = user.displayName || user.email.split('@')[0];
-        document.getElementById('user-email').textContent = user.email;
-      }
-    });
+    // === CEK AUTH STATUS (OPTIONAL - TIDAK MEMAKSA LOGIN) ===
+    if (window.authSystem && window.authSystem.currentUser) {
+      console.log('✅ User sudah login:', window.authSystem.currentUser.email);
+    } else {
+      console.log('🔐 User belum login (tapi tetap bisa belanja)');
+    }
 
     // === SISTEM PRODUK DETAIL ===
     const params = new URLSearchParams(window.location.search);
@@ -270,6 +248,14 @@
         // Tombol tambah ke keranjang
         const addBtn = document.getElementById("add-to-cart");
         addBtn.addEventListener("click", addToCartFromDetail);
+        
+        // Juga bisa tambah dengan Enter di quantity input
+        const qtyInput = document.getElementById("qty");
+        qtyInput.addEventListener("keypress", function(e) {
+          if (e.key === "Enter") {
+            addToCartFromDetail();
+          }
+        });
       })
       .catch(err => {
         console.error("❌ Gagal memuat produk:", err);
@@ -288,63 +274,207 @@
         document.getElementById(tab.dataset.tab).classList.add("active");
       });
     });
+    
+    // Update navbar cart saat pertama load
+    updateNavbarCart();
   });
 
-  // 🔹 Fungsi Tambahan
+  // === FUNGSI ADD TO CART DARI DETAIL ===
   function addToCartFromDetail() {
-    const qty = parseInt(document.getElementById("qty").value);
-    if (!window.currentProduct || qty < 1) return alert("Jumlah minimal 1");
+      console.log("🛒 addToCartFromDetail dipanggil");
+      
+      const quantityInput = document.getElementById("qty");
+      const quantity = parseInt(quantityInput.value);
 
-    const cart = JSON.parse(localStorage.getItem("semart-cart") || "[]");
-    const existing = cart.find(p => p.id === window.currentProduct.id);
-    if (existing) existing.quantity += qty;
-    else cart.push({ ...window.currentProduct, quantity: qty });
+      console.log("🛒 Quantity dari input:", quantity);
+      console.log("🛒 Produk saat ini:", window.currentProduct);
 
-    localStorage.setItem("semart-cart", JSON.stringify(cart));
-    showAddToCartSuccess(window.currentProduct.name, qty);
-    updateNavbarCart();
+      if (!window.currentProduct) {
+          alert("Produk tidak ditemukan. Silakan refresh halaman.");
+          return;
+      }
+      
+      if (isNaN(quantity) || quantity < 1) {
+          alert("Jumlah harus angka dan minimal 1.");
+          quantityInput.focus();
+          quantityInput.select();
+          return;
+      }
+
+      const productData = {
+          id: window.currentProduct.id,
+          name: window.currentProduct.name,
+          price: window.currentProduct.price,
+          image: window.currentProduct.image
+      };
+
+      console.log("🛒 Data produk yang akan dikirim:", productData);
+      console.log("🛒 Quantity yang akan dikirim:", quantity);
+      
+      // Priority 1: Gunakan shoppingCart instance dari cart.js
+      if (window.shoppingCart && typeof window.shoppingCart.addToCart === 'function') {
+          try {
+              console.log("🛒 Menggunakan shoppingCart.addToCart");
+              window.shoppingCart.addToCart(productData, quantity);
+              return;
+          } catch (error) {
+              console.error("🛒 Error saat memanggil shoppingCart.addToCart:", error);
+          }
+      }
+      
+      // Priority 2: Gunakan global addToCart function
+      if (typeof addToCart === 'function') {
+          try {
+              console.log("🛒 Menggunakan global addToCart function");
+              addToCart(productData, quantity);
+              return;
+          } catch (error) {
+              console.error("🛒 Error saat memanggil addToCart:", error);
+          }
+      }
+      
+      // Priority 3: Fallback ke localStorage dengan KEY YANG SAMA
+      console.warn("🛒 Tidak ada cart system yang tersedia, menggunakan fallback");
+      fallbackAddToCart(productData, quantity);
   }
 
-  function showAddToCartSuccess(name, qty) {
-    const toast = document.createElement("div");
-    toast.style.cssText = `
-      position:fixed;top:100px;right:20px;background:#28a745;color:#fff;
-      padding:1rem 1.5rem;border-radius:8px;z-index:1000;box-shadow:0 4px 12px rgba(0,0,0,0.2);
-    `;
-    toast.innerHTML = `<b>✓ ${qty}x ${name}</b> ditambahkan ke keranjang`;
-    document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 3500);
+  // Fallback function dengan KEY YANG KONSISTEN
+  function fallbackAddToCart(productData, quantity) {
+      console.log("🛒 Menggunakan fallback cart system");
+      
+      try {
+          // SELALU gunakan key 'semart-cart'
+          const cart = JSON.parse(localStorage.getItem('semart-cart') || '[]');
+          const existingItem = cart.find(item => item.id == productData.id);
+          
+          if (existingItem) {
+              existingItem.quantity += quantity;
+          } else {
+              cart.push({
+                  ...productData,
+                  quantity: quantity
+              });
+          }
+          
+          // SELALU simpan dengan key 'semart-cart'
+          localStorage.setItem('semart-cart', JSON.stringify(cart));
+          showAddToCartSuccess(productData.name, quantity);
+          
+          // Update navbar
+          updateNavbarCart();
+      } catch (error) {
+          console.error("🛒 Error dalam fallbackAddToCart:", error);
+          alert("Terjadi kesalahan saat menambahkan ke keranjang: " + error.message);
+      }
   }
 
+  // 🔹 NEW: Fungsi show success message
+  function showAddToCartSuccess(productName, quantity) {
+      console.log("🛒 Menampilkan toast success:", quantity + "x " + productName);
+      
+      const toast = document.createElement("div");
+      toast.style.cssText = `
+          position: fixed; 
+          top: 100px; 
+          right: 20px;
+          background: #28a745; 
+          color: white;
+          padding: 1rem 1.5rem; 
+          border-radius: 8px;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+          z-index: 1000; 
+          animation: slideInRight 0.3s ease;
+          max-width: 300px;
+          font-family: 'Poppins', sans-serif;
+      `;
+      toast.innerHTML = `
+          <div style="display: flex; align-items: center; gap: 10px;">
+              <span style="font-size: 1.2rem;">✓</span>
+              <div>
+                  <strong>Berhasil ditambahkan!</strong>
+                  <div style="font-size: 0.9rem;">${quantity}x ${productName}</div>
+                  <div style="font-size: 0.8rem; opacity: 0.9;">
+                      Lihat <a href="cart.html" style="color: white; text-decoration: underline;">keranjang</a>
+                  </div>
+              </div>
+          </div>
+      `;
+      
+      document.body.appendChild(toast);
+      
+      setTimeout(() => {
+          toast.style.animation = "slideOutRight 0.3s ease";
+          setTimeout(() => {
+              if (toast.parentNode) {
+                  toast.parentNode.removeChild(toast);
+              }
+          }, 300);
+      }, 4000);
+  }
+
+  // Fungsi untuk update navbar cart
   function updateNavbarCart() {
-    const cart = JSON.parse(localStorage.getItem("semart-cart") || "[]");
-    const totalItems = cart.reduce((a, b) => a + b.quantity, 0);
-    const totalPrice = cart.reduce((a, b) => a + b.price * b.quantity, 0);
-    document.getElementById("nav-cart-count").textContent = totalItems;
-    document.getElementById("nav-cart-total").textContent = totalPrice.toLocaleString("id-ID");
+      try {
+          // SELALU gunakan key 'semart-cart'
+          const cart = JSON.parse(localStorage.getItem('semart-cart') || '[]');
+          const totalItems = cart.reduce((sum, item) => sum + (item.quantity || 0), 0);
+          const totalPrice = cart.reduce((sum, item) => sum + ((item.price || 0) * (item.quantity || 0)), 0);
+          
+          const cartCount = document.getElementById('nav-cart-count');
+          const cartTotal = document.getElementById('nav-cart-total');
+          
+          if (cartCount) cartCount.textContent = totalItems;
+          if (cartTotal) cartTotal.textContent = totalPrice.toLocaleString('id-ID');
+          
+          console.log("🛒 Navbar updated:", { totalItems, totalPrice });
+      } catch (error) {
+          console.error("🛒 Error updating navbar:", error);
+      }
   }
 
   function generateStars(rating) {
-    const full = Math.floor(rating);
-    const half = rating % 1 >= 0.5 ? 1 : 0;
-    const empty = 5 - full - half;
-    return "★".repeat(full) + (half ? "½" : "") + "☆".repeat(empty);
+      const fullStars = Math.floor(rating);
+      const halfStar = rating % 1 >= 0.5 ? 1 : 0;
+      const emptyStars = 5 - fullStars - halfStar;
+      return "★".repeat(fullStars) + (halfStar ? "½" : "") + "☆".repeat(emptyStars);
   }
 
   function setupSearch() {
-    const input = document.getElementById("search-input");
-    const btn = document.getElementById("search-btn");
-    const go = () => {
-      const q = input.value.trim();
-      if (q) window.location.href = `search-results.html?search=${encodeURIComponent(q)}`;
-      else alert("Masukkan kata kunci pencarian");
-    };
-    input.addEventListener("keypress", e => e.key === "Enter" && go());
-    btn.addEventListener("click", go);
+      const input = document.getElementById("search-input");
+      const btn = document.getElementById("search-btn");
+      const go = () => {
+        const q = input.value.trim();
+        if (q) window.location.href = `search-results.html?search=${encodeURIComponent(q)}`;
+        else alert("Masukkan kata kunci pencarian");
+      };
+      input.addEventListener("keypress", e => e.key === "Enter" && go());
+      btn.addEventListener("click", go);
   }
-</script>
+
+  // Animasi CSS untuk toast
+  const style = document.createElement("style");
+  style.textContent = `
+      @keyframes slideInRight {
+          from { transform: translateX(100%); opacity: 0; }
+          to { transform: translateX(0); opacity: 1; }
+      }
+      @keyframes slideOutRight {
+          from { transform: translateX(0); opacity: 1; }
+          to { transform: translateX(100%); opacity: 0; }
+      }
+      
+      .longdesc {
+          max-height: 100px;
+          overflow: hidden;
+          transition: max-height 0.3s ease;
+      }
+      
+      .longdesc.expanded {
+          max-height: 1000px;
+      }
+  `;
+  document.head.appendChild(style);
+  </script>
 
 </body>
 </html>
-
-
