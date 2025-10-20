@@ -12,109 +12,39 @@ class ShoppingCart {
         }
     }
 
-    // 🔹 MODIFIKASI: Get cart berdasarkan user login atau guest
+    // 🔹 FIX: SELALU gunakan key 'semart-cart'
     getCartFromStorage() {
         try {
-            // Cek jika auth system sudah tersedia dan user login
-            if (typeof window.semartAuth !== 'undefined' && window.semartAuth.isLoggedIn()) {
-                const user = window.semartAuth.getCurrentUser();
-                const userId = user ? user.uid : null;
-                if (userId) {
-                    const userCart = localStorage.getItem(`semart-cart-${userId}`);
-                    console.log('🛒 Loading user cart for:', userId);
-                    return userCart ? JSON.parse(userCart) : [];
-                }
-            }
-            
-            // Guest cart (fallback)
-            const guestCart = localStorage.getItem('semart-cart-guest');
-            console.log('🛒 Loading guest cart');
-            return guestCart ? JSON.parse(guestCart) : [];
-            
+            const cartData = localStorage.getItem('semart-cart');
+            console.log('🛒 Loading cart from storage:', cartData);
+            return cartData ? JSON.parse(cartData) : [];
         } catch (error) {
             console.error('🛒 Error loading cart from storage:', error);
             return [];
         }
     }
 
-    // 🔹 MODIFIKASI: Save cart berdasarkan user status
+    // 🔹 FIX: HANYA SATU method saveCartToStorage - SELALU gunakan key 'semart-cart'
     saveCartToStorage() {
         try {
-            if (typeof window.semartAuth !== 'undefined' && window.semartAuth.isLoggedIn()) {
-                const user = window.semartAuth.getCurrentUser();
-                const userId = user ? user.uid : null;
-                if (userId) {
-                    localStorage.setItem(`semart-cart-${userId}`, JSON.stringify(this.cart));
-                    console.log('🛒 Saved user cart for:', userId);
-                    this.updateNavbarCart();
-                    return;
-                }
-            }
-            
-            // Guest cart (fallback)
-            localStorage.setItem('semart-cart-guest', JSON.stringify(this.cart));
-            console.log('🛒 Saved guest cart');
+            localStorage.setItem('semart-cart', JSON.stringify(this.cart));
+            console.log('🛒 Saved cart to storage:', this.cart);
             this.updateNavbarCart();
-            
         } catch (error) {
             console.error('🛒 Error saving cart to storage:', error);
         }
     }
 
-    // 🔹 NEW: Transfer guest cart to user cart after login
-    transferGuestCartToUser(userId) {
-        try {
-            const guestCart = localStorage.getItem('semart-cart-guest');
-            if (guestCart) {
-                console.log('🛒 Transferring guest cart to user:', userId);
-                
-                const guestCartData = JSON.parse(guestCart);
-                const userCart = localStorage.getItem(`semart-cart-${userId}`);
-                const userCartData = userCart ? JSON.parse(userCart) : [];
-                
-                // Merge guest cart with user cart
-                const mergedCart = this.mergeCarts(userCartData, guestCartData);
-                
-                localStorage.setItem(`semart-cart-${userId}`, JSON.stringify(mergedCart));
-                localStorage.removeItem('semart-cart-guest');
-                
-                // Update current cart instance
-                this.cart = mergedCart;
-                this.saveCartToStorage();
-                this.updateNavbarCart();
-                
-                console.log('🛒 Cart transfer completed');
-            }
-        } catch (error) {
-            console.error('🛒 Error transferring cart:', error);
-        }
-    }
-
-    // 🔹 NEW: Merge two carts (handle duplicate products)
-    mergeCarts(userCart, guestCart) {
-        const merged = [...userCart];
-        
-        guestCart.forEach(guestItem => {
-            const existingItem = merged.find(userItem => userItem.id === guestItem.id);
-            
-            if (existingItem) {
-                // Jika produk sudah ada, tambahkan quantity
-                existingItem.quantity += guestItem.quantity;
-            } else {
-                // Jika produk baru, tambahkan ke cart
-                merged.push(guestItem);
-            }
-        });
-        
-        return merged;
-    }
+    // 🔹 HAPUS SEMUA method terkait user-specific storage:
+    // - transferGuestCartToUser() 
+    // - mergeCarts()
+    // - DAN method saveCartToStorage() yang kedua
 
     addToCart(product, quantity = 1) {
         try {
             console.log('🛒 Adding to cart:', { 
                 product: product.name, 
-                quantity: quantity,
-                user: window.semartAuth?.isLoggedIn() ? 'logged-in' : 'guest'
+                quantity: quantity
             });
             
             // Validasi input
@@ -417,7 +347,7 @@ class ShoppingCart {
             }
 
             // Cek jika user sudah login
-            if (typeof window.semartAuth === 'undefined' || !window.semartAuth.isLoggedIn()) {
+            if (typeof window.authSystem === 'undefined' || !window.authSystem.currentUser) {
                 if (confirm('Anda perlu login untuk checkout. Mau login sekarang?')) {
                     window.location.href = 'login.html?redirect=checkout';
                     return;
@@ -442,7 +372,7 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('🛒 DOM loaded, initializing cart');
     try {
         shoppingCart = new ShoppingCart();
-        window.shoppingCart = shoppingCart; // Expose to global
+        window.shoppingCart = shoppingCart;
         
         console.log('🛒 Cart initialized successfully');
         console.log('🛒 Current cart items:', shoppingCart.cart);
@@ -452,7 +382,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// Global addToCart function
+// 🔹 FIX: Global addToCart function - GUNAKAN KEY YANG SAMA
 function addToCart(product, quantity = 1) {
     console.log('🛒 Global addToCart called:', { product: product?.name, quantity });
     
@@ -462,8 +392,8 @@ function addToCart(product, quantity = 1) {
             shoppingCart.addToCart(product, quantity);
         } else {
             console.log('🛒 ShoppingCart not available, using fallback');
-            // Fallback langsung ke localStorage
-            const cart = JSON.parse(localStorage.getItem('semart-cart-guest') || '[]');
+            // FALLBACK: Gunakan key 'semart-cart' yang sama
+            const cart = JSON.parse(localStorage.getItem('semart-cart') || '[]');
             const existingItem = cart.find(item => item.id == product.id);
             
             if (existingItem) {
@@ -478,38 +408,14 @@ function addToCart(product, quantity = 1) {
                 });
             }
             
-            localStorage.setItem('semart-cart-guest', JSON.stringify(cart));
+            // SIMPAN DENGAN KEY 'semart-cart'
+            localStorage.setItem('semart-cart', JSON.stringify(cart));
             
             // Update navbar manually
-            const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-            const totalPrice = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-            
-            const cartCount = document.getElementById('nav-cart-count');
-            const cartTotal = document.getElementById('nav-cart-total');
-            
-            if (cartCount) cartCount.textContent = totalItems;
-            if (cartTotal) cartTotal.textContent = totalPrice.toLocaleString('id-ID');
+            updateNavbarCartGlobal();
             
             // Show success message
-            const toast = document.createElement('div');
-            toast.style.cssText = `
-                position: fixed; top: 100px; right: 20px;
-                background: #28a745; color: white; padding: 1rem 1.5rem;
-                border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-                z-index: 1000; animation: slideInRight 0.3s ease;
-                max-width: 300px; font-family: 'Poppins', sans-serif;
-            `;
-            toast.innerHTML = `
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <span style="font-size: 1.2rem;">✓</span>
-                    <div>
-                        <strong>Berhasil ditambahkan!</strong>
-                        <div style="font-size: 0.9rem;">${quantity}x ${product.name}</div>
-                    </div>
-                </div>
-            `;
-            document.body.appendChild(toast);
-            setTimeout(() => toast.remove(), 4000);
+            showAddToCartSuccessGlobal(product.name, quantity);
         }
     } catch (error) {
         console.error('🛒 Error in global addToCart:', error);
@@ -517,19 +423,76 @@ function addToCart(product, quantity = 1) {
     }
 }
 
-// Function untuk transfer cart setelah login success
-function transferCartAfterLogin(userId) {
-    console.log('🛒 Transferring cart for user:', userId);
-    if (typeof shoppingCart !== 'undefined') {
-        shoppingCart.transferGuestCartToUser(userId);
+// 🔹 NEW: Global function untuk update navbar
+function updateNavbarCartGlobal() {
+    try {
+        const cart = JSON.parse(localStorage.getItem('semart-cart') || '[]');
+        const totalItems = cart.reduce((sum, item) => sum + (item.quantity || 0), 0);
+        const totalPrice = cart.reduce((sum, item) => sum + ((item.price || 0) * (item.quantity || 0)), 0);
+        
+        const cartCount = document.getElementById('nav-cart-count');
+        const cartTotal = document.getElementById('nav-cart-total');
+        
+        if (cartCount) cartCount.textContent = totalItems;
+        if (cartTotal) cartTotal.textContent = totalPrice.toLocaleString('id-ID');
+        
+        console.log("🛒 Global Navbar updated:", { totalItems, totalPrice });
+    } catch (error) {
+        console.error("🛒 Error updating global navbar:", error);
     }
 }
 
-// Expose to global for debugging and access
+// 🔹 NEW: Global function untuk show success message
+function showAddToCartSuccessGlobal(productName, quantity = 1) {
+    try {
+        const toast = document.createElement('div');
+        toast.style.cssText = `
+            position: fixed;
+            top: 100px;
+            right: 20px;
+            background: #28a745;
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            z-index: 1000;
+            animation: slideInRight 0.3s ease;
+            max-width: 300px;
+            font-family: 'Poppins', sans-serif;
+        `;
+        toast.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 1.2rem;">✓</span>
+                <div>
+                    <strong>Berhasil ditambahkan!</strong>
+                    <div style="font-size: 0.9rem;">${quantity}x ${productName}</div>
+                    <div style="font-size: 0.8rem; opacity: 0.9;">
+                        Lihat <a href="cart.html" style="color: white; text-decoration: underline;">keranjang</a>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.style.animation = 'slideOutRight 0.3s ease';
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.parentNode.removeChild(toast);
+                }
+            }, 300);
+        }, 4000);
+    } catch (error) {
+        console.error('🛒 Error showing add to cart message:', error);
+    }
+}
+
+// Expose to global
 window.ShoppingCart = ShoppingCart;
 window.shoppingCart = shoppingCart;
 window.addToCart = addToCart;
-window.transferCartAfterLogin = transferCartAfterLogin;
+window.updateNavbarCartGlobal = updateNavbarCartGlobal;
 
 // Add CSS animations if not exists
 if (!document.querySelector('#cart-animations')) {
