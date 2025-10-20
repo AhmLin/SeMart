@@ -440,7 +440,7 @@ body {
   align-items: center;    /* horizontal centering */
   justify-content: space-between; /* atau center, tergantung layout */
   
-  background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.8)), url("/bckhero.png");
+  background-color: #fff;
   background-repeat: no-repeat;
   background-size: cover;
   background-position: center;
@@ -1180,6 +1180,7 @@ input[type=number] {
         opacity: 0;
     }
 }
+
 
 
 
