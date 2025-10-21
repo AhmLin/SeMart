@@ -449,25 +449,16 @@ class ShoppingCart {
                 alert('Keranjang belanja Anda kosong!');
                 return;
             }
-
-            // Validasi form pengiriman
+    
+            // Validasi form pengiriman (jika ada di cart page)
             const shippingForm = document.getElementById('shipping-form');
             if (shippingForm && !shippingForm.checkValidity()) {
                 alert('Harap lengkapi semua informasi pengiriman yang wajib diisi!');
                 shippingForm.reportValidity();
                 return;
             }
-
-            // Cek jika user sudah login
-            if (typeof window.authSystem === 'undefined' || !window.authSystem.currentUser) {
-                if (confirm('Anda perlu login untuk checkout. Mau login sekarang?')) {
-                    window.location.href = 'login.html?redirect=checkout';
-                    return;
-                }
-                return;
-            }
-            
-            // Simpan data checkout termasuk informasi pengiriman
+    
+            // Simpan data sementara untuk checkout page
             const checkoutData = {
                 cart: this.cart,
                 discount: this.currentDiscount || 0,
@@ -475,8 +466,11 @@ class ShoppingCart {
                 timestamp: new Date().toISOString()
             };
             
-            localStorage.setItem('semart-checkout', JSON.stringify(checkoutData));
+            localStorage.setItem('semart-checkout-temp', JSON.stringify(checkoutData));
+            
+            // Redirect ke checkout page
             window.location.href = 'checkout.html';
+            
         } catch (error) {
             console.error('🛒 Error during checkout:', error);
             alert('Terjadi kesalahan saat checkout. Silakan coba lagi.');
@@ -647,3 +641,4 @@ if (!document.querySelector('#cart-animations')) {
     `;
     document.head.appendChild(style);
 }
+
