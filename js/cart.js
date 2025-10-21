@@ -1,7 +1,7 @@
 class ShoppingCart {
     constructor() {
         this.cart = this.getCartFromStorage();
-        this.currentDiscount = 0; // 🔹 TAMBAHKAN INI
+        this.currentDiscount = 0;
         this.init();
     }
 
@@ -13,7 +13,6 @@ class ShoppingCart {
         }
     }
 
-    // 🔹 FIX: SELALU gunakan key 'semart-cart'
     getCartFromStorage() {
         try {
             const cartData = localStorage.getItem('semart-cart');
@@ -25,7 +24,6 @@ class ShoppingCart {
         }
     }
 
-    // 🔹 FIX: HANYA SATU method saveCartToStorage - SELALU gunakan key 'semart-cart'
     saveCartToStorage() {
         try {
             localStorage.setItem('semart-cart', JSON.stringify(this.cart));
@@ -43,7 +41,6 @@ class ShoppingCart {
                 quantity: quantity
             });
             
-            // Validasi input
             if (!product || !product.id) {
                 throw new Error('Product data tidak valid');
             }
@@ -120,7 +117,7 @@ class ShoppingCart {
             try {
                 console.log('🛒 Clearing cart');
                 this.cart = [];
-                this.currentDiscount = 0; // Reset discount juga
+                this.currentDiscount = 0;
                 this.saveCartToStorage();
                 
                 if (window.location.pathname.includes('cart.html')) {
@@ -177,7 +174,6 @@ class ShoppingCart {
         }
     }
     
-    // 🔹 FIX: HANYA SATU setupCartPage method
     setupCartPage() {
         try {
             console.log('🛒 Setting up cart page');
@@ -204,7 +200,6 @@ class ShoppingCart {
                 });
             }
             
-            // Enter key untuk promo code
             const promoInput = document.getElementById('promo-code');
             if (promoInput) {
                 promoInput.addEventListener('keypress', (e) => {
@@ -238,7 +233,6 @@ class ShoppingCart {
                 return;
             }
             
-            // Daftar kode promo (bisa disimpan di database nanti)
             const validPromoCodes = {
                 'DISKON10': { discount: 0.1, minPurchase: 50000 },
                 'SELAMAT15': { discount: 0.15, minPurchase: 100000 },
@@ -263,14 +257,12 @@ class ShoppingCart {
             const discount = Math.floor(subtotal * promo.discount);
             this.currentDiscount = discount;
             
-            // Tampilkan diskon
             if (discountAmount) discountAmount.textContent = discount.toLocaleString('id-ID');
             if (discountRow) discountRow.style.display = 'flex';
             
             promoMessage.textContent = `Diskon ${promo.discount * 100}% berhasil diterapkan!`;
             promoMessage.className = 'promo-message success';
             
-            // Update total
             this.updateCartSummary();
             
         } catch (error) {
@@ -282,8 +274,8 @@ class ShoppingCart {
         try {
             const subtotal = this.getTotalPrice();
             const discount = this.currentDiscount || 0;
-            const shipping = 0; // Bisa ditambahkan kalkulasi ongkir nanti
-            const total = Math.max(0, subtotal - discount + shipping); // Pastikan tidak negatif
+            const shipping = 0;
+            const total = Math.max(0, subtotal - discount + shipping);
             
             const subtotalElement = document.getElementById('subtotal');
             const totalPriceElement = document.getElementById('total-price');
@@ -298,7 +290,6 @@ class ShoppingCart {
         }
     }
     
-    // Update renderCartPage untuk include summary update
     renderCartPage() {
         try {
             console.log('🛒 Rendering cart page');
@@ -316,12 +307,10 @@ class ShoppingCart {
                 emptyCart.style.display = 'block';
                 cartItemsContainer.style.display = 'none';
                 
-                // Reset discount
                 this.currentDiscount = 0;
                 const discountRow = document.getElementById('discount-row');
                 if (discountRow) discountRow.style.display = 'none';
                 
-                // Reset promo code
                 const promoInput = document.getElementById('promo-code');
                 const promoMessage = document.getElementById('promo-message');
                 if (promoInput) promoInput.value = '';
@@ -332,7 +321,7 @@ class ShoppingCart {
             } else {
                 console.log('🛒 Cart has', this.cart.length, 'items');
                 emptyCart.style.display = 'none';
-                cartItemsContainer.style.display = 'block'; // Ubah dari 'grid' ke 'block'
+                cartItemsContainer.style.display = 'block';
                 
                 cartItems.innerHTML = '';
                 this.cart.forEach(item => {
@@ -368,7 +357,6 @@ class ShoppingCart {
             </div>
         `;
         
-        // Event listeners
         const decreaseBtn = cartItem.querySelector('.decrease');
         const increaseBtn = cartItem.querySelector('.increase');
         const removeBtn = cartItem.querySelector('.remove-item');
@@ -443,7 +431,6 @@ class ShoppingCart {
         }
     }
     
-    // Di method checkout() di cart.js, ganti dengan:
     checkout() {
         try {
             if (this.cart.length === 0) {
@@ -451,7 +438,6 @@ class ShoppingCart {
                 return;
             }
     
-            // Validasi form pengiriman
             const shippingForm = document.getElementById('shipping-form');
             if (shippingForm && !shippingForm.checkValidity()) {
                 alert('Harap lengkapi semua informasi pengiriman yang wajib diisi!');
@@ -459,7 +445,6 @@ class ShoppingCart {
                 return;
             }
     
-            // Cek jika user sudah login
             if (typeof window.authSystem === 'undefined' || !window.authSystem.currentUser) {
                 if (confirm('Anda perlu login untuk checkout. Mau login sekarang?')) {
                     window.location.href = 'login.html?redirect=checkout';
@@ -468,7 +453,6 @@ class ShoppingCart {
                 return;
             }
             
-            // Generate data checkout
             const checkoutData = {
                 cart: this.cart,
                 discount: this.currentDiscount || 0,
@@ -480,10 +464,7 @@ class ShoppingCart {
                 expiryTime: this.getExpiryTime()
             };
             
-            // Simpan data untuk payment page
             localStorage.setItem('semart-checkout', JSON.stringify(checkoutData));
-            
-            // Redirect ke payment page
             window.location.href = 'payment.html';
             
         } catch (error) {
@@ -492,7 +473,6 @@ class ShoppingCart {
         }
     }
     
-    // Tambahkan method helper di cart.js
     generateOrderId() {
         const timestamp = Date.now().toString();
         const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
@@ -500,14 +480,14 @@ class ShoppingCart {
     }
     
     generateVirtualAccount() {
-        const bankCode = '888'; // Kode Bank Nusantara
+        const bankCode = '888';
         const random = Math.floor(Math.random() * 1000000000).toString().padStart(9, '0');
         return `${bankCode}${random}`;
     }
     
     getExpiryTime() {
         const now = new Date();
-        now.setHours(now.getHours() + 24); // Expiry 24 jam
+        now.setHours(now.getHours() + 24);
         return now.toISOString();
     }
     
@@ -531,6 +511,24 @@ class ShoppingCart {
         }
     }
 
+    getShippingInfo() {
+        try {
+            return {
+                recipientName: document.getElementById('recipient-name')?.value || '',
+                recipientPhone: document.getElementById('recipient-phone')?.value || '',
+                shippingAddress: document.getElementById('shipping-address')?.value || '',
+                city: document.getElementById('city')?.value || '',
+                postalCode: document.getElementById('postal-code')?.value || '',
+                promoCode: document.getElementById('promo-code')?.value || '',
+                orderNotes: document.getElementById('order-notes')?.value || ''
+            };
+        } catch (error) {
+            console.error('🛒 Error getting shipping info:', error);
+            return {};
+        }
+    }
+} // 🔹 TUTUP CLASS YANG BENAR
+
 // Global cart instance
 let shoppingCart;
 
@@ -549,7 +547,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// 🔹 FIX: Global addToCart function - GUNAKAN KEY YANG SAMA
+// Global addToCart function
 function addToCart(product, quantity = 1) {
     console.log('🛒 Global addToCart called:', { product: product?.name, quantity });
     
@@ -559,7 +557,6 @@ function addToCart(product, quantity = 1) {
             shoppingCart.addToCart(product, quantity);
         } else {
             console.log('🛒 ShoppingCart not available, using fallback');
-            // FALLBACK: Gunakan key 'semart-cart' yang sama
             const cart = JSON.parse(localStorage.getItem('semart-cart') || '[]');
             const existingItem = cart.find(item => item.id == product.id);
             
@@ -575,13 +572,8 @@ function addToCart(product, quantity = 1) {
                 });
             }
             
-            // SIMPAN DENGAN KEY 'semart-cart'
             localStorage.setItem('semart-cart', JSON.stringify(cart));
-            
-            // Update navbar manually
             updateNavbarCartGlobal();
-            
-            // Show success message
             showAddToCartSuccessGlobal(product.name, quantity);
         }
     } catch (error) {
@@ -590,7 +582,7 @@ function addToCart(product, quantity = 1) {
     }
 }
 
-// 🔹 NEW: Global function untuk update navbar
+// Global function untuk update navbar
 function updateNavbarCartGlobal() {
     try {
         const cart = JSON.parse(localStorage.getItem('semart-cart') || '[]');
@@ -609,7 +601,7 @@ function updateNavbarCartGlobal() {
     }
 }
 
-// 🔹 NEW: Global function untuk show success message
+// Global function untuk show success message
 function showAddToCartSuccessGlobal(productName, quantity = 1) {
     try {
         const toast = document.createElement('div');
@@ -677,5 +669,3 @@ if (!document.querySelector('#cart-animations')) {
     `;
     document.head.appendChild(style);
 }
-
-
