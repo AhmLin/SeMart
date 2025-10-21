@@ -443,6 +443,7 @@ class ShoppingCart {
         }
     }
     
+    // Di method checkout() di cart.js, ganti dengan:
     checkout() {
         try {
             if (this.cart.length === 0) {
@@ -450,7 +451,7 @@ class ShoppingCart {
                 return;
             }
     
-            // Validasi form pengiriman (jika ada di cart page)
+            // Validasi form pengiriman
             const shippingForm = document.getElementById('shipping-form');
             if (shippingForm && !shippingForm.checkValidity()) {
                 alert('Harap lengkapi semua informasi pengiriman yang wajib diisi!');
@@ -458,18 +459,32 @@ class ShoppingCart {
                 return;
             }
     
-            // Simpan data sementara untuk checkout page
+            // Cek jika user sudah login
+            if (typeof window.authSystem === 'undefined' || !window.authSystem.currentUser) {
+                if (confirm('Anda perlu login untuk checkout. Mau login sekarang?')) {
+                    window.location.href = 'login.html?redirect=checkout';
+                    return;
+                }
+                return;
+            }
+            
+            // Generate data checkout
             const checkoutData = {
                 cart: this.cart,
                 discount: this.currentDiscount || 0,
                 shippingInfo: this.getShippingInfo(),
-                timestamp: new Date().toISOString()
+                userInfo: this.getUserInfo(),
+                timestamp: new Date().toISOString(),
+                orderId: this.generateOrderId(),
+                virtualAccount: this.generateVirtualAccount(),
+                expiryTime: this.getExpiryTime()
             };
             
-            localStorage.setItem('semart-checkout-temp', JSON.stringify(checkoutData));
+            // Simpan data untuk payment page
+            localStorage.setItem('semart-checkout', JSON.stringify(checkoutData));
             
-            // Redirect ke checkout page
-            window.location.href = 'checkout.html';
+            // Redirect ke payment page
+            window.location.href = 'payment.html';
             
         } catch (error) {
             console.error('🛒 Error during checkout:', error);
@@ -477,23 +492,44 @@ class ShoppingCart {
         }
     }
     
-    getShippingInfo() {
+    // Tambahkan method helper di cart.js
+    generateOrderId() {
+        const timestamp = Date.now().toString();
+        const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+        return `SM${timestamp}${random}`;
+    }
+    
+    generateVirtualAccount() {
+        const bankCode = '888'; // Kode Bank Nusantara
+        const random = Math.floor(Math.random() * 1000000000).toString().padStart(9, '0');
+        return `${bankCode}${random}`;
+    }
+    
+    getExpiryTime() {
+        const now = new Date();
+        now.setHours(now.getHours() + 24); // Expiry 24 jam
+        return now.toISOString();
+    }
+    
+    getUserInfo() {
         try {
+            if (window.authSystem && window.authSystem.currentUser) {
+                return {
+                    name: window.authSystem.currentUser.displayName || 'Customer',
+                    email: window.authSystem.currentUser.email || '',
+                    phone: window.authSystem.currentUser.phoneNumber || ''
+                };
+            }
             return {
-                recipientName: document.getElementById('recipient-name')?.value || '',
-                recipientPhone: document.getElementById('recipient-phone')?.value || '',
-                shippingAddress: document.getElementById('shipping-address')?.value || '',
-                city: document.getElementById('city')?.value || '',
-                postalCode: document.getElementById('postal-code')?.value || '',
-                promoCode: document.getElementById('promo-code')?.value || '',
-                orderNotes: document.getElementById('order-notes')?.value || ''
+                name: 'Customer',
+                email: '',
+                phone: ''
             };
         } catch (error) {
-            console.error('🛒 Error getting shipping info:', error);
+            console.error('🛒 Error getting user info:', error);
             return {};
         }
     }
-}
 
 // Global cart instance
 let shoppingCart;
@@ -641,4 +677,5 @@ if (!document.querySelector('#cart-animations')) {
     `;
     document.head.appendChild(style);
 }
+
 
