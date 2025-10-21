@@ -1,6 +1,7 @@
 class ShoppingCart {
     constructor() {
         this.cart = this.getCartFromStorage();
+        this.currentDiscount = 0; // 🔹 TAMBAHKAN INI
         this.init();
     }
 
@@ -34,11 +35,6 @@ class ShoppingCart {
             console.error('🛒 Error saving cart to storage:', error);
         }
     }
-
-    // 🔹 HAPUS SEMUA method terkait user-specific storage:
-    // - transferGuestCartToUser() 
-    // - mergeCarts()
-    // - DAN method saveCartToStorage() yang kedua
 
     addToCart(product, quantity = 1) {
         try {
@@ -124,6 +120,7 @@ class ShoppingCart {
             try {
                 console.log('🛒 Clearing cart');
                 this.cart = [];
+                this.currentDiscount = 0; // Reset discount juga
                 this.saveCartToStorage();
                 
                 if (window.location.pathname.includes('cart.html')) {
@@ -180,12 +177,14 @@ class ShoppingCart {
         }
     }
     
+    // 🔹 FIX: HANYA SATU setupCartPage method
     setupCartPage() {
         try {
             console.log('🛒 Setting up cart page');
             
             const clearCartBtn = document.getElementById('clear-cart');
             const checkoutBtn = document.getElementById('checkout');
+            const applyPromoBtn = document.getElementById('apply-promo');
             
             if (clearCartBtn) {
                 clearCartBtn.addEventListener('click', () => {
@@ -199,20 +198,113 @@ class ShoppingCart {
                 });
             }
             
+            if (applyPromoBtn) {
+                applyPromoBtn.addEventListener('click', () => {
+                    this.applyPromoCode();
+                });
+            }
+            
+            // Enter key untuk promo code
+            const promoInput = document.getElementById('promo-code');
+            if (promoInput) {
+                promoInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        this.applyPromoCode();
+                    }
+                });
+            }
+            
             this.renderCartPage();
         } catch (error) {
             console.error('🛒 Error setting up cart page:', error);
         }
     }
     
+    applyPromoCode() {
+        try {
+            const promoCodeInput = document.getElementById('promo-code');
+            const promoMessage = document.getElementById('promo-message');
+            const discountRow = document.getElementById('discount-row');
+            const discountAmount = document.getElementById('discount-amount');
+            
+            if (!promoCodeInput || !promoMessage) return;
+            
+            const promoCode = promoCodeInput.value.trim().toUpperCase();
+            
+            if (!promoCode) {
+                promoMessage.textContent = 'Masukkan kode promo terlebih dahulu';
+                promoMessage.className = 'promo-message error';
+                return;
+            }
+            
+            // Daftar kode promo (bisa disimpan di database nanti)
+            const validPromoCodes = {
+                'DISKON10': { discount: 0.1, minPurchase: 50000 },
+                'SELAMAT15': { discount: 0.15, minPurchase: 100000 },
+                'WELCOME20': { discount: 0.2, minPurchase: 150000 }
+            };
+            
+            const promo = validPromoCodes[promoCode];
+            const subtotal = this.getTotalPrice();
+            
+            if (!promo) {
+                promoMessage.textContent = 'Kode promo tidak valid';
+                promoMessage.className = 'promo-message error';
+                return;
+            }
+            
+            if (subtotal < promo.minPurchase) {
+                promoMessage.textContent = `Minimal pembelian Rp${promo.minPurchase.toLocaleString('id-ID')}`;
+                promoMessage.className = 'promo-message error';
+                return;
+            }
+            
+            const discount = Math.floor(subtotal * promo.discount);
+            this.currentDiscount = discount;
+            
+            // Tampilkan diskon
+            if (discountAmount) discountAmount.textContent = discount.toLocaleString('id-ID');
+            if (discountRow) discountRow.style.display = 'flex';
+            
+            promoMessage.textContent = `Diskon ${promo.discount * 100}% berhasil diterapkan!`;
+            promoMessage.className = 'promo-message success';
+            
+            // Update total
+            this.updateCartSummary();
+            
+        } catch (error) {
+            console.error('🛒 Error applying promo code:', error);
+        }
+    }
+    
+    updateCartSummary() {
+        try {
+            const subtotal = this.getTotalPrice();
+            const discount = this.currentDiscount || 0;
+            const shipping = 0; // Bisa ditambahkan kalkulasi ongkir nanti
+            const total = Math.max(0, subtotal - discount + shipping); // Pastikan tidak negatif
+            
+            const subtotalElement = document.getElementById('subtotal');
+            const totalPriceElement = document.getElementById('total-price');
+            const shippingElement = document.getElementById('shipping');
+            
+            if (subtotalElement) subtotalElement.textContent = subtotal.toLocaleString('id-ID');
+            if (totalPriceElement) totalPriceElement.textContent = total.toLocaleString('id-ID');
+            if (shippingElement) shippingElement.textContent = shipping.toLocaleString('id-ID');
+            
+        } catch (error) {
+            console.error('🛒 Error updating cart summary:', error);
+        }
+    }
+    
+    // Update renderCartPage untuk include summary update
     renderCartPage() {
         try {
             console.log('🛒 Rendering cart page');
             const emptyCart = document.getElementById('empty-cart');
             const cartItemsContainer = document.getElementById('cart-items-container');
             const cartItems = document.getElementById('cart-items');
-            const subtotal = document.getElementById('subtotal');
-            const totalPrice = document.getElementById('total-price');
             
             if (!emptyCart || !cartItemsContainer || !cartItems) {
                 console.error('🛒 Cart page elements not found');
@@ -223,10 +315,24 @@ class ShoppingCart {
                 console.log('🛒 Cart is empty');
                 emptyCart.style.display = 'block';
                 cartItemsContainer.style.display = 'none';
+                
+                // Reset discount
+                this.currentDiscount = 0;
+                const discountRow = document.getElementById('discount-row');
+                if (discountRow) discountRow.style.display = 'none';
+                
+                // Reset promo code
+                const promoInput = document.getElementById('promo-code');
+                const promoMessage = document.getElementById('promo-message');
+                if (promoInput) promoInput.value = '';
+                if (promoMessage) {
+                    promoMessage.textContent = '';
+                    promoMessage.className = 'promo-message';
+                }
             } else {
                 console.log('🛒 Cart has', this.cart.length, 'items');
                 emptyCart.style.display = 'none';
-                cartItemsContainer.style.display = 'grid';
+                cartItemsContainer.style.display = 'block'; // Ubah dari 'grid' ke 'block'
                 
                 cartItems.innerHTML = '';
                 this.cart.forEach(item => {
@@ -234,9 +340,7 @@ class ShoppingCart {
                     cartItems.appendChild(cartItemElement);
                 });
                 
-                const total = this.getTotalPrice();
-                if (subtotal) subtotal.textContent = total.toLocaleString('id-ID');
-                if (totalPrice) totalPrice.textContent = total.toLocaleString('id-ID');
+                this.updateCartSummary();
             }
         } catch (error) {
             console.error('🛒 Error rendering cart page:', error);
@@ -346,6 +450,14 @@ class ShoppingCart {
                 return;
             }
 
+            // Validasi form pengiriman
+            const shippingForm = document.getElementById('shipping-form');
+            if (shippingForm && !shippingForm.checkValidity()) {
+                alert('Harap lengkapi semua informasi pengiriman yang wajib diisi!');
+                shippingForm.reportValidity();
+                return;
+            }
+
             // Cek jika user sudah login
             if (typeof window.authSystem === 'undefined' || !window.authSystem.currentUser) {
                 if (confirm('Anda perlu login untuk checkout. Mau login sekarang?')) {
@@ -355,11 +467,36 @@ class ShoppingCart {
                 return;
             }
             
-            localStorage.setItem('semart-checkout', JSON.stringify(this.cart));
+            // Simpan data checkout termasuk informasi pengiriman
+            const checkoutData = {
+                cart: this.cart,
+                discount: this.currentDiscount || 0,
+                shippingInfo: this.getShippingInfo(),
+                timestamp: new Date().toISOString()
+            };
+            
+            localStorage.setItem('semart-checkout', JSON.stringify(checkoutData));
             window.location.href = 'checkout.html';
         } catch (error) {
             console.error('🛒 Error during checkout:', error);
             alert('Terjadi kesalahan saat checkout. Silakan coba lagi.');
+        }
+    }
+    
+    getShippingInfo() {
+        try {
+            return {
+                recipientName: document.getElementById('recipient-name')?.value || '',
+                recipientPhone: document.getElementById('recipient-phone')?.value || '',
+                shippingAddress: document.getElementById('shipping-address')?.value || '',
+                city: document.getElementById('city')?.value || '',
+                postalCode: document.getElementById('postal-code')?.value || '',
+                promoCode: document.getElementById('promo-code')?.value || '',
+                orderNotes: document.getElementById('order-notes')?.value || ''
+            };
+        } catch (error) {
+            console.error('🛒 Error getting shipping info:', error);
+            return {};
         }
     }
 }
