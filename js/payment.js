@@ -12,6 +12,7 @@ class PaymentSystem {
         this.startPaymentTimer();
     }
 
+
     loadCheckoutData() {
         try {
             const checkoutData = localStorage.getItem('semart-checkout');
@@ -162,6 +163,7 @@ class PaymentSystem {
         this.paymentTimer = setInterval(updateTimer, 1000);
     }
 
+
     async downloadPDF() {
         try {
             const invoiceContent = document.getElementById('invoice-content');
@@ -175,26 +177,48 @@ class PaymentSystem {
             downloadBtn.textContent = 'Membuat PDF...';
             downloadBtn.disabled = true;
 
-            // Use html2canvas and jsPDF
+            // 🔥 PERBAIKAN: Check jika libraries tersedia
+            if (typeof html2canvas === 'undefined') {
+                throw new Error('html2canvas library tidak tersedia');
+            }
+
+            if (typeof jspdf === 'undefined' && typeof window.jspdf === 'undefined') {
+                throw new Error('jsPDF library tidak tersedia');
+            }
+
+            // Use html2canvas untuk capture invoice
             const canvas = await html2canvas(invoiceContent, {
                 scale: 2,
                 useCORS: true,
-                logging: false
+                logging: false,
+                backgroundColor: '#ffffff'
             });
 
             const imgData = canvas.toDataURL('image/png');
-            const pdf = new jsPDF('p', 'mm', 'a4');
             
-            const imgWidth = 210;
-            const pageHeight = 295;
-            const imgHeight = canvas.height * imgWidth / canvas.width;
+            // 🔥 PERBAIKAN: Handle jsPDF yang berbeda-beda
+            let pdf;
+            if (typeof jspdf !== 'undefined') {
+                // Jika jspdf tersedia sebagai module
+                pdf = new jspdf.jsPDF('p', 'mm', 'a4');
+            } else if (typeof window.jspdf !== 'undefined') {
+                // Jika jspdf tersedia di window
+                pdf = new window.jspdf.jsPDF('p', 'mm', 'a4');
+            } else {
+                throw new Error('jsPDF tidak tersedia');
+            }
+
+            const imgWidth = 210; // A4 width in mm
+            const pageHeight = 295; // A4 height in mm
+            const imgHeight = (canvas.height * imgWidth) / canvas.width;
             let heightLeft = imgHeight;
             let position = 0;
 
+            // Add first page
             pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
             heightLeft -= pageHeight;
 
-            // Add new pages if needed
+            // Add additional pages if needed
             while (heightLeft >= 0) {
                 position = heightLeft - imgHeight;
                 pdf.addPage();
@@ -203,24 +227,185 @@ class PaymentSystem {
             }
 
             // Save PDF
-            const fileName = `invoice-${this.checkoutData.orderId}.pdf`;
+            const orderId = this.checkoutData?.orderId || 'invoice';
+            const fileName = `invoice-${orderId}.pdf`;
             pdf.save(fileName);
 
             // Show success message
             this.showMessage('PDF berhasil didownload!', 'success');
 
-            // Reset button
-            downloadBtn.textContent = originalText;
-            downloadBtn.disabled = false;
-
         } catch (error) {
             console.error('💳 Error downloading PDF:', error);
-            this.showMessage('Gagal mendownload PDF. Silakan screenshot halaman ini.', 'error');
             
-            // Reset button
+            // 🔥 PERBAIKAN: Fallback options
+            this.handlePDFError(error);
+            
+        } finally {
+            // Reset button state
             const downloadBtn = document.getElementById('download-pdf');
-            downloadBtn.textContent = 'Download PDF Invoice';
-            downloadBtn.disabled = false;
+            if (downloadBtn) {
+                downloadBtn.textContent = 'Download PDF Invoice';
+                downloadBtn.disabled = false;
+            }
+        }
+    }
+
+        // 🔥 METHOD BARU: Handle PDF errors dengan fallback options
+    handlePDFError(error) {
+        const errorMessage = `
+            Gagal mengenerate PDF. Silakan gunakan salah satu cara berikut:
+            
+            1. Screenshot halaman ini manual
+            2. Print halaman (Ctrl+P) dan save sebagai PDF
+            3. Hubungi customer service untuk invoice
+            
+            Error: ${error.message}
+        `;
+
+        // Show detailed error message dengan options
+        const fallbackModal = this.createFallbackModal();
+        document.body.appendChild(fallbackModal);
+    }
+
+    // 🔥 METHOD BARU: Create fallback modal untuk PDF error
+    createFallbackModal() {
+        const modal = document.createElement('div');
+        modal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.3s ease;
+        `;
+
+        modal.innerHTML = `
+            <div style="
+                background: white;
+                padding: 2rem;
+                border-radius: 12px;
+                max-width: 500px;
+                width: 90%;
+                text-align: center;
+            ">
+                <h3 style="color: #e74c3c; margin-bottom: 1rem;">⚠️ Gagal Download PDF</h3>
+                <p style="margin-bottom: 1.5rem; color: #555;">
+                    Terjadi kesalahan saat generate PDF. Silakan gunakan alternatif berikut:
+                </p>
+                
+                <div style="text-align: left; margin-bottom: 2rem;">
+                    <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; padding: 1rem; background: #f8f9fa; border-radius: 8px;">
+                        <span style="font-size: 1.5rem;">📸</span>
+                        <div>
+                            <strong>Screenshot Manual</strong>
+                            <p style="margin: 0.25rem 0 0 0; font-size: 0.9rem; color: #666;">
+                                Gunakan screenshot tool browser atau OS
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; padding: 1rem; background: #f8f9fa; border-radius: 8px;">
+                        <span style="font-size: 1.5rem;">🖨️</span>
+                        <div>
+                            <strong>Print sebagai PDF</strong>
+                            <p style="margin: 0.25rem 0 0 0; font-size: 0.9rem; color: #666;">
+                                Tekan <kbd>Ctrl</kbd> + <kbd>P</kbd> → Pilih "Save as PDF"
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background: #f8f9fa; border-radius: 8px;">
+                        <span style="font-size: 1.5rem;">📞</span>
+                        <div>
+                            <strong>Hubungi Kami</strong>
+                            <p style="margin: 0.25rem 0 0 0; font-size: 0.9rem; color: #666;">
+                                Customer service: (021) 123-4567
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="display: flex; gap: 1rem; justify-content: center;">
+                    <button onclick="window.print()" style="
+                        background: #007bff;
+                        color: white;
+                        border: none;
+                        padding: 0.75rem 1.5rem;
+                        border-radius: 6px;
+                        cursor: pointer;
+                        font-weight: 500;
+                    ">🖨️ Print Halaman</button>
+                    
+                    <button onclick="this.closest('[style]').remove()" style="
+                        background: #6c757d;
+                        color: white;
+                        border: none;
+                        padding: 0.75rem 1.5rem;
+                        border-radius: 6px;
+                        cursor: pointer;
+                        font-weight: 500;
+                    ">Tutup</button>
+                </div>
+            </div>
+        `;
+
+        // Close modal when clicking outside
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.remove();
+            }
+        });
+
+        return modal;
+    }
+
+    // 🔥 METHOD BARU: Check PDF library availability
+    checkPDFLibraries() {
+        const libraries = {
+            html2canvas: typeof html2canvas !== 'undefined',
+            jsPDF: typeof jspdf !== 'undefined' || typeof window.jspdf !== 'undefined'
+        };
+
+        console.log('💳 PDF Libraries status:', libraries);
+        return libraries;
+    }
+
+    // Update setupEventListeners untuk include library check
+    setupEventListeners() {
+        // Download PDF
+        const downloadBtn = document.getElementById('download-pdf');
+        if (downloadBtn) {
+            downloadBtn.addEventListener('click', () => {
+                // Check libraries sebelum download
+                const libraries = this.checkPDFLibraries();
+                if (!libraries.html2canvas || !libraries.jsPDF) {
+                    this.showMessage('Library PDF tidak tersedia. Menggunakan fallback...', 'warning');
+                    this.handlePDFError(new Error('PDF libraries not available'));
+                    return;
+                }
+                this.downloadPDF();
+            });
+        }
+
+        // Check payment status
+        const checkStatusBtn = document.getElementById('check-status');
+        if (checkStatusBtn) {
+            checkStatusBtn.addEventListener('click', () => {
+                this.checkPaymentStatus();
+            });
+        }
+
+        // 🔥 TAMBAHKAN: Print button fallback
+        const printBtn = document.getElementById('print-invoice');
+        if (printBtn) {
+            printBtn.addEventListener('click', () => {
+                window.print();
+            });
         }
     }
 
