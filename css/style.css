@@ -27,12 +27,14 @@ body {
   top: 0;
   z-index: 10;
   height: 12vh;
+
 }
 
 .nav-content {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 20px;
 }
 
 .logo {
@@ -1180,6 +1182,7 @@ input[type=number] {
         opacity: 0;
     }
 }
+
 
 
 
