@@ -23,14 +23,14 @@
           </div>
           <nav class="right-nav">
               <!-- User menu untuk payment page -->
-              <div id="nav-auth" style="display: none;">
-                  <a href="login.html" class="login-btn">Login</a>
-                  <a href="signup.html" class="signup-btn">Daftar</a>
-              </div>
-              <div id="user-menu" style="display: none;">
-                  <span id="user-name">User</span>
-                  <button id="logout-btn" class="logout-btn">Logout</button>
-              </div>
+            <div class="nav-auth" id="nav-auth">
+                <a href="login.html" class="btn-login">Login</a>
+                <a href="signup.html" class="btn-signup">Daftar</a>
+            </div>
+            <div class="user-menu" id="user-menu" style="display: none;">
+                <span class="user-greeting">Halo, <span id="user-name">User</span></span>
+                <button id="logout-btn" class="logout-btn">Logout</button>
+            </div>
               <div class="cart-section">
                 <a href="cart.html" class="cart-link">
                     <div class="cart-info">
@@ -268,20 +268,9 @@
   </footer>
 
   <!-- 🔥 LOAD SCRIPT DENGAN CHECK DOUBLE LOADING -->
-  <script>
-      // Cek apakah auth.js sudah di-load
-      if (!window.authSystem) {
-          const authScript = document.createElement('script');
-          authScript.type = 'module';
-          authScript.src = 'js/firebase-auth.js';
-          document.head.appendChild(authScript);
-          console.log('📥 Loading auth.js...');
-      } else {
-          console.log('✅ auth.js already loaded');
-      }
-  </script>
-  
-  <!-- Load payment system -->
-  <script type="module" src="js/payment.js"></script>
+    <!-- Ganti script complex dengan yang sederhana seperti di index.html -->
+    <script type="module" src="js/firebase-auth.js"></script>
+    <script type="module" src="js/simple-auth-fix.js"></script>
+    <script type="module" src="js/payment.js"></script>
 </body>
 </html>
