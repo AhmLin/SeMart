@@ -64,7 +64,6 @@ class PaymentSystem {
                     price: item.price,
                     quantity: item.quantity,
                     image: item.image,
-                    // Bisa tambah info lain seperti category, weight, dll
                 })),
                 
                 // 🔥 INFORMASI PEMBAYARAN (dari payment page)
@@ -72,7 +71,7 @@ class PaymentSystem {
                     virtualAccount: this.checkoutData.virtualAccount,
                     subtotal: this.getTotalAmount(),
                     discount: this.checkoutData.discount || 0,
-                    shippingCost: 0, // Bisa dikembangkan dengan kalkulasi ongkir
+                    shippingCost: 0,
                     finalAmount: this.getTotalAmount() - (this.checkoutData.discount || 0)
                 },
                 
@@ -139,8 +138,6 @@ class PaymentSystem {
         }, 5000);
     }
 
-
-
     getTotalAmount() {
         if (!this.checkoutData) return 0;
         
@@ -168,7 +165,6 @@ class PaymentSystem {
             this.showError('Terjadi kesalahan saat memuat data pembayaran.');
         }
     }
-}
 
     renderInvoice() {
         if (!this.checkoutData) return;
@@ -178,7 +174,7 @@ class PaymentSystem {
             
             // Calculate totals
             const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-            const shipping = 0; // Bisa ditambahkan kalkulasi ongkir
+            const shipping = 0;
             const total = Math.max(0, subtotal - discount + shipping);
 
             // Set invoice data
@@ -207,8 +203,11 @@ class PaymentSystem {
 
             // Discount
             if (discount > 0) {
-                document.getElementById('invoice-discount-row').style.display = 'flex';
-                this.setElementText('invoice-discount', `-Rp${discount.toLocaleString('id-ID')}`);
+                const discountRow = document.getElementById('invoice-discount-row');
+                if (discountRow) {
+                    discountRow.style.display = 'flex';
+                    this.setElementText('invoice-discount', `-Rp${discount.toLocaleString('id-ID')}`);
+                }
             }
 
             // Virtual Account
@@ -260,6 +259,13 @@ class PaymentSystem {
         const downloadBtn = document.getElementById('download-pdf');
         if (downloadBtn) {
             downloadBtn.addEventListener('click', () => {
+                // Check libraries sebelum download
+                const libraries = this.checkPDFLibraries();
+                if (!libraries.html2canvas || !libraries.jsPDF) {
+                    this.showMessage('Library PDF tidak tersedia. Menggunakan fallback...', 'warning');
+                    this.handlePDFError(new Error('PDF libraries not available'));
+                    return;
+                }
                 this.downloadPDF();
             });
         }
@@ -269,6 +275,14 @@ class PaymentSystem {
         if (checkStatusBtn) {
             checkStatusBtn.addEventListener('click', () => {
                 this.checkPaymentStatus();
+            });
+        }
+
+        // Print button fallback
+        const printBtn = document.getElementById('print-invoice');
+        if (printBtn) {
+            printBtn.addEventListener('click', () => {
+                window.print();
             });
         }
     }
@@ -283,7 +297,9 @@ class PaymentSystem {
 
             if (timeLeft <= 0) {
                 this.setElementText('payment-timer', '00:00:00');
-                clearInterval(this.paymentTimer);
+                if (this.paymentTimer) {
+                    clearInterval(this.paymentTimer);
+                }
                 this.showExpiryWarning();
                 return;
             }
@@ -301,7 +317,6 @@ class PaymentSystem {
         this.paymentTimer = setInterval(updateTimer, 1000);
     }
 
-
     async downloadPDF() {
         try {
             const invoiceContent = document.getElementById('invoice-content');
@@ -315,7 +330,7 @@ class PaymentSystem {
             downloadBtn.textContent = 'Membuat PDF...';
             downloadBtn.disabled = true;
 
-            // 🔥 PERBAIKAN: Check jika libraries tersedia
+            // Check jika libraries tersedia
             if (typeof html2canvas === 'undefined') {
                 throw new Error('html2canvas library tidak tersedia');
             }
@@ -334,7 +349,7 @@ class PaymentSystem {
 
             const imgData = canvas.toDataURL('image/png');
             
-            // 🔥 PERBAIKAN: Handle jsPDF yang berbeda-beda
+            // Handle jsPDF yang berbeda-beda
             let pdf;
             if (typeof jspdf !== 'undefined') {
                 // Jika jspdf tersedia sebagai module
@@ -375,7 +390,7 @@ class PaymentSystem {
         } catch (error) {
             console.error('💳 Error downloading PDF:', error);
             
-            // 🔥 PERBAIKAN: Fallback options
+            // Fallback options
             this.handlePDFError(error);
             
         } finally {
@@ -388,24 +403,13 @@ class PaymentSystem {
         }
     }
 
-        // 🔥 METHOD BARU: Handle PDF errors dengan fallback options
+    // METHOD BARU: Handle PDF errors dengan fallback options
     handlePDFError(error) {
-        const errorMessage = `
-            Gagal mengenerate PDF. Silakan gunakan salah satu cara berikut:
-            
-            1. Screenshot halaman ini manual
-            2. Print halaman (Ctrl+P) dan save sebagai PDF
-            3. Hubungi customer service untuk invoice
-            
-            Error: ${error.message}
-        `;
-
-        // Show detailed error message dengan options
         const fallbackModal = this.createFallbackModal();
         document.body.appendChild(fallbackModal);
     }
 
-    // 🔥 METHOD BARU: Create fallback modal untuk PDF error
+    // METHOD BARU: Create fallback modal untuk PDF error
     createFallbackModal() {
         const modal = document.createElement('div');
         modal.style.cssText = `
@@ -502,7 +506,7 @@ class PaymentSystem {
         return modal;
     }
 
-    // 🔥 METHOD BARU: Check PDF library availability
+    // METHOD BARU: Check PDF library availability
     checkPDFLibraries() {
         const libraries = {
             html2canvas: typeof html2canvas !== 'undefined',
@@ -511,40 +515,6 @@ class PaymentSystem {
 
         console.log('💳 PDF Libraries status:', libraries);
         return libraries;
-    }
-
-    // Update setupEventListeners untuk include library check
-    setupEventListeners() {
-        // Download PDF
-        const downloadBtn = document.getElementById('download-pdf');
-        if (downloadBtn) {
-            downloadBtn.addEventListener('click', () => {
-                // Check libraries sebelum download
-                const libraries = this.checkPDFLibraries();
-                if (!libraries.html2canvas || !libraries.jsPDF) {
-                    this.showMessage('Library PDF tidak tersedia. Menggunakan fallback...', 'warning');
-                    this.handlePDFError(new Error('PDF libraries not available'));
-                    return;
-                }
-                this.downloadPDF();
-            });
-        }
-
-        // Check payment status
-        const checkStatusBtn = document.getElementById('check-status');
-        if (checkStatusBtn) {
-            checkStatusBtn.addEventListener('click', () => {
-                this.checkPaymentStatus();
-            });
-        }
-
-        // 🔥 TAMBAHKAN: Print button fallback
-        const printBtn = document.getElementById('print-invoice');
-        if (printBtn) {
-            printBtn.addEventListener('click', () => {
-                window.print();
-            });
-        }
     }
 
     checkPaymentStatus() {
@@ -647,6 +617,14 @@ if (!document.querySelector('#payment-animations')) {
         @keyframes slideOutRight {
             from { transform: translateX(0); opacity: 1; }
             to { transform: translateX(100%); opacity: 0; }
+        }
+        @keyframes slideInLeft {
+            from { transform: translateX(-100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
     `;
     document.head.appendChild(style);
