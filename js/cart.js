@@ -645,7 +645,7 @@ class ShoppingCart {
                 alert('Keranjang belanja Anda kosong!');
                 return;
             }
-    
+
             // Validasi form pengiriman
             const shippingForm = document.getElementById('shipping-form');
             if (shippingForm && !shippingForm.checkValidity()) {
@@ -653,13 +653,13 @@ class ShoppingCart {
                 shippingForm.reportValidity();
                 return;
             }
-    
+
             // 🔥 CEK LOGIN SEBELUM CHECKOUT
             if (typeof window.authSystem === 'undefined' || !window.authSystem.currentUser) {
                 if (confirm('Anda perlu login untuk melanjutkan ke pembayaran. Mau login sekarang?')) {
                     // Simpan data checkout sementara
                     const tempCheckoutData = {
-                        cart: this.cart,
+                        cart: this.cart, // 🔥 LANGSUNG gunakan this.cart (array)
                         discount: this.currentDiscount || 0,
                         shippingInfo: this.getShippingInfo(),
                         timestamp: new Date().toISOString()
@@ -671,10 +671,10 @@ class ShoppingCart {
                 }
                 return;
             }
-    
-            // Generate data checkout
+
+            // 🔥 GENERATE DATA CHECKOUT YANG KONSISTEN
             const checkoutData = {
-                cart: this.cart,
+                cart: this.cart, // 🔥 LANGSUNG gunakan this.cart (array)
                 discount: this.currentDiscount || 0,
                 shippingInfo: this.getShippingInfo(),
                 userInfo: this.getUserInfo(),
@@ -683,8 +683,10 @@ class ShoppingCart {
                 virtualAccount: this.generateVirtualAccount(),
                 expiryTime: this.getExpiryTime()
             };
-            
-            // Simpan data untuk payment page
+
+            console.log('💳 Checkout data prepared:', checkoutData);
+
+            // 🔥 SIMPAN KE LOCALSTORAGE DENGAN STRUKTUR YANG KONSISTEN
             localStorage.setItem('semart-checkout', JSON.stringify(checkoutData));
             
             // Redirect ke payment page
@@ -693,6 +695,81 @@ class ShoppingCart {
         } catch (error) {
             console.error('🛒 Error during checkout:', error);
             alert('Terjadi kesalahan saat checkout. Silakan coba lagi.');
+        }
+    }
+
+    /**
+     * 📦 Get shipping info dari form
+     */
+    getShippingInfo() {
+        try {
+            // Coba ambil dari form jika ada
+            const recipientName = document.getElementById('recipient-name')?.value;
+            const recipientPhone = document.getElementById('recipient-phone')?.value;
+            const shippingAddress = document.getElementById('shipping-address')?.value;
+            const city = document.getElementById('city')?.value;
+            const postalCode = document.getElementById('postal-code')?.value;
+            const orderNotes = document.getElementById('order-notes')?.value;
+
+            // Jika form tidak lengkap, gunakan data user atau default
+            return {
+                recipientName: recipientName || this.getUserInfo().name || 'Customer',
+                recipientPhone: recipientPhone || this.getUserInfo().phone || '081234567890',
+                shippingAddress: shippingAddress || 'Alamat pengiriman',
+                city: city || 'Kota',
+                postalCode: postalCode || '12345',
+                orderNotes: orderNotes || ''
+            };
+        } catch (error) {
+            console.error('🛒 Error getting shipping info:', error);
+            return {
+                recipientName: 'Customer',
+                recipientPhone: '081234567890',
+                shippingAddress: 'Alamat pengiriman',
+                city: 'Kota',
+                postalCode: '12345',
+                orderNotes: ''
+            };
+        }
+    }
+
+    /**
+     * 👤 Get user info dari auth system
+     */
+    getUserInfo() {
+        try {
+            if (window.authSystem && window.authSystem.currentUser) {
+                const user = window.authSystem.currentUser;
+                return {
+                    name: user.displayName || 'Customer',
+                    email: user.email || '',
+                    phone: user.phoneNumber || ''
+                };
+            }
+            
+            // Fallback ke localStorage
+            const userData = localStorage.getItem('currentUser');
+            if (userData) {
+                const user = JSON.parse(userData);
+                return {
+                    name: user.displayName || 'Customer',
+                    email: user.email || '',
+                    phone: user.phoneNumber || ''
+                };
+            }
+            
+            return {
+                name: 'Customer',
+                email: '',
+                phone: ''
+            };
+        } catch (error) {
+            console.error('🛒 Error getting user info:', error);
+            return {
+                name: 'Customer',
+                email: '',
+                phone: ''
+            };
         }
     }
     
@@ -904,3 +981,4 @@ function debugCartSystem() {
 }
 
 window.debugCart = debugCartSystem;
+
