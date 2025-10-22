@@ -198,95 +198,7 @@ class ShoppingCart {
             return 0;
         }
     }
-    // 🔥 METHOD BARU: Universal add to cart listeners
-    setupGlobalAddToCartListeners() {
-        try {
-            console.log('🛒 Setting up global add to cart listeners');
-            
-            // Event delegation untuk semua page
-            document.addEventListener('click', (e) => {
-                const addToCartBtn = e.target.closest('.add-to-cart, .btn-add-to-cart, [onclick*="addToCart"]');
-                if (addToCartBtn) {
-                    e.preventDefault();
-                    this.handleAddToCartClick(addToCartBtn);
-                }
-            });
 
-        } catch (error) {
-            console.error('🛒 Error setting up global listeners:', error);
-        }
-    }
-
-    // 🔥 METHOD BARU: Handle add to cart clicks
-    handleAddToCartClick(button) {
-        try {
-            console.log('🛒 Add to cart button clicked:', button);
-            
-            const productData = this.getProductDataFromButton(button);
-            
-            if (productData && productData.id) {
-                this.addToCart(productData, 1);
-            } else {
-                console.error('🛒 Product data not found from button:', button);
-                this.showErrorMessage('Data produk tidak ditemukan');
-            }
-            
-        } catch (error) {
-            console.error('🛒 Error handling add to cart click:', error);
-            this.showErrorMessage('Terjadi kesalahan saat menambahkan ke keranjang');
-        }
-    }
-
-    // 🔥 METHOD BARU: Extract product data dari button
-    getProductDataFromButton(button) {
-        // Coba dari berbagai attribute
-        const productId = button.getAttribute('data-product-id') || 
-                         button.getAttribute('data-id') ||
-                         button.closest('[data-product-id]')?.getAttribute('data-product-id');
-        
-        const productName = button.getAttribute('data-product-name') || 
-                           button.closest('.product-card, .product-item')?.querySelector('.product-name, .product-title, .card-title, h3, h4')?.textContent ||
-                           'Product';
-        
-        const productPrice = button.getAttribute('data-product-price') || 
-                            button.closest('.product-card, .product-item')?.querySelector('.product-price, .price, .card-price')?.textContent ||
-                            '0';
-        
-        const productImage = button.getAttribute('data-product-image') || 
-                            button.closest('.product-card, .product-item')?.querySelector('.product-image, .card-img, img')?.src ||
-                            'images/placeholder-product.jpg';
-
-        const price = this.parsePrice(productPrice);
-
-        if (productId) {
-            return {
-                id: productId,
-                name: productName.trim(),
-                price: price,
-                image: productImage
-            };
-        }
-
-        return null;
-    }
-
-    // 🔥 METHOD BARU: Parse harga dari string
-    parsePrice(priceString) {
-        try {
-            const cleaned = priceString.toString()
-                .replace(/Rp\s?/gi, '')
-                .replace(/\./g, '')
-                .replace(/,/g, '.')
-                .trim();
-            
-            return parseInt(cleaned) || 0;
-        } catch (error) {
-            console.error('🛒 Error parsing price:', error);
-            return 0;
-        }
-    }
-
-    // ... (method lainnya tetap sama dengan kode sebelumnya) ...
     getCartFromStorage() {
         try {
             const cartData = localStorage.getItem('semart-cart');
@@ -726,37 +638,6 @@ class ShoppingCart {
             console.error('🛒 Error showing add to cart message:', error);
         }
     }
-
-    // 🔥 METHOD BARU: Show error messages
-    showErrorMessage(message) {
-        const toast = document.createElement('div');
-        toast.style.cssText = `
-            position: fixed;
-            top: 100px;
-            right: 20px;
-            background: #dc3545;
-            color: white;
-            padding: 1rem 1.5rem;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-            z-index: 1000;
-            animation: slideInRight 0.3s ease;
-            max-width: 300px;
-            font-family: 'Poppins', sans-serif;
-        `;
-        toast.textContent = message;
-        
-        document.body.appendChild(toast);
-        
-        setTimeout(() => {
-            toast.style.animation = 'slideOutRight 0.3s ease';
-            setTimeout(() => {
-                if (toast.parentNode) {
-                    toast.parentNode.removeChild(toast);
-                }
-            }, 300);
-        }, 4000);
-    }
     
     checkout() {
         try {
@@ -807,15 +688,6 @@ class ShoppingCart {
             localStorage.setItem('semart-checkout', JSON.stringify(checkoutData));
             
             // Redirect ke payment page
-            window.location.href = 'payment.html';
-            
-        } catch (error) {
-            console.error('🛒 Error during checkout:', error);
-            alert('Terjadi kesalahan saat checkout. Silakan coba lagi.');
-        }
-    }
-            
-            localStorage.setItem('semart-checkout', JSON.stringify(checkoutData));
             window.location.href = 'payment.html';
             
         } catch (error) {
@@ -1032,5 +904,3 @@ function debugCartSystem() {
 }
 
 window.debugCart = debugCartSystem;
-
-
