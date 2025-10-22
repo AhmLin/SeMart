@@ -1,6 +1,4 @@
-// payment.js - Kirim data lengkap ke Firebase
-import firebaseDB from './firebase-db.js';
-
+// payment.js - Final Version dengan Firebase Integration
 class PaymentSystem {
     constructor() {
         this.checkoutData = null;
@@ -11,14 +9,130 @@ class PaymentSystem {
     init() {
         console.log('💳 Initializing payment system');
         this.loadCheckoutData();
-        this.setupEventListeners();
-        this.startPaymentTimer();
         
-        // Simpan ke Firebase dengan data lengkap
-        this.saveCompleteOrderToFirebase();
+        // Cek login status dan setup
+        if (this.checkLoginStatus()) {
+            this.setupEventListeners();
+            this.startPaymentTimer();
+            this.saveCompleteOrderToFirebase();
+        }
     }
 
-    // 🔥 METHOD BARU: Simpan data lengkap ke Firebase
+    // ==================== AUTHENTICATION & FIREBASE ====================
+
+    /**
+     * 🔐 Cek status login user
+     * @returns {boolean} - Login status
+     */
+    checkLoginStatus() {
+        // Tunggu sebentar untuk memastikan auth system terload
+        setTimeout(() => {
+            const user = window.authSystem?.currentUser;
+            
+            if (!user) {
+                console.warn('💳 User not logged in');
+                this.showLoginRequiredModal();
+                return false;
+            }
+            
+            console.log('💳 User is logged in:', user.email);
+            return true;
+        }, 1000);
+        
+        return true;
+    }
+
+    /**
+     * 🔐 Tampilkan modal login required
+     */
+    showLoginRequiredModal() {
+        const modal = document.createElement('div');
+        modal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.3s ease;
+        `;
+
+        modal.innerHTML = `
+            <div style="
+                background: white;
+                padding: 2.5rem;
+                border-radius: 16px;
+                max-width: 450px;
+                width: 90%;
+                text-align: center;
+                box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            ">
+                <div style="font-size: 4rem; margin-bottom: 1.5rem;">🔒</div>
+                <h3 style="color: #e74c3c; margin-bottom: 1rem; font-size: 1.5rem;">Login Diperlukan</h3>
+                <p style="margin-bottom: 2rem; color: #555; line-height: 1.6;">
+                    Anda perlu login untuk menyimpan data pesanan dan melanjutkan pembayaran.
+                    Data pesanan Anda akan aman tersimpan setelah login.
+                </p>
+                
+                <div style="display: flex; flex-direction: column; gap: 1rem;">
+                    <button onclick="window.location.href='login.html?redirect=payment'" style="
+                        background: #007bff;
+                        color: white;
+                        border: none;
+                        padding: 1rem 2rem;
+                        border-radius: 8px;
+                        cursor: pointer;
+                        font-weight: 600;
+                        font-size: 1.1rem;
+                        transition: background-color 0.3s ease;
+                    " onmouseover="this.style.background='#0056b3'" 
+                       onmouseout="this.style.background='#007bff'">
+                        🔑 Login Sekarang
+                    </button>
+                    
+                    <button onclick="window.location.href='cart.html'" style="
+                        background: #6c757d;
+                        color: white;
+                        border: none;
+                        padding: 0.75rem 1.5rem;
+                        border-radius: 6px;
+                        cursor: pointer;
+                        font-weight: 500;
+                        transition: background-color 0.3s ease;
+                    " onmouseover="this.style.background='#5a6268'" 
+                       onmouseout="this.style.background='#6c757d'">
+                        ← Kembali ke Keranjang
+                    </button>
+                </div>
+                
+                <div style="margin-top: 1.5rem; padding: 1rem; background: #f8f9fa; border-radius: 8px;">
+                    <p style="margin: 0; color: #666; font-size: 0.9rem;">
+                        <strong>Info:</strong> Virtual Account dan invoice tetap bisa digunakan tanpa login, 
+                        tetapi riwayat pesanan tidak akan tersimpan.
+                    </p>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+        
+        // Prevent closing modal
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                // Tetap tampilkan modal, user harus memilih action
+            }
+        });
+
+        return modal;
+    }
+
+    /**
+     * 💾 Simpan data lengkap ke Firebase
+     */
     async saveCompleteOrderToFirebase() {
         try {
             if (!this.checkoutData) {
@@ -26,10 +140,13 @@ class PaymentSystem {
                 return;
             }
 
-            // Cek jika user sudah login
+            // Tunggu auth system terload
+            await this.waitForAuthSystem();
+            
             const user = window.authSystem?.currentUser;
             if (!user) {
-                console.warn('💳 User not logged in, skipping Firebase save');
+                console.warn('💳 User not logged in, saving temporarily');
+                this.saveOrderTemporarily();
                 return;
             }
 
@@ -47,7 +164,7 @@ class PaymentSystem {
                 userEmail: user.email,
                 userName: user.displayName || this.checkoutData.shippingInfo.recipientName,
                 
-                // 🔥 INFORMASI PENERIMA (dari form pengiriman)
+                // INFORMASI PENERIMA
                 shippingInfo: {
                     recipientName: this.checkoutData.shippingInfo.recipientName,
                     recipientPhone: this.checkoutData.shippingInfo.recipientPhone,
@@ -57,39 +174,53 @@ class PaymentSystem {
                     orderNotes: this.checkoutData.shippingInfo.orderNotes || ''
                 },
                 
-                // 🔥 BARANG YANG DIBELI (dari cart)
+                // BARANG YANG DIBELI
                 items: this.checkoutData.cart.map(item => ({
                     id: item.id,
                     name: item.name,
                     price: item.price,
                     quantity: item.quantity,
                     image: item.image,
+                    subtotal: item.price * item.quantity
                 })),
                 
-                // 🔥 INFORMASI PEMBAYARAN (dari payment page)
+                // INFORMASI PEMBAYARAN
                 paymentInfo: {
                     virtualAccount: this.checkoutData.virtualAccount,
                     subtotal: this.getTotalAmount(),
                     discount: this.checkoutData.discount || 0,
                     shippingCost: 0,
-                    finalAmount: this.getTotalAmount() - (this.checkoutData.discount || 0)
+                    finalAmount: this.getTotalAmount() - (this.checkoutData.discount || 0),
+                    status: 'pending'
                 },
                 
-                // 🔥 INFORMASI PROMO (jika ada)
+                // INFORMASI PROMO
                 promoCode: this.checkoutData.shippingInfo.promoCode || '',
                 discountPercentage: this.calculateDiscountPercentage(),
                 
-                // Timestamp dan expiry
-                expiryTime: this.checkoutData.expiryTime
+                // STATUS & TIMESTAMP
+                status: 'pending_payment',
+                expiryTime: this.checkoutData.expiryTime,
+                createdAt: new Date().toISOString()
             };
 
             console.log('💳 Complete order data for Firebase:', completeOrderData);
+
+            // Pastikan firebaseDB tersedia
+            if (typeof firebaseDB === 'undefined' || !firebaseDB.initialized) {
+                console.warn('💳 FirebaseDB not available, saving temporarily');
+                this.saveOrderTemporarily();
+                return;
+            }
 
             // Simpan ke Firebase
             const result = await firebaseDB.saveOrder(completeOrderData);
             
             // Tandai sudah disimpan
             localStorage.setItem(`order-${this.checkoutData.orderId}-saved`, 'true');
+            
+            // Hapus data temporary jika ada
+            localStorage.removeItem(`temp-order-${this.checkoutData.orderId}`);
             
             console.log('💳 Complete order successfully saved to Firebase:', result);
             
@@ -98,55 +229,77 @@ class PaymentSystem {
 
         } catch (error) {
             console.error('💳 Error saving complete order to Firebase:', error);
+            
+            // Simpan sementara jika gagal
+            this.saveOrderTemporarily();
+            
             this.showMessage(
-                'Pesanan berhasil dibuat, tetapi terjadi kesalahan saat menyimpan data server. Silakan screenshot halaman ini sebagai bukti.', 
-                'warning'
+                'Pesanan berhasil dibuat. Data akan disimpan ke server setelah terkoneksi.', 
+                'info'
             );
         }
     }
 
-    // 🔥 METHOD BARU: Hitung persentase diskon
-    calculateDiscountPercentage() {
-        if (!this.checkoutData.discount || !this.checkoutData.cart.length) return 0;
-        
-        const subtotal = this.getTotalAmount();
-        return Math.round((this.checkoutData.discount / subtotal) * 100);
+    /**
+     * ⏳ Tunggu auth system terload
+     */
+    async waitForAuthSystem() {
+        return new Promise((resolve) => {
+            const checkAuth = () => {
+                if (window.authSystem) {
+                    resolve();
+                } else {
+                    setTimeout(checkAuth, 100);
+                }
+            };
+            checkAuth();
+        });
     }
 
-    // 🔥 METHOD BARU: Tunjukkan status save ke Firebase
-    showFirebaseSaveStatus(result) {
-        // Tambahkan indicator di UI bahwa data tersimpan
-        const saveStatus = document.createElement('div');
-        saveStatus.style.cssText = `
-            position: fixed;
-            bottom: 20px;
-            left: 20px;
-            background: #28a745;
-            color: white;
-            padding: 0.5rem 1rem;
-            border-radius: 6px;
-            font-size: 0.8rem;
-            z-index: 1000;
-            animation: slideInLeft 0.3s ease;
-        `;
-        saveStatus.innerHTML = `✅ Data pesanan tersimpan #${this.checkoutData.orderId}`;
-        
-        document.body.appendChild(saveStatus);
-        
-        setTimeout(() => {
-            saveStatus.remove();
-        }, 5000);
+    /**
+     * 💾 Simpan data sementara di localStorage
+     */
+    saveOrderTemporarily() {
+        try {
+            const tempOrderData = {
+                ...this.checkoutData,
+                savedAt: new Date().toISOString(),
+                status: 'temporary',
+                retryCount: 0
+            };
+            
+            localStorage.setItem(`temp-order-${this.checkoutData.orderId}`, JSON.stringify(tempOrderData));
+            console.log('💳 Order saved temporarily:', this.checkoutData.orderId);
+            
+            // Schedule retry untuk 10 detik lagi
+            setTimeout(() => {
+                this.retrySaveToFirebase();
+            }, 10000);
+            
+        } catch (error) {
+            console.error('💳 Error saving temporary order:', error);
+        }
     }
 
-    getTotalAmount() {
-        if (!this.checkoutData) return 0;
-        
-        return this.checkoutData.cart.reduce((total, item) => {
-            return total + (item.price * item.quantity);
-        }, 0);
+    /**
+    �� Coba save ulang ke Firebase
+     */
+    async retrySaveToFirebase() {
+        const user = window.authSystem?.currentUser;
+        if (user && typeof firebaseDB !== 'undefined' && firebaseDB.initialized) {
+            console.log('💳 Retrying Firebase save...');
+            await this.saveCompleteOrderToFirebase();
+        } else {
+            // Coba lagi nanti
+            console.log('💳 Conditions not met for retry, will try again later');
+        }
     }
 
-    // 🔥 UPDATE: Method loadCheckoutData untuk pastikan data lengkap
+    // ==================== INVOICE RENDERING ====================
+
+    /**
+     * 📄 Load checkout data dari localStorage
+     */
     loadCheckoutData() {
         try {
             const checkoutData = localStorage.getItem('semart-checkout');
@@ -166,6 +319,9 @@ class PaymentSystem {
         }
     }
 
+    /**
+     * 🎨 Render invoice ke HTML
+     */
     renderInvoice() {
         if (!this.checkoutData) return;
 
@@ -233,6 +389,9 @@ class PaymentSystem {
         }
     }
 
+    /**
+     * 📊 Render tabel produk
+     */
     renderProductsTable(cart) {
         const tbody = document.getElementById('invoice-products-body');
         if (!tbody) return;
@@ -249,74 +408,11 @@ class PaymentSystem {
         `).join('');
     }
 
-    setElementText(id, text) {
-        const element = document.getElementById(id);
-        if (element) element.textContent = text;
-    }
+    // ==================== PDF & PRINT FUNCTIONALITY ====================
 
-    setupEventListeners() {
-        // Download PDF
-        const downloadBtn = document.getElementById('download-pdf');
-        if (downloadBtn) {
-            downloadBtn.addEventListener('click', () => {
-                // Check libraries sebelum download
-                const libraries = this.checkPDFLibraries();
-                if (!libraries.html2canvas || !libraries.jsPDF) {
-                    this.showMessage('Library PDF tidak tersedia. Menggunakan fallback...', 'warning');
-                    this.handlePDFError(new Error('PDF libraries not available'));
-                    return;
-                }
-                this.downloadPDF();
-            });
-        }
-
-        // Check payment status
-        const checkStatusBtn = document.getElementById('check-status');
-        if (checkStatusBtn) {
-            checkStatusBtn.addEventListener('click', () => {
-                this.checkPaymentStatus();
-            });
-        }
-
-        // Print button fallback
-        const printBtn = document.getElementById('print-invoice');
-        if (printBtn) {
-            printBtn.addEventListener('click', () => {
-                window.print();
-            });
-        }
-    }
-
-    startPaymentTimer() {
-        if (!this.checkoutData || !this.checkoutData.expiryTime) return;
-
-        const updateTimer = () => {
-            const now = new Date().getTime();
-            const expiry = new Date(this.checkoutData.expiryTime).getTime();
-            const timeLeft = expiry - now;
-
-            if (timeLeft <= 0) {
-                this.setElementText('payment-timer', '00:00:00');
-                if (this.paymentTimer) {
-                    clearInterval(this.paymentTimer);
-                }
-                this.showExpiryWarning();
-                return;
-            }
-
-            const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
-            const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
-
-            this.setElementText('payment-timer', 
-                `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
-            );
-        };
-
-        updateTimer();
-        this.paymentTimer = setInterval(updateTimer, 1000);
-    }
-
+    /**
+     * 📄 Download invoice sebagai PDF
+     */
     async downloadPDF() {
         try {
             const invoiceContent = document.getElementById('invoice-content');
@@ -352,17 +448,15 @@ class PaymentSystem {
             // Handle jsPDF yang berbeda-beda
             let pdf;
             if (typeof jspdf !== 'undefined') {
-                // Jika jspdf tersedia sebagai module
                 pdf = new jspdf.jsPDF('p', 'mm', 'a4');
             } else if (typeof window.jspdf !== 'undefined') {
-                // Jika jspdf tersedia di window
                 pdf = new window.jspdf.jsPDF('p', 'mm', 'a4');
             } else {
                 throw new Error('jsPDF tidak tersedia');
             }
 
-            const imgWidth = 210; // A4 width in mm
-            const pageHeight = 295; // A4 height in mm
+            const imgWidth = 210;
+            const pageHeight = 295;
             const imgHeight = (canvas.height * imgWidth) / canvas.width;
             let heightLeft = imgHeight;
             let position = 0;
@@ -389,8 +483,6 @@ class PaymentSystem {
 
         } catch (error) {
             console.error('💳 Error downloading PDF:', error);
-            
-            // Fallback options
             this.handlePDFError(error);
             
         } finally {
@@ -403,13 +495,17 @@ class PaymentSystem {
         }
     }
 
-    // METHOD BARU: Handle PDF errors dengan fallback options
+    /**
+     * 🖨️ Handle PDF error dengan fallback
+     */
     handlePDFError(error) {
         const fallbackModal = this.createFallbackModal();
         document.body.appendChild(fallbackModal);
     }
 
-    // METHOD BARU: Create fallback modal untuk PDF error
+    /**
+     * 📱 Buat modal fallback untuk PDF error
+     */
     createFallbackModal() {
         const modal = document.createElement('div');
         modal.style.cssText = `
@@ -460,16 +556,6 @@ class PaymentSystem {
                             </p>
                         </div>
                     </div>
-                    
-                    <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background: #f8f9fa; border-radius: 8px;">
-                        <span style="font-size: 1.5rem;">📞</span>
-                        <div>
-                            <strong>Hubungi Kami</strong>
-                            <p style="margin: 0.25rem 0 0 0; font-size: 0.9rem; color: #666;">
-                                Customer service: (021) 123-4567
-                            </p>
-                        </div>
-                    </div>
                 </div>
                 
                 <div style="display: flex; gap: 1rem; justify-content: center;">
@@ -506,19 +592,45 @@ class PaymentSystem {
         return modal;
     }
 
-    // METHOD BARU: Check PDF library availability
-    checkPDFLibraries() {
-        const libraries = {
-            html2canvas: typeof html2canvas !== 'undefined',
-            jsPDF: typeof jspdf !== 'undefined' || typeof window.jspdf !== 'undefined'
+    // ==================== PAYMENT TIMER & STATUS ====================
+
+    /**
+     * ⏰ Start payment countdown timer
+     */
+    startPaymentTimer() {
+        if (!this.checkoutData || !this.checkoutData.expiryTime) return;
+
+        const updateTimer = () => {
+            const now = new Date().getTime();
+            const expiry = new Date(this.checkoutData.expiryTime).getTime();
+            const timeLeft = expiry - now;
+
+            if (timeLeft <= 0) {
+                this.setElementText('payment-timer', '00:00:00');
+                if (this.paymentTimer) {
+                    clearInterval(this.paymentTimer);
+                }
+                this.showExpiryWarning();
+                return;
+            }
+
+            const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+
+            this.setElementText('payment-timer', 
+                `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+            );
         };
 
-        console.log('💳 PDF Libraries status:', libraries);
-        return libraries;
+        updateTimer();
+        this.paymentTimer = setInterval(updateTimer, 1000);
     }
 
+    /**
+     * 🔍 Check payment status (simulasi)
+     */
     checkPaymentStatus() {
-        // Simulasi cek status pembayaran
         this.showMessage('Sedang memeriksa status pembayaran...', 'info');
         
         setTimeout(() => {
@@ -526,12 +638,125 @@ class PaymentSystem {
         }, 2000);
     }
 
-    showExpiryWarning() {
-        this.showMessage('Batas waktu pembayaran telah habis. Silakan buat pesanan baru.', 'warning');
+    // ==================== EVENT LISTENERS ====================
+
+    /**
+     * 🎯 Setup event listeners
+     */
+    setupEventListeners() {
+        // Download PDF
+        const downloadBtn = document.getElementById('download-pdf');
+        if (downloadBtn) {
+            downloadBtn.addEventListener('click', () => {
+                const libraries = this.checkPDFLibraries();
+                if (!libraries.html2canvas || !libraries.jsPDF) {
+                    this.showMessage('Library PDF tidak tersedia. Menggunakan fallback...', 'warning');
+                    this.handlePDFError(new Error('PDF libraries not available'));
+                    return;
+                }
+                this.downloadPDF();
+            });
+        }
+
+        // Check payment status
+        const checkStatusBtn = document.getElementById('check-status');
+        if (checkStatusBtn) {
+            checkStatusBtn.addEventListener('click', () => {
+                this.checkPaymentStatus();
+            });
+        }
+
+        // Print button fallback
+        const printBtn = document.getElementById('print-invoice');
+        if (printBtn) {
+            printBtn.addEventListener('click', () => {
+                window.print();
+            });
+        }
+
+        // Login button (jika ada)
+        const loginBtn = document.getElementById('login-from-payment');
+        if (loginBtn) {
+            loginBtn.addEventListener('click', () => {
+                window.location.href = 'login.html?redirect=payment';
+            });
+        }
     }
 
+    // ==================== HELPER METHODS ====================
+
+    /**
+     * 🔧 Set element text dengan safety check
+     */
+    setElementText(id, text) {
+        const element = document.getElementById(id);
+        if (element) element.textContent = text;
+    }
+
+    /**
+     * 🧮 Hitung total amount
+     */
+    getTotalAmount() {
+        if (!this.checkoutData) return 0;
+        return this.checkoutData.cart.reduce((total, item) => total + (item.price * item.quantity), 0);
+    }
+
+    /**
+     * 💰 Hitung persentase diskon
+     */
+    calculateDiscountPercentage() {
+        if (!this.checkoutData.discount || !this.checkoutData.cart.length) return 0;
+        const subtotal = this.getTotalAmount();
+        return Math.round((this.checkoutData.discount / subtotal) * 100);
+    }
+
+    /**
+     * 📚 Check PDF library availability
+     */
+    checkPDFLibraries() {
+        const libraries = {
+            html2canvas: typeof html2canvas !== 'undefined',
+            jsPDF: typeof jspdf !== 'undefined' || typeof window.jspdf !== 'undefined'
+        };
+        return libraries;
+    }
+
+    /**
+     * 💬 Tunjukkan status save ke Firebase
+     */
+    showFirebaseSaveStatus(result) {
+        const saveStatus = document.createElement('div');
+        saveStatus.style.cssText = `
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: #28a745;
+            color: white;
+            padding: 0.75rem 1.25rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            z-index: 1000;
+            animation: slideInLeft 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        `;
+        saveStatus.innerHTML = `✅ Data pesanan tersimpan #${this.checkoutData.orderId}`;
+        
+        document.body.appendChild(saveStatus);
+        
+        setTimeout(() => {
+            saveStatus.style.animation = 'slideOutLeft 0.3s ease';
+            setTimeout(() => {
+                if (saveStatus.parentNode) {
+                    saveStatus.parentNode.removeChild(saveStatus);
+                }
+            }, 300);
+        }, 5000);
+    }
+
+    /**
+     * 💬 Show message toast
+     */
     showMessage(message, type = 'info') {
-        // Create toast message
         const toast = document.createElement('div');
         toast.style.cssText = `
             position: fixed;
@@ -561,6 +786,9 @@ class PaymentSystem {
         }, 5000);
     }
 
+    /**
+     * 🎨 Get toast color berdasarkan type
+     */
     getToastColor(type) {
         const colors = {
             success: '#28a745',
@@ -571,20 +799,50 @@ class PaymentSystem {
         return colors[type] || colors.info;
     }
 
+    /**
+     * ⚠️ Show expiry warning
+     */
+    showExpiryWarning() {
+        this.showMessage('Batas waktu pembayaran telah habis. Silakan buat pesanan baru.', 'warning');
+    }
+
+    /**
+     * ❌ Show error message
+     */
     showError(message) {
         const errorDiv = document.createElement('div');
         errorDiv.style.cssText = `
             background: #f8d7da;
             color: #721c24;
-            padding: 1rem;
+            padding: 1.5rem;
             border-radius: 8px;
-            margin: 1rem 0;
+            margin: 2rem auto;
             border: 1px solid #f5c6cb;
             text-align: center;
+            max-width: 500px;
         `;
         errorDiv.innerHTML = `
-            <p><strong>Error:</strong> ${message}</p>
-            <a href="cart.html" style="color: #721c24; text-decoration: underline;">Kembali ke Keranjang</a>
+            <h4 style="margin: 0 0 1rem 0; color: #721c24;">⚠️ Terjadi Kesalahan</h4>
+            <p style="margin: 0 0 1.5rem 0;">${message}</p>
+            <div style="display: flex; gap: 1rem; justify-content: center;">
+                <a href="cart.html" style="
+                    background: #6c757d;
+                    color: white;
+                    padding: 0.75rem 1.5rem;
+                    border-radius: 6px;
+                    text-decoration: none;
+                    font-weight: 500;
+                ">Kembali ke Keranjang</a>
+                <button onclick="location.reload()" style="
+                    background: #007bff;
+                    color: white;
+                    border: none;
+                    padding: 0.75rem 1.5rem;
+                    border-radius: 6px;
+                    cursor: pointer;
+                    font-weight: 500;
+                ">Refresh Halaman</button>
+            </div>
         `;
         
         const container = document.querySelector('.payment-content');
@@ -594,6 +852,8 @@ class PaymentSystem {
         }
     }
 }
+
+// ==================== INITIALIZATION ====================
 
 // Initialize payment system when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
@@ -621,6 +881,10 @@ if (!document.querySelector('#payment-animations')) {
         @keyframes slideInLeft {
             from { transform: translateX(-100%); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slideOutLeft {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(-100%); opacity: 0; }
         }
         @keyframes fadeIn {
             from { opacity: 0; }
