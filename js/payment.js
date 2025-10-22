@@ -349,75 +349,62 @@ class PaymentSystem {
     /**
      * 📄 Load checkout data dari localStorage
      */
+/**
+ * 📄 Load checkout data dari localStorage - FIXED VERSION
+ */
 loadCheckoutData() {
     try {
         console.log('💳 Checking for checkout data...');
         
-        // Cek beberapa kemungkinan key
-        const possibleKeys = ['semart-checkout', 'checkoutData', 'currentOrder'];
-        let checkoutData = null;
-        let sourceKey = null;
-        
-        for (const key of possibleKeys) {
-            const data = localStorage.getItem(key);
-            if (data) {
-                checkoutData = JSON.parse(data);
-                sourceKey = key;
-                console.log(`💳 Found checkout data in: ${key}`);
-                break;
-            }
-        }
-        
+        const checkoutData = JSON.parse(localStorage.getItem('semart-checkout'));
         if (!checkoutData) {
-            console.error('❌ No checkout data found in any storage key');
-            
-            // Coba ambil dari URL parameters (jika ada redirect dari checkout)
-            const urlParams = new URLSearchParams(window.location.search);
-            const orderData = urlParams.get('orderData');
-            if (orderData) {
-                try {
-                    checkoutData = JSON.parse(decodeURIComponent(orderData));
-                    localStorage.setItem('semart-checkout', JSON.stringify(checkoutData));
-                    console.log('💳 Loaded checkout data from URL parameters');
-                } catch (e) {
-                    console.error('💳 Error parsing order data from URL:', e);
-                }
-            }
-            
-            if (!checkoutData) {
-                this.showError('Data checkout tidak ditemukan. Silakan kembali ke keranjang dan lakukan checkout kembali.');
-                return;
-            }
-        }
-        
-        // Validasi data penting
-        if (!checkoutData.orderId) {
-            checkoutData.orderId = 'INV-' + Date.now();
-            console.log('💳 Generated new order ID:', checkoutData.orderId);
-        }
-        
-        if (!checkoutData.virtualAccount) {
-            checkoutData.virtualAccount = this.generateVirtualAccount();
-            console.log('💳 Generated new virtual account:', checkoutData.virtualAccount);
-        }
-        
-        if (!checkoutData.expiryTime) {
-            checkoutData.expiryTime = this.getExpiryTime();
-            console.log('💳 Generated new expiry time:', checkoutData.expiryTime);
-        }
-        
-        // Validasi cart items
-        if (!checkoutData.cart || !Array.isArray(checkoutData.cart) || checkoutData.cart.length === 0) {
-            console.error('❌ Invalid or empty cart data:', checkoutData.cart);
-            this.showError('Data keranjang tidak valid. Silakan kembali ke keranjang.');
+            console.error('❌ No checkout data found');
+            this.showError('Data checkout tidak ditemukan. Silakan kembali ke keranjang.');
             return;
         }
+
+        console.log('💳 Raw checkout data:', checkoutData);
+
+        // 🔥 PERBAIKAN: Handle struktur data yang berbeda
+        // Data menggunakan userInfo, bukan langsung di root
+        const processedData = {
+            // Data dari root
+            ...checkoutData,
+            
+            // 🔥 OVERRIDE: Gunakan shippingInfo dari root jika ada, atau dari userInfo
+            shippingInfo: checkoutData.shippingInfo || checkoutData.userInfo || {},
+            
+            // 🔥 OVERRIDE: Pastikan cart ada
+            cart: checkoutData.cart || [],
+            
+            // 🔥 GENERATE jika tidak ada
+            orderId: checkoutData.orderId || `INV-${Date.now()}`,
+            virtualAccount: checkoutData.virtualAccount || this.generateVirtualAccount(),
+            expiryTime: checkoutData.expiryTime || this.getExpiryTime(),
+            discount: checkoutData.discount || 0
+        };
+
+        console.log('💳 Processed checkout data:', processedData);
+
+        // Validasi data penting
+        if (!processedData.cart || !Array.isArray(processedData.cart) || processedData.cart.length === 0) {
+            console.error('❌ Invalid cart data:', processedData.cart);
+            this.showError('Keranjang belanja kosong. Silakan kembali ke keranjang.');
+            return;
+        }
+
+        if (!processedData.shippingInfo.recipientName) {
+            console.error('❌ Missing recipient name');
+            this.showError('Data penerima tidak lengkap. Silakan lengkapi data pengiriman.');
+            return;
+        }
+
+        this.checkoutData = processedData;
         
-        // Simpan kembali dengan data yang lengkap
-        localStorage.setItem('semart-checkout', JSON.stringify(checkoutData));
-        this.checkoutData = checkoutData;
+        // Simpan kembali dengan struktur yang konsisten
+        localStorage.setItem('semart-checkout', JSON.stringify(this.checkoutData));
         
-        console.log('💳 Complete checkout data loaded:', this.checkoutData);
+        console.log('💳 Final checkout data ready:', this.checkoutData);
         this.renderInvoice();
         
     } catch (error) {
@@ -428,72 +415,112 @@ loadCheckoutData() {
     /**
      * 🎨 Render invoice ke HTML
      */
-    renderInvoice() {
-        if (!this.checkoutData) return;
-
-        try {
-            const { cart, discount, shippingInfo, orderId, virtualAccount, expiryTime } = this.checkoutData;
-            
-            // Calculate totals
-            const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-            const shipping = 0;
-            const total = Math.max(0, subtotal - discount + shipping);
-
-            // Set invoice data
-            this.setElementText('invoice-order-id', orderId);
-            this.setElementText('invoice-date', new Date().toLocaleDateString('id-ID', {
-                weekday: 'long',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-            }));
-            this.setElementText('order-date', new Date().toLocaleDateString('id-ID'));
-
-            // Customer info
-            this.setElementText('customer-name', shippingInfo.recipientName);
-            this.setElementText('customer-phone', shippingInfo.recipientPhone);
-            this.setElementText('customer-address', shippingInfo.shippingAddress);
-            this.setElementText('customer-city', `${shippingInfo.city} ${shippingInfo.postalCode}`);
-
-            // Products
-            this.renderProductsTable(cart);
-
-            // Totals
-            this.setElementText('invoice-subtotal', `Rp${subtotal.toLocaleString('id-ID')}`);
-            this.setElementText('invoice-total', `Rp${total.toLocaleString('id-ID')}`);
-            this.setElementText('invoice-shipping', `Rp${shipping.toLocaleString('id-ID')}`);
-
-            // Discount
-            if (discount > 0) {
-                const discountRow = document.getElementById('invoice-discount-row');
-                if (discountRow) {
-                    discountRow.style.display = 'flex';
-                    this.setElementText('invoice-discount', `-Rp${discount.toLocaleString('id-ID')}`);
-                }
-            }
-
-            // Virtual Account
-            this.setElementText('va-number', virtualAccount);
-            this.setElementText('instruction-va', virtualAccount);
-            this.setElementText('va-amount', `Rp${total.toLocaleString('id-ID')}`);
-
-            // Expiry time
-            const expiryDate = new Date(expiryTime);
-            const formattedExpiry = expiryDate.toLocaleDateString('id-ID', {
-                weekday: 'long',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-            });
-            this.setElementText('payment-expiry', formattedExpiry);
-            this.setElementText('expiry-time', formattedExpiry);
-
-        } catch (error) {
-            console.error('💳 Error rendering invoice:', error);
-        }
+/**
+ * 🎨 Render invoice ke HTML - FIXED FOR YOUR DATA STRUCTURE
+ */
+renderInvoice() {
+    if (!this.checkoutData) {
+        console.error('💳 No checkout data available for rendering');
+        return;
     }
+
+    try {
+        console.log('💳 Starting invoice rendering with data:', this.checkoutData);
+        
+        const { cart, discount, shippingInfo, orderId, virtualAccount, expiryTime } = this.checkoutData;
+        
+        // Debug info
+        console.log('💳 Cart items:', cart);
+        console.log('💳 Shipping info:', shippingInfo);
+        console.log('💳 Discount:', discount);
+
+        // Calculate totals
+        const subtotal = cart.reduce((sum, item) => {
+            const price = Number(item.price) || 0;
+            const quantity = Number(item.quantity) || 1;
+            return sum + (price * quantity);
+        }, 0);
+        
+        const shipping = 0;
+        const total = Math.max(0, subtotal - (Number(discount) || 0) + shipping);
+
+        console.log('💳 Calculated totals:', { subtotal, discount, shipping, total });
+
+        // 🔥 FIX: Set invoice data
+        document.getElementById('invoice-order-id').textContent = orderId;
+        document.getElementById('invoice-date').textContent = new Date().toLocaleDateString('id-ID', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+        document.getElementById('order-date').textContent = new Date().toLocaleDateString('id-ID');
+
+        // 🔥 FIX: Customer info - pastikan menggunakan shippingInfo yang benar
+        document.getElementById('customer-name').textContent = shippingInfo.recipientName || 'Tidak tersedia';
+        document.getElementById('customer-phone').textContent = shippingInfo.recipientPhone || 'Tidak tersedia';
+        document.getElementById('customer-address').textContent = shippingInfo.shippingAddress || 'Tidak tersedia';
+        document.getElementById('customer-city').textContent = 
+            `${shippingInfo.city || ''} ${shippingInfo.postalCode || ''}`.trim() || 'Tidak tersedia';
+
+        // 🔥 FIX: Render products table
+        const tbody = document.getElementById('invoice-products-body');
+        if (tbody && cart && cart.length > 0) {
+            tbody.innerHTML = cart.map(item => `
+                <tr>
+                    <td>
+                        <strong>${item.name || 'Produk'}</strong>
+                    </td>
+                    <td>Rp${(item.price || 0).toLocaleString('id-ID')}</td>
+                    <td>${item.quantity || 1}</td>
+                    <td>Rp${((item.price || 0) * (item.quantity || 1)).toLocaleString('id-ID')}</td>
+                </tr>
+            `).join('');
+        } else {
+            tbody.innerHTML = '<tr><td colspan="4">Tidak ada produk</td></tr>';
+        }
+
+        // 🔥 FIX: Render totals
+        document.getElementById('invoice-subtotal').textContent = `Rp${subtotal.toLocaleString('id-ID')}`;
+        document.getElementById('invoice-total').textContent = `Rp${total.toLocaleString('id-ID')}`;
+        document.getElementById('invoice-shipping').textContent = `Rp${shipping.toLocaleString('id-ID')}`;
+
+        // Handle discount
+        if (discount > 0) {
+            const discountRow = document.getElementById('invoice-discount-row');
+            if (discountRow) {
+                discountRow.style.display = 'flex';
+                document.getElementById('invoice-discount').textContent = `-Rp${discount.toLocaleString('id-ID')}`;
+            }
+        }
+
+        // 🔥 FIX: Virtual Account
+        const vaNumber = virtualAccount || this.generateVirtualAccount();
+        document.getElementById('va-number').textContent = vaNumber;
+        document.getElementById('instruction-va').textContent = vaNumber;
+        document.getElementById('va-amount').textContent = `Rp${total.toLocaleString('id-ID')}`;
+
+        // Expiry time
+        const expiryDate = new Date(expiryTime);
+        const formattedExpiry = expiryDate.toLocaleDateString('id-ID', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+        
+        document.getElementById('payment-expiry').textContent = formattedExpiry;
+        document.getElementById('expiry-time').textContent = formattedExpiry;
+
+        console.log('💳 Invoice rendering completed successfully');
+
+    } catch (error) {
+        console.error('💳 Error rendering invoice:', error);
+        this.showError(`Gagal menampilkan invoice: ${error.message}`);
+    }
+}
 
     /**
      * 📊 Render tabel produk
