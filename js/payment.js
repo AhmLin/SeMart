@@ -7,38 +7,90 @@ class PaymentSystem {
         this.paymentTimer = null;
         this.isAuthReady = false;
         this.currentUser = null;
-        this.init();
+        this.isDOMReady = false;
+        
+        // Tunggu DOM ready sebelum init
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                this.isDOMReady = true;
+                this.init();
+            });
+        } else {
+            this.isDOMReady = true;
+            this.init();
+        }
     }
 
     async init() {
-        console.log('💳 Initializing payment system');
+        console.log('💳 Initializing payment system, DOM ready:', this.isDOMReady);
         
+        if (!this.isDOMReady) {
+            console.error('💳 DOM not ready, delaying initialization');
+            setTimeout(() => this.init(), 100);
+            return;
+        }
+
         try {
+            // Pastikan semua element invoice sudah tersedia
+            if (!this.checkInvoiceElements()) {
+                console.error('💳 Invoice elements not found, retrying...');
+                setTimeout(() => this.init(), 500);
+                return;
+            }
+
+            console.log('💳 All invoice elements found, proceeding...');
+            
             // Tunggu auth system ready
             await this.waitForAuthSystem();
             this.isAuthReady = true;
             
-            console.log('💳 Auth system ready, current user:', this.currentUser);
+            console.log('💳 Auth system ready');
             
             this.loadCheckoutData();
-            
-            // Setup UI berdasarkan login status
             this.setupAuthBasedUI();
             this.setupEventListeners();
             this.startPaymentTimer();
             
-            // Simpan ke Firebase jika user login
             if (this.isUserLoggedIn()) {
                 await this.saveCompleteOrderToFirebase();
             }
             
         } catch (error) {
             console.error('💳 Error during payment initialization:', error);
-            // Fallback: lanjutkan tanpa auth
             this.loadCheckoutData();
             this.setupEventListeners();
             this.startPaymentTimer();
         }
+    }
+
+    /**
+     * 🔍 Check jika semua element invoice sudah tersedia di DOM
+     */
+    checkInvoiceElements() {
+        const requiredElements = [
+            'invoice-order-id',
+            'invoice-date',
+            'customer-name', 
+            'customer-phone',
+            'customer-address',
+            'customer-city',
+            'invoice-products-body',
+            'invoice-subtotal',
+            'invoice-total',
+            'va-number'
+        ];
+
+        const allElementsExist = requiredElements.every(id => {
+            const element = document.getElementById(id);
+            const exists = !!element;
+            if (!exists) {
+                console.warn(`💳 Missing element: ${id}`);
+            }
+            return exists;
+        });
+
+        console.log(`💳 Required elements check: ${allElementsExist ? 'PASS' : 'FAIL'}`);
+        return allElementsExist;
     }
 
     // ==================== AUTHENTICATION & FIREBASE ====================
