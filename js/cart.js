@@ -1,3 +1,4 @@
+// cart.js - FINAL VERSION dengan semua perbaikan
 class ShoppingCart {
     constructor() {
         this.cart = this.getCartFromStorage();
@@ -8,7 +9,7 @@ class ShoppingCart {
     init() {
         this.updateNavbarCart();
         
-        // 🔥 TAMBAHKAN: Universal event listeners untuk SEMUA page
+        // Universal event listeners untuk SEMUA page
         this.setupGlobalAddToCartListeners();
         
         if (window.location.pathname.includes('cart.html')) {
@@ -16,12 +17,12 @@ class ShoppingCart {
         }
     }
 
-    // 🔥 METHOD BARU: Universal event listeners untuk semua page
+    // Universal event listeners untuk semua page
     setupGlobalAddToCartListeners() {
         try {
             console.log('🛒 Setting up global add to cart listeners for all pages');
             
-            // Method 1: Event delegation - bekerja untuk element yang ada sekarang dan akan datang
+            // Method 1: Event delegation
             document.addEventListener('click', (e) => {
                 const addToCartBtn = e.target.closest('.add-to-cart, .btn-add-to-cart, [onclick*="addToCart"]');
                 if (addToCartBtn) {
@@ -30,10 +31,10 @@ class ShoppingCart {
                 }
             });
 
-            // Method 2: Direct event listeners untuk button yang sudah ada di DOM
+            // Method 2: Direct event listeners
             this.attachAddToCartListeners();
 
-            // Method 3: Observer untuk button yang ditambahkan dynamically (AJAX, etc.)
+            // Method 3: Observer untuk dynamic buttons
             this.observeDynamicButtons();
 
             console.log('🛒 Global add to cart listeners setup completed');
@@ -43,7 +44,7 @@ class ShoppingCart {
         }
     }
 
-    // 🔥 METHOD BARU: Attach listeners ke existing buttons
+    // Attach listeners ke existing buttons
     attachAddToCartListeners() {
         const addToCartButtons = document.querySelectorAll(
             '.add-to-cart, .btn-add-to-cart, [data-product-id], button[onclick*="addToCart"]'
@@ -52,7 +53,6 @@ class ShoppingCart {
         console.log(`🛒 Found ${addToCartButtons.length} add to cart buttons`);
         
         addToCartButtons.forEach(button => {
-            // Hanya attach listener sekali
             if (!button.hasAttribute('data-cart-listener')) {
                 button.setAttribute('data-cart-listener', 'true');
                 button.addEventListener('click', (e) => {
@@ -64,7 +64,7 @@ class ShoppingCart {
         });
     }
 
-    // 🔥 METHOD BARU: Observer untuk button yang ditambahkan dynamically
+    // Observer untuk button yang ditambahkan dynamically
     observeDynamicButtons() {
         const observer = new MutationObserver((mutations) => {
             let shouldUpdate = false;
@@ -72,7 +72,7 @@ class ShoppingCart {
             mutations.forEach((mutation) => {
                 if (mutation.addedNodes.length) {
                     mutation.addedNodes.forEach(node => {
-                        if (node.nodeType === 1) { // Element node
+                        if (node.nodeType === 1) {
                             if (node.matches && (
                                 node.matches('.add-to-cart, .btn-add-to-cart, [data-product-id]') ||
                                 node.querySelector('.add-to-cart, .btn-add-to-cart, [data-product-id]')
@@ -96,12 +96,11 @@ class ShoppingCart {
         });
     }
 
-    // 🔥 METHOD BARU: Handle click pada add to cart button
+    // Handle click pada add to cart button
     handleAddToCartClick(button) {
         try {
             console.log('🛒 Add to cart button clicked:', button);
             
-            // Dapatkan data product dari berbagai sumber
             const productData = this.getProductDataFromButton(button);
             
             if (productData && productData.id) {
@@ -117,11 +116,10 @@ class ShoppingCart {
         }
     }
 
-    // 🔥 METHOD BARU: Extract product data dari button
+    // Extract product data dari button
     getProductDataFromButton(button) {
         console.log('🛒 Extracting product data from button:', button);
         
-        // Coba dari berbagai attribute
         const productId = button.getAttribute('data-product-id') || 
                          button.getAttribute('data-id') ||
                          button.closest('[data-product-id]')?.getAttribute('data-product-id') ||
@@ -139,7 +137,6 @@ class ShoppingCart {
                             button.closest('.product-card, .product-item, .card')?.querySelector('.product-image, .card-img, img')?.src ||
                             'images/placeholder-product.jpg';
 
-        // Parse price dari string ke number
         const price = this.parsePrice(productPrice);
 
         console.log('🛒 Extracted product data:', {
@@ -161,13 +158,12 @@ class ShoppingCart {
         return null;
     }
 
-    // 🔥 METHOD BARU: Generate product ID dari nama jika tidak ada
+    // Generate product ID dari nama jika tidak ada
     generateProductIdFromName(button) {
         const productName = button.getAttribute('data-product-name') || 
                            button.closest('.product-card, .product-item')?.querySelector('.product-name, .card-title')?.textContent;
         
         if (productName) {
-            // Generate ID dari nama produk (lowercase, hapus spasi, special chars)
             return productName.toLowerCase()
                 .replace(/[^a-z0-9]/g, '-')
                 .replace(/-+/g, '-')
@@ -177,12 +173,11 @@ class ShoppingCart {
         return null;
     }
 
-    // 🔥 METHOD BARU: Parse harga dari string "Rp 100.000" ke number 100000
+    // Parse harga dari string "Rp 100.000" ke number 100000
     parsePrice(priceString) {
         try {
             if (!priceString) return 0;
             
-            // Hapus "Rp", spasi, dan titik
             const cleaned = priceString.toString()
                 .replace(/Rp\s?/gi, '')
                 .replace(/\./g, '')
@@ -227,7 +222,6 @@ class ShoppingCart {
                 quantity: quantity 
             });
             
-            // Validasi input
             if (!product || !product.id) {
                 throw new Error('Product data tidak valid');
             }
@@ -262,7 +256,7 @@ class ShoppingCart {
         }
     }
 
-    // 🔥 METHOD BARU: Show error message
+    // Show error message
     showErrorMessage(message) {
         const toast = document.createElement('div');
         toast.style.cssText = `
@@ -654,12 +648,12 @@ class ShoppingCart {
                 return;
             }
 
-            // 🔥 CEK LOGIN SEBELUM CHECKOUT
+            // Cek login sebelum checkout
             if (typeof window.authSystem === 'undefined' || !window.authSystem.currentUser) {
                 if (confirm('Anda perlu login untuk melanjutkan ke pembayaran. Mau login sekarang?')) {
                     // Simpan data checkout sementara
                     const tempCheckoutData = {
-                        cart: this.cart, // 🔥 LANGSUNG gunakan this.cart (array)
+                        cart: this.cart,
                         discount: this.currentDiscount || 0,
                         shippingInfo: this.getShippingInfo(),
                         timestamp: new Date().toISOString()
@@ -672,9 +666,9 @@ class ShoppingCart {
                 return;
             }
 
-            // 🔥 GENERATE DATA CHECKOUT YANG KONSISTEN
+            // Generate data checkout yang konsisten
             const checkoutData = {
-                cart: this.cart, // 🔥 LANGSUNG gunakan this.cart (array)
+                cart: this.cart,
                 discount: this.currentDiscount || 0,
                 shippingInfo: this.getShippingInfo(),
                 userInfo: this.getUserInfo(),
@@ -686,7 +680,7 @@ class ShoppingCart {
 
             console.log('💳 Checkout data prepared:', checkoutData);
 
-            // 🔥 SIMPAN KE LOCALSTORAGE DENGAN STRUKTUR YANG KONSISTEN
+            // Simpan ke localStorage dengan struktur yang konsisten
             localStorage.setItem('semart-checkout', JSON.stringify(checkoutData));
             
             // Redirect ke payment page
@@ -718,7 +712,8 @@ class ShoppingCart {
                 shippingAddress: shippingAddress || 'Alamat pengiriman',
                 city: city || 'Kota',
                 postalCode: postalCode || '12345',
-                orderNotes: orderNotes || ''
+                orderNotes: orderNotes || '',
+                promoCode: document.getElementById('promo-code')?.value || ''
             };
         } catch (error) {
             console.error('🛒 Error getting shipping info:', error);
@@ -728,7 +723,8 @@ class ShoppingCart {
                 shippingAddress: 'Alamat pengiriman',
                 city: 'Kota',
                 postalCode: '12345',
-                orderNotes: ''
+                orderNotes: '',
+                promoCode: ''
             };
         }
     }
@@ -789,43 +785,6 @@ class ShoppingCart {
         const now = new Date();
         now.setHours(now.getHours() + 24);
         return now.toISOString();
-    }
-    
-    getUserInfo() {
-        try {
-            if (window.authSystem && window.authSystem.currentUser) {
-                return {
-                    name: window.authSystem.currentUser.displayName || 'Customer',
-                    email: window.authSystem.currentUser.email || '',
-                    phone: window.authSystem.currentUser.phoneNumber || ''
-                };
-            }
-            return {
-                name: 'Customer',
-                email: '',
-                phone: ''
-            };
-        } catch (error) {
-            console.error('🛒 Error getting user info:', error);
-            return {};
-        }
-    }
-
-    getShippingInfo() {
-        try {
-            return {
-                recipientName: document.getElementById('recipient-name')?.value || '',
-                recipientPhone: document.getElementById('recipient-phone')?.value || '',
-                shippingAddress: document.getElementById('shipping-address')?.value || '',
-                city: document.getElementById('city')?.value || '',
-                postalCode: document.getElementById('postal-code')?.value || '',
-                promoCode: document.getElementById('promo-code')?.value || '',
-                orderNotes: document.getElementById('order-notes')?.value || ''
-            };
-        } catch (error) {
-            console.error('🛒 Error getting shipping info:', error);
-            return {};
-        }
     }
 }
 
@@ -981,4 +940,3 @@ function debugCartSystem() {
 }
 
 window.debugCart = debugCartSystem;
-
