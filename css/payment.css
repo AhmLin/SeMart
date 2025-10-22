@@ -59,6 +59,10 @@
     color: white;
 }
 
+.progress-step .active {
+    background-color: #fff;
+}   
+
 .step-text {
     font-size: 0.9rem;
     color: #6c757d;
