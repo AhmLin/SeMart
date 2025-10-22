@@ -35,18 +35,40 @@ const firebaseConfig = {
 };
 
 // ============================
-//  🚀 INISIALISASI FIREBASE
+//  🚀 INISIALISASI FIREBASE - CEK SUDAH ADA ATAU BELUM
 // ============================
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-setPersistence(auth, browserLocalPersistence);
+let app, auth, db;
+
+try {
+  // Cek apakah Firebase sudah diinisialisasi
+  if (!window.firebaseApp) {
+    app = initializeApp(firebaseConfig);
+    window.firebaseApp = app; // Simpan di global scope
+    console.log('🔥 Firebase App initialized');
+  } else {
+    app = window.firebaseApp;
+    console.log('🔥 Using existing Firebase App');
+  }
+
+  // Inisialisasi auth dan db
+  auth = getAuth(app);
+  db = getFirestore(app);
+  
+  // Set persistence
+  setPersistence(auth, browserLocalPersistence);
+  
+  console.log('🔥 Auth & Firestore initialized');
+
+} catch (error) {
+  console.error('🔥 Firebase initialization error:', error);
+}
 
 // ============================
 //  👤 AUTH SYSTEM CLASS
 // ============================
 class AuthSystem {
   constructor() {
+    // Gunakan instance yang sudah diinisialisasi
     this.auth = auth;
     this.db = db;
     this.currentUser = null;
@@ -79,6 +101,9 @@ class AuthSystem {
         // Update navbar
         this.updateNavbarUI(true, user);
 
+        // Trigger custom event untuk payment system
+        this.triggerAuthStateChanged(user);
+
         // Redirect jika di halaman login/signup
         if (currentPage.includes('login.html') || currentPage.includes('signup.html')) {
           console.log('➡️ Redirect ke index.html setelah login');
@@ -91,8 +116,22 @@ class AuthSystem {
         this.currentUser = null;
         console.log('🔐 User signed out');
         this.updateNavbarUI(false);
+        
+        // Trigger custom event untuk logout
+        this.triggerAuthStateChanged(null);
       }
     });
+  }
+
+  /**
+   * 🎯 Trigger custom event untuk auth state changes
+   */
+  triggerAuthStateChanged(user) {
+    const event = new CustomEvent('authStateChanged', {
+      detail: { user }
+    });
+    document.dispatchEvent(event);
+    console.log('🎯 Auth state change event dispatched');
   }
 
   // ============================
@@ -108,7 +147,7 @@ class AuthSystem {
     console.log('🔍 Elements found:', { navAuth: !!navAuth, userMenu: !!userMenu });
 
     if (!navAuth || !userMenu) {
-      console.log('❌ Navbar elements not found');
+      console.log('❌ Navbar elements not found - might be on payment page');
       return;
     }
 
@@ -312,5 +351,12 @@ class AuthSystem {
 // ============================
 document.addEventListener('DOMContentLoaded', () => {
   console.log('🔧 Initializing Auth System...');
-  window.authSystem = new AuthSystem();
+  
+  // Cek apakah auth system sudah diinisialisasi
+  if (!window.authSystem) {
+    window.authSystem = new AuthSystem();
+    console.log('✅ Auth System initialized successfully');
+  } else {
+    console.log('✅ Auth System already initialized');
+  }
 });
