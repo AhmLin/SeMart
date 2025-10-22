@@ -546,3 +546,9 @@
 .btn-print:hover {
     background: #5a6268 !important;
 }
+
+.kop {
+    displa: flex;
+    gap: 10px;
+    align-items: center;
+}
