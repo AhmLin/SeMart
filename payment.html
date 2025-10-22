@@ -272,6 +272,13 @@
     <script type="module" src="js/firebase-auth.js"></script>
     <script type="module" src="js/simple-auth-fix.js"></script>
     <!-- <script type="module" src="js/payment-full.js"></script> -->
-    <script type="module" src="js/payment.js"></script>
+    <!-- Di bagian akhir body -->
+    <script type="module">
+        // Prevent double loading
+        if (!window.paymentManagerInitialized) {
+            window.paymentManagerInitialized = true;
+            import('./js/payment.js').catch(console.error);
+        }
+    </script>
 </body>
 </html>
