@@ -349,25 +349,82 @@ class PaymentSystem {
     /**
      * 📄 Load checkout data dari localStorage
      */
-    loadCheckoutData() {
-        try {
-            const checkoutData = localStorage.getItem('semart-checkout');
+loadCheckoutData() {
+    try {
+        console.log('💳 Checking for checkout data...');
+        
+        // Cek beberapa kemungkinan key
+        const possibleKeys = ['semart-checkout', 'checkoutData', 'currentOrder'];
+        let checkoutData = null;
+        let sourceKey = null;
+        
+        for (const key of possibleKeys) {
+            const data = localStorage.getItem(key);
+            if (data) {
+                checkoutData = JSON.parse(data);
+                sourceKey = key;
+                console.log(`💳 Found checkout data in: ${key}`);
+                break;
+            }
+        }
+        
+        if (!checkoutData) {
+            console.error('❌ No checkout data found in any storage key');
+            
+            // Coba ambil dari URL parameters (jika ada redirect dari checkout)
+            const urlParams = new URLSearchParams(window.location.search);
+            const orderData = urlParams.get('orderData');
+            if (orderData) {
+                try {
+                    checkoutData = JSON.parse(decodeURIComponent(orderData));
+                    localStorage.setItem('semart-checkout', JSON.stringify(checkoutData));
+                    console.log('💳 Loaded checkout data from URL parameters');
+                } catch (e) {
+                    console.error('💳 Error parsing order data from URL:', e);
+                }
+            }
+            
             if (!checkoutData) {
-                console.error('❌ No checkout data found');
-                this.showError('Data checkout tidak ditemukan. Silakan kembali ke keranjang.');
+                this.showError('Data checkout tidak ditemukan. Silakan kembali ke keranjang dan lakukan checkout kembali.');
                 return;
             }
-
-            this.checkoutData = JSON.parse(checkoutData);
-            console.log('💳 Complete checkout data loaded:', this.checkoutData);
-            this.renderInvoice();
-            
-        } catch (error) {
-            console.error('💳 Error loading checkout data:', error);
-            this.showError('Terjadi kesalahan saat memuat data pembayaran.');
         }
+        
+        // Validasi data penting
+        if (!checkoutData.orderId) {
+            checkoutData.orderId = 'INV-' + Date.now();
+            console.log('💳 Generated new order ID:', checkoutData.orderId);
+        }
+        
+        if (!checkoutData.virtualAccount) {
+            checkoutData.virtualAccount = this.generateVirtualAccount();
+            console.log('💳 Generated new virtual account:', checkoutData.virtualAccount);
+        }
+        
+        if (!checkoutData.expiryTime) {
+            checkoutData.expiryTime = this.getExpiryTime();
+            console.log('💳 Generated new expiry time:', checkoutData.expiryTime);
+        }
+        
+        // Validasi cart items
+        if (!checkoutData.cart || !Array.isArray(checkoutData.cart) || checkoutData.cart.length === 0) {
+            console.error('❌ Invalid or empty cart data:', checkoutData.cart);
+            this.showError('Data keranjang tidak valid. Silakan kembali ke keranjang.');
+            return;
+        }
+        
+        // Simpan kembali dengan data yang lengkap
+        localStorage.setItem('semart-checkout', JSON.stringify(checkoutData));
+        this.checkoutData = checkoutData;
+        
+        console.log('💳 Complete checkout data loaded:', this.checkoutData);
+        this.renderInvoice();
+        
+    } catch (error) {
+        console.error('💳 Error loading checkout data:', error);
+        this.showError('Terjadi kesalahan saat memuat data pembayaran: ' + error.message);
     }
-
+}
     /**
      * 🎨 Render invoice ke HTML
      */
