@@ -1,5 +1,5 @@
 // ============================
-//  🔐 FIREBASE AUTH HANDLER FINAL
+//  🔐 FIREBASE AUTH HANDLER FINAL - SINGLETON VERSION
 // ============================
 import {
   initializeApp
@@ -35,32 +35,36 @@ const firebaseConfig = {
 };
 
 // ============================
-//  🚀 INISIALISASI FIREBASE - CEK SUDAH ADA ATAU BELUM
+//  🚀 CEK APAKAH SUDAH DIINISIALISASI
 // ============================
-let app, auth, db;
+if (window.firebaseInitialized) {
+  console.log('🔥 Firebase already initialized, skipping...');
+} else {
+  // ============================
+  //  🚀 INISIALISASI FIREBASE - HANYA SEKALI
+  // ============================
+  let app, auth, db;
 
-try {
-  // Cek apakah Firebase sudah diinisialisasi
-  if (!window.firebaseApp) {
+  try {
+    // Inisialisasi Firebase
     app = initializeApp(firebaseConfig);
-    window.firebaseApp = app; // Simpan di global scope
-    console.log('🔥 Firebase App initialized');
-  } else {
-    app = window.firebaseApp;
-    console.log('🔥 Using existing Firebase App');
+    auth = getAuth(app);
+    db = getFirestore(app);
+    
+    // Set persistence
+    setPersistence(auth, browserLocalPersistence);
+    
+    // Tandai sudah diinisialisasi
+    window.firebaseApp = app;
+    window.firebaseAuth = auth;
+    window.firebaseDb = db;
+    window.firebaseInitialized = true;
+    
+    console.log('🔥 Firebase initialized successfully');
+
+  } catch (error) {
+    console.error('🔥 Firebase initialization error:', error);
   }
-
-  // Inisialisasi auth dan db
-  auth = getAuth(app);
-  db = getFirestore(app);
-  
-  // Set persistence
-  setPersistence(auth, browserLocalPersistence);
-  
-  console.log('🔥 Auth & Firestore initialized');
-
-} catch (error) {
-  console.error('🔥 Firebase initialization error:', error);
 }
 
 // ============================
@@ -69,9 +73,17 @@ try {
 class AuthSystem {
   constructor() {
     // Gunakan instance yang sudah diinisialisasi
-    this.auth = auth;
-    this.db = db;
+    this.auth = window.firebaseAuth;
+    this.db = window.firebaseDb;
     this.currentUser = null;
+    
+    // Cek apakah instance sudah ada
+    if (window.authSystemInstance) {
+      console.log('🚀 AuthSystem instance already exists, returning existing instance');
+      return window.authSystemInstance;
+    }
+    
+    window.authSystemInstance = this;
     this.init();
   }
 
@@ -347,16 +359,16 @@ class AuthSystem {
 }
 
 // ============================
-//  🚀 INISIALISASI SISTEM AUTH
+//  🚀 INISIALISASI SISTEM AUTH - HANYA SEKALI
 // ============================
 document.addEventListener('DOMContentLoaded', () => {
-  console.log('🔧 Initializing Auth System...');
+  console.log('🔧 Checking Auth System initialization...');
   
   // Cek apakah auth system sudah diinisialisasi
   if (!window.authSystem) {
     window.authSystem = new AuthSystem();
     console.log('✅ Auth System initialized successfully');
   } else {
-    console.log('✅ Auth System already initialized');
+    console.log('✅ Auth System already initialized, using existing instance');
   }
 });
