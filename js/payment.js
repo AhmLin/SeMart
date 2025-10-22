@@ -1,9 +1,12 @@
 // payment.js - Final Version dengan Firebase Integration & Auth System
+import firebaseDB from './firebase-db.js';
+
 class PaymentSystem {
     constructor() {
         this.checkoutData = null;
         this.paymentTimer = null;
         this.isAuthReady = false;
+        this.currentUser = null;
         this.init();
     }
 
@@ -15,7 +18,7 @@ class PaymentSystem {
             await this.waitForAuthSystem();
             this.isAuthReady = true;
             
-            console.log('💳 Auth system ready, current user:', window.authSystem?.currentUser);
+            console.log('💳 Auth system ready, current user:', this.currentUser);
             
             this.loadCheckoutData();
             
@@ -48,11 +51,27 @@ class PaymentSystem {
             const startTime = Date.now();
             
             const checkAuth = () => {
-                if (window.authSystem !== undefined) {
-                    console.log('💳 Auth system loaded after', Date.now() - startTime, 'ms');
+                // Cek jika user sudah login dari localStorage/session
+                const userData = localStorage.getItem('currentUser');
+                if (userData) {
+                    try {
+                        this.currentUser = JSON.parse(userData);
+                        console.log('💳 User found in localStorage:', this.currentUser);
+                        resolve();
+                        return;
+                    } catch (e) {
+                        console.warn('💳 Error parsing user data from localStorage:', e);
+                    }
+                }
+                
+                // Cek auth system global
+                if (window.authSystem !== undefined && window.authSystem.currentUser) {
+                    this.currentUser = window.authSystem.currentUser;
+                    console.log('💳 User from auth system:', this.currentUser);
                     resolve();
                 } else if (Date.now() - startTime > maxWait) {
                     console.warn('💳 Auth system timeout, continuing without auth');
+                    this.currentUser = null;
                     resolve(); // Lanjut tanpa auth
                 } else {
                     setTimeout(checkAuth, 100);
@@ -67,9 +86,7 @@ class PaymentSystem {
      * 🔍 Cek apakah user login
      */
     isUserLoggedIn() {
-        return this.isAuthReady && 
-               window.authSystem?.currentUser !== null && 
-               window.authSystem?.currentUser !== undefined;
+        return this.currentUser !== null && this.currentUser !== undefined;
     }
 
     /**
@@ -89,9 +106,7 @@ class PaymentSystem {
      * 🔐 Tampilkan fitur untuk user login
      */
     showLoggedInFeatures() {
-        const user = window.authSystem.currentUser;
-        console.log('💳 Logged in user:', user.email);
-        this.updateInvoiceWithUserInfo(user);
+        this.updateInvoiceWithUserInfo(this.currentUser);
         this.showFirebaseSaveStatus();
     }
 
@@ -169,8 +184,7 @@ class PaymentSystem {
                 return;
             }
 
-            const user = window.authSystem.currentUser;
-            console.log('💳 Saving order to Firebase for user:', user.email);
+            console.log('💳 Saving order to Firebase for user:', this.currentUser.email);
 
             // Cek jika order sudah disimpan sebelumnya
             const existingOrder = localStorage.getItem(`order-${this.checkoutData.orderId}-saved`);
@@ -181,59 +195,104 @@ class PaymentSystem {
 
             // 🔥 SIAPKAN DATA LENGKAP DARI PAYMENT PAGE
             const completeOrderData = {
+                // ========== INFORMASI ORDER ==========
                 orderId: this.checkoutData.orderId,
-                userId: user.uid,
-                userEmail: user.email,
-                userName: user.displayName || this.checkoutData.shippingInfo.recipientName,
+                orderNumber: `ORDER-${this.checkoutData.orderId}`,
                 
-                // INFORMASI PENERIMA
-                shippingInfo: {
-                    recipientName: this.checkoutData.shippingInfo.recipientName,
-                    recipientPhone: this.checkoutData.shippingInfo.recipientPhone,
-                    shippingAddress: this.checkoutData.shippingInfo.shippingAddress,
+                // ========== INFORMASI USER ==========
+                userId: this.currentUser.uid,
+                userEmail: this.currentUser.email,
+                userName: this.currentUser.displayName || this.checkoutData.shippingInfo.recipientName,
+                
+                // ========== INFORMASI PENERIMA LENGKAP ==========
+                recipientInfo: {
+                    name: this.checkoutData.shippingInfo.recipientName,
+                    phone: this.checkoutData.shippingInfo.recipientPhone,
+                    address: this.checkoutData.shippingInfo.shippingAddress,
                     city: this.checkoutData.shippingInfo.city,
                     postalCode: this.checkoutData.shippingInfo.postalCode,
-                    orderNotes: this.checkoutData.shippingInfo.orderNotes || ''
+                    notes: this.checkoutData.shippingInfo.orderNotes || 'Tidak ada catatan'
                 },
                 
-                // BARANG YANG DIBELI
-                items: this.checkoutData.cart.map(item => ({
-                    id: item.id,
-                    name: item.name,
-                    price: item.price,
-                    quantity: item.quantity,
-                    image: item.image,
-                    subtotal: item.price * item.quantity
+                // ========== BARANG YANG DIBELI LENGKAP ==========
+                items: this.checkoutData.cart.map((item, index) => ({
+                    itemId: index + 1,
+                    productId: item.id || `prod-${index}`,
+                    productName: item.name || 'Product',
+                    price: Number(item.price) || 0,
+                    quantity: Number(item.quantity) || 1,
+                    subtotal: (Number(item.price) || 0) * (Number(item.quantity) || 1),
+                    image: item.image || 'images/placeholder-product.jpg',
+                    category: item.category || 'Umum'
                 })),
                 
-                // INFORMASI PEMBAYARAN
+                // ========== INFORMASI PEMBAYARAN LENGKAP ==========
                 paymentInfo: {
-                    virtualAccount: this.checkoutData.virtualAccount,
+                    method: 'bank_nusantara',
+                    virtualAccount: this.checkoutData.virtualAccount || this.generateVirtualAccount(),
+                    bankName: 'Bank Nusantara',
+                    
+                    // Breakdown harga
                     subtotal: this.getTotalAmount(),
                     discount: this.checkoutData.discount || 0,
                     shippingCost: 0,
-                    finalAmount: this.getTotalAmount() - (this.checkoutData.discount || 0),
+                    tax: 0,
+                    totalAmount: this.getTotalAmount() - (this.checkoutData.discount || 0),
+                    
+                    // Status pembayaran
+                    status: 'pending',
+                    expiryTime: this.checkoutData.expiryTime || this.getExpiryTime()
+                },
+                
+                // ========== INFORMASI PENGIRIMAN ==========
+                shippingInfo: {
+                    service: 'standard',
+                    cost: 0,
+                    estimatedDelivery: this.getEstimatedDelivery(),
+                    trackingNumber: '',
                     status: 'pending'
                 },
                 
-                // INFORMASI PROMO
-                promoCode: this.checkoutData.shippingInfo.promoCode || '',
-                discountPercentage: this.calculateDiscountPercentage(),
+                // ========== PROMO & DISKON ==========
+                promotion: {
+                    promoCode: this.checkoutData.promoCode || '',
+                    discountAmount: this.checkoutData.discount || 0,
+                    discountPercentage: this.calculateDiscountPercentage()
+                },
                 
-                // STATUS & TIMESTAMP
+                // ========== STATUS ORDER ==========
                 status: 'pending_payment',
-                expiryTime: this.checkoutData.expiryTime,
+                statusHistory: [
+                    {
+                        status: 'pending_payment',
+                        timestamp: new Date().toISOString(),
+                        note: 'Menunggu pembayaran via Bank Nusantara',
+                        description: 'Pesanan dibuat dan menunggu pembayaran'
+                    }
+                ],
+                
+                // ========== METADATA ==========
+                metadata: {
+                    itemsCount: this.checkoutData.cart.length,
+                    totalQuantity: this.checkoutData.cart.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0),
+                    platform: 'web',
+                    browser: navigator.userAgent,
+                    screenResolution: `${screen.width}x${screen.height}`,
+                    ipAddress: 'unknown'
+                },
+                
+                // ========== TIMESTAMPS ==========
                 createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString()
+                updatedAt: new Date().toISOString(),
+                expiresAt: this.checkoutData.expiryTime || this.getExpiryTime()
             };
 
             console.log('💳 Complete order data for Firebase:', completeOrderData);
 
-            // Pastikan firebaseDB tersedia
-            if (typeof firebaseDB === 'undefined' || !firebaseDB.initialized) {
-                console.warn('💳 FirebaseDB not available, saving temporarily');
-                this.saveOrderTemporarily();
-                return;
+            // Validasi data sebelum simpan
+            const validation = firebaseDB.validateOrderData(completeOrderData);
+            if (!validation.isValid) {
+                throw new Error(`Data tidak valid: ${validation.errors.join(', ')}`);
             }
 
             // Simpan ke Firebase
@@ -602,7 +661,7 @@ class PaymentSystem {
                 if (this.paymentTimer) {
                     clearInterval(this.paymentTimer);
                 }
-                this.showExpiryWarning();
+                this.handlePaymentExpired();
                 return;
             }
 
@@ -620,14 +679,69 @@ class PaymentSystem {
     }
 
     /**
-     * 🔍 Check payment status (simulasi)
+     * 🔍 Check payment status dari Firebase
      */
-    checkPaymentStatus() {
-        this.showMessage('Sedang memeriksa status pembayaran...', 'info');
+    async checkPaymentStatus() {
+        try {
+            if (!this.checkoutData?.orderId) {
+                throw new Error('Order ID tidak ditemukan');
+            }
+
+            this.showMessage('Sedang memeriksa status pembayaran...', 'info');
+
+            const order = await firebaseDB.getOrderByOrderId(this.checkoutData.orderId);
+            
+            if (order) {
+                this.showPaymentStatus(order.paymentInfo?.status || 'pending');
+            } else {
+                throw new Error('Data pesanan tidak ditemukan di database');
+            }
+        } catch (error) {
+            console.error('💳 Error checking payment status:', error);
+            this.showMessage('Gagal memeriksa status pembayaran. Silakan coba lagi.', 'error');
+        }
+    }
+
+    /**
+     * 📊 Tampilkan status pembayaran
+     */
+    showPaymentStatus(status) {
+        const statusMessages = {
+            'pending': '⏳ Menunggu pembayaran',
+            'paid': '✅ Pembayaran berhasil',
+            'failed': '❌ Pembayaran gagal',
+            'expired': '⏰ Waktu pembayaran habis'
+        };
         
-        setTimeout(() => {
-            this.showMessage('Pembayaran masih dalam proses. Silakan coba lagi dalam beberapa menit.', 'info');
-        }, 2000);
+        const message = statusMessages[status] || 'Status tidak diketahui';
+        this.showMessage(`Status Pembayaran: ${message}`, 'info');
+        
+        // Redirect jika sudah paid
+        if (status === 'paid') {
+            setTimeout(() => {
+                window.location.href = 'order-success.html';
+            }, 3000);
+        }
+    }
+
+    /**
+     * ⏰ Handle payment expired
+     */
+    async handlePaymentExpired() {
+        try {
+            if (this.checkoutData?.orderId) {
+                await firebaseDB.updateOrderStatus(this.checkoutData.orderId, 'expired', 'Waktu pembayaran habis');
+                await firebaseDB.updatePaymentStatus(this.checkoutData.orderId, 'expired');
+            }
+            
+            this.showMessage('Waktu pembayaran telah habis. Silakan buat pesanan baru.', 'warning');
+            
+            setTimeout(() => {
+                window.location.href = 'cart.html';
+            }, 5000);
+        } catch (error) {
+            console.error('💳 Error handling payment expiration:', error);
+        }
     }
 
     // ==================== EVENT LISTENERS ====================
@@ -692,6 +806,33 @@ class PaymentSystem {
         if (!this.checkoutData.discount || !this.checkoutData.cart.length) return 0;
         const subtotal = this.getTotalAmount();
         return Math.round((this.checkoutData.discount / subtotal) * 100);
+    }
+
+    /**
+     * 🔢 Generate virtual account
+     */
+    generateVirtualAccount() {
+        const bankCode = '888';
+        const random = Math.floor(Math.random() * 1000000000).toString().padStart(9, '0');
+        return `${bankCode}${random}`;
+    }
+
+    /**
+     * ⏱️ Get expiry time (24 jam dari sekarang)
+     */
+    getExpiryTime() {
+        const expiry = new Date();
+        expiry.setHours(expiry.getHours() + 24);
+        return expiry.toISOString();
+    }
+
+    /**
+     * 📦 Get estimated delivery time
+     */
+    getEstimatedDelivery() {
+        const deliveryDate = new Date();
+        deliveryDate.setDate(deliveryDate.getDate() + 3);
+        return deliveryDate.toISOString();
     }
 
     /**
@@ -786,13 +927,6 @@ class PaymentSystem {
     }
 
     /**
-     * ⚠️ Show expiry warning
-     */
-    showExpiryWarning() {
-        this.showMessage('Batas waktu pembayaran telah habis. Silakan buat pesanan baru.', 'warning');
-    }
-
-    /**
      * ❌ Show error message
      */
     showError(message) {
@@ -854,7 +988,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Debug info
         console.log('💳 Payment system initialized');
         console.log('💳 Auth system available:', typeof window.authSystem !== 'undefined');
-        console.log('💳 Current user:', window.authSystem?.currentUser);
+        console.log('💳 Current user:', window.paymentSystem.currentUser);
         
     } catch (error) {
         console.error('💳 Error initializing payment system:', error);
@@ -870,6 +1004,7 @@ document.addEventListener('authStateChanged', (event) => {
     
     if (window.paymentSystem && event.detail.user) {
         console.log('💳 User logged in, retrying Firebase save...');
+        window.paymentSystem.currentUser = event.detail.user;
         window.paymentSystem.saveCompleteOrderToFirebase().catch(console.error);
     }
 });
@@ -882,7 +1017,7 @@ document.addEventListener('authStateChanged', (event) => {
 function debugPaymentSystem() {
     console.log('💳=== PAYMENT SYSTEM DEBUG ===');
     console.log('💳 Auth system available:', typeof window.authSystem !== 'undefined');
-    console.log('💳 Current user:', window.authSystem?.currentUser);
+    console.log('💳 Current user:', window.paymentSystem?.currentUser);
     console.log('💳 Payment system:', window.paymentSystem);
     console.log('💳 User logged in:', window.paymentSystem?.isUserLoggedIn());
     console.log('💳 Auth ready:', window.paymentSystem?.isAuthReady);
