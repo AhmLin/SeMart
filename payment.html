@@ -27,10 +27,25 @@
                 <a href="login.html" class="btn-login">Login</a>
                 <a href="signup.html" class="btn-signup">Daftar</a>
             </div>
-            <div class="user-menu" id="user-menu" style="display: none;">
-                <span class="user-greeting">Halo, <span id="user-name">User</span></span>
-            </div>
-              <div class="cart-section">
+             <div class="user-menu" id="user-menu" style="display: none;">
+                  <div class="user-profile">
+                    <div class="user-avatar">
+                       <img src="https://cdn-icons-png.flaticon.com/512/747/747545.png" style="width:60%; filter: brightness(0) invert(1);">
+                    </div>
+                    <div class="user-info">
+                      <span class="user-greeting">Halo, <span id="user-name">User</span></span>
+                      <span class="user-email" id="user-email"></span>
+                      <div class="user-dropdown">
+                        <a href="profile.html" class="dropdown-item">📋 Profil Saya</a>
+                        <a href="orders.html" class="dropdown-item">📦 Pesanan Saya</a>
+                        <a href="wishlist.html" class="dropdown-item">❤️ Wishlist</a>
+                        <div class="dropdown-divider"></div>
+                        <a href="#" id="logout-btn" class="dropdown-item logout">🚪 Logout</a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              <!-- <div class="cart-section">
                 <a href="cart.html" class="cart-link">
                     <div class="cart-info">
                         <div class="cart-icon-with-count">
@@ -39,7 +54,7 @@
                         </div>
                     </div>
                 </a>
-            </div>
+            </div> -->
           </nav>
       </div>
   </header>
