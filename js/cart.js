@@ -549,6 +549,7 @@ class ShoppingCart {
                 return;
             }
     
+            // Validasi form pengiriman
             const shippingForm = document.getElementById('shipping-form');
             if (shippingForm && !shippingForm.checkValidity()) {
                 alert('Harap lengkapi semua informasi pengiriman yang wajib diisi!');
@@ -556,14 +557,25 @@ class ShoppingCart {
                 return;
             }
     
+            // 🔥 CEK LOGIN SEBELUM CHECKOUT
             if (typeof window.authSystem === 'undefined' || !window.authSystem.currentUser) {
-                if (confirm('Anda perlu login untuk checkout. Mau login sekarang?')) {
-                    window.location.href = 'login.html?redirect=checkout';
+                if (confirm('Anda perlu login untuk melanjutkan ke pembayaran. Mau login sekarang?')) {
+                    // Simpan data checkout sementara
+                    const tempCheckoutData = {
+                        cart: this.cart,
+                        discount: this.currentDiscount || 0,
+                        shippingInfo: this.getShippingInfo(),
+                        timestamp: new Date().toISOString()
+                    };
+                    
+                    localStorage.setItem('semart-checkout-temp', JSON.stringify(tempCheckoutData));
+                    window.location.href = 'login.html?redirect=payment';
                     return;
                 }
                 return;
             }
-            
+    
+            // Generate data checkout
             const checkoutData = {
                 cart: this.cart,
                 discount: this.currentDiscount || 0,
@@ -574,6 +586,18 @@ class ShoppingCart {
                 virtualAccount: this.generateVirtualAccount(),
                 expiryTime: this.getExpiryTime()
             };
+            
+            // Simpan data untuk payment page
+            localStorage.setItem('semart-checkout', JSON.stringify(checkoutData));
+            
+            // Redirect ke payment page
+            window.location.href = 'payment.html';
+            
+        } catch (error) {
+            console.error('🛒 Error during checkout:', error);
+            alert('Terjadi kesalahan saat checkout. Silakan coba lagi.');
+        }
+    }
             
             localStorage.setItem('semart-checkout', JSON.stringify(checkoutData));
             window.location.href = 'payment.html';
@@ -792,3 +816,4 @@ function debugCartSystem() {
 }
 
 window.debugCart = debugCartSystem;
+
