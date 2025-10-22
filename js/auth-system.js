@@ -707,6 +707,69 @@ class AuthSystem {
             return [];
         }
     }
+        // 🔥 METHOD BARU: Cek jika ada pending redirect
+    checkPendingRedirect() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const redirect = urlParams.get('redirect');
+        
+        if (redirect && this.currentUser) {
+            console.log('🔑 Redirecting to:', redirect);
+            
+            switch(redirect) {
+                case 'payment':
+                    window.location.href = 'payment.html';
+                    break;
+                case 'checkout':
+                    window.location.href = 'cart.html';
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+
+    // 🔥 METHOD BARU: Simpan pending order setelah login
+    async processPendingOrdersAfterLogin() {
+        // Cari semua temporary orders
+        const tempOrders = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key.startsWith('temp-order-')) {
+                const orderData = JSON.parse(localStorage.getItem(key));
+                tempOrders.push(orderData);
+            }
+        }
+
+        // Process masing-masing temporary order
+        for (const order of tempOrders) {
+            try {
+                console.log('🔑 Processing pending order:', order.orderId);
+                await this.savePendingOrderToFirebase(order);
+            } catch (error) {
+                console.error('🔑 Error processing pending order:', error);
+            }
+        }
+    }
+
+    // 🔥 METHOD BARU: Save pending order ke Firebase
+    async savePendingOrderToFirebase(orderData) {
+        if (!this.currentUser) return;
+
+        const completeOrderData = {
+            ...orderData,
+            userId: this.currentUser.uid,
+            userEmail: this.currentUser.email,
+            userName: this.currentUser.displayName || orderData.shippingInfo.recipientName,
+            status: 'pending_payment',
+            retried: true
+        };
+
+        if (typeof firebaseDB !== 'undefined' && firebaseDB.initialized) {
+            await firebaseDB.saveOrder(completeOrderData);
+            localStorage.removeItem(`temp-order-${orderData.orderId}`);
+            console.log('🔑 Pending order saved to Firebase:', orderData.orderId);
+        }
+    }
 }
 
 // 🔹 GLOBAL INITIALIZATION
