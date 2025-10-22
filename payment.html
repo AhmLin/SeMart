@@ -22,7 +22,7 @@
               <h1>SeMart</h1>
           </div>
           <nav class="right-nav">
-              <!-- 🔥 PERBAIKI: Tambahkan user menu di navbar payment -->
+              <!-- User menu untuk payment page -->
               <div id="nav-auth" style="display: none;">
                   <a href="login.html" class="login-btn">Login</a>
                   <a href="signup.html" class="signup-btn">Daftar</a>
@@ -45,232 +45,243 @@
       </div>
   </header>
 
-    <div class="backpage">
-        <a href="cart.html" class="back-btn">← ke Keranjang</a>
-    </div>
+  <div class="backpage">
+      <a href="cart.html" class="back-btn">← ke Keranjang</a>
+  </div>
 
-    <main>
-        <section class="payment-page">
-            <div class="container">
-                <!-- Progress Indicator -->
-                <div class="payment-progress">
-                    <div class="progress-step completed">
-                        <span class="step-number">1</span>
-                        <span class="step-text">Keranjang</span>
-                    </div>
-                    <div class="progress-step completed">
-                        <span class="step-number">2</span>
-                        <span class="step-text">Checkout</span>
-                    </div>
-                    <div class="progress-step active">
-                        <span class="step-number">3</span>
-                        <span class="step-text">Pembayaran</span>
-                    </div>
-                    <div class="progress-step">
-                        <span class="step-number">4</span>
-                        <span class="step-text">Selesai</span>
-                    </div>
-                </div>
+  <main>
+      <section class="payment-page">
+          <div class="container">
+              <!-- Progress Indicator -->
+              <div class="payment-progress">
+                  <div class="progress-step completed">
+                      <span class="step-number">1</span>
+                      <span class="step-text">Keranjang</span>
+                  </div>
+                  <div class="progress-step completed">
+                      <span class="step-number">2</span>
+                      <span class="step-text">Checkout</span>
+                  </div>
+                  <div class="progress-step active">
+                      <span class="step-number">3</span>
+                      <span class="step-text">Pembayaran</span>
+                  </div>
+                  <div class="progress-step">
+                      <span class="step-number">4</span>
+                      <span class="step-text">Selesai</span>
+                  </div>
+              </div>
 
-                <h1 class="page-title">Pembayaran</h1>
-                
-                <div class="payment-content">
-                    <!-- Left: Invoice -->
-                    <div class="invoice-section">
-                        <div class="invoice-card" id="invoice-content">
-                            <!-- Header Invoice -->
-                            <div class="invoice-header">
-                                <div class="invoice-store">
-                                    <h2>SeMart Store</h2>
-                                    <p>Jl. Contoh Alamat No. 123</p>
-                                    <p>Jakarta Selatan, 12345</p>
-                                    <p>Telp: (021) 123-4567 | Email: info@semart.com</p>
-                                </div>
-                                <div class="invoice-title">
-                                    <h1>INVOICE</h1>
-                                    <p class="invoice-number">No: <span id="invoice-order-id">-</span></p>
-                                    <p class="invoice-date" id="invoice-date">-</p>
-                                </div>
-                            </div>
+              <h1 class="page-title">Pembayaran</h1>
+              
+              <div class="payment-content">
+                  <!-- Left: Invoice -->
+                  <div class="invoice-section">
+                      <div class="invoice-card" id="invoice-content">
+                          <!-- Header Invoice -->
+                          <div class="invoice-header">
+                              <div class="invoice-store">
+                                  <h2>SeMart Store</h2>
+                                  <p>Jl. Contoh Alamat No. 123</p>
+                                  <p>Jakarta Selatan, 12345</p>
+                                  <p>Telp: (021) 123-4567 | Email: info@semart.com</p>
+                              </div>
+                              <div class="invoice-title">
+                                  <h1>INVOICE</h1>
+                                  <p class="invoice-number">No: <span id="invoice-order-id">-</span></p>
+                                  <p class="invoice-date" id="invoice-date">-</p>
+                              </div>
+                          </div>
 
-                            <!-- Customer & Store Info -->
-                            <div class="invoice-info-grid">
-                                <div class="invoice-customer">
-                                    <h3>Kepada:</h3>
-                                    <p id="customer-name">-</p>
-                                    <p id="customer-phone">-</p>
-                                    <p id="customer-address">-</p>
-                                    <p id="customer-city">-</p>
-                                </div>
-                                <div class="invoice-meta">
-                                    <h3>Detail Pesanan:</h3>
-                                    <p>Tanggal: <span id="order-date">-</span></p>
-                                    <p>Batas Bayar: <span id="payment-expiry">-</span></p>
-                                    <p>Status: <span class="status-pending">Menunggu Pembayaran</span></p>
-                                </div>
-                            </div>
+                          <!-- Customer & Store Info -->
+                          <div class="invoice-info-grid">
+                              <div class="invoice-customer">
+                                  <h3>Kepada:</h3>
+                                  <p id="customer-name">-</p>
+                                  <p id="customer-phone">-</p>
+                                  <p id="customer-address">-</p>
+                                  <p id="customer-city">-</p>
+                              </div>
+                              <div class="invoice-meta">
+                                  <h3>Detail Pesanan:</h3>
+                                  <p>Tanggal: <span id="order-date">-</span></p>
+                                  <p>Batas Bayar: <span id="payment-expiry">-</span></p>
+                                  <p>Status: <span class="status-pending">Menunggu Pembayaran</span></p>
+                              </div>
+                          </div>
 
-                            <!-- Products Table -->
-                            <div class="invoice-products">
-                                <table>
-                                    <thead>
-                                        <tr>
-                                            <th>Produk</th>
-                                            <th>Harga</th>
-                                            <th>Qty</th>
-                                            <th>Subtotal</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="invoice-products-body">
-                                        <!-- Diisi JavaScript -->
-                                    </tbody>
-                                </table>
-                            </div>
+                          <!-- Products Table -->
+                          <div class="invoice-products">
+                              <table>
+                                  <thead>
+                                      <tr>
+                                          <th>Produk</th>
+                                          <th>Harga</th>
+                                          <th>Qty</th>
+                                          <th>Subtotal</th>
+                                      </tr>
+                                  </thead>
+                                  <tbody id="invoice-products-body">
+                                      <!-- Diisi JavaScript -->
+                                  </tbody>
+                              </table>
+                          </div>
 
-                            <!-- Total Section -->
-                            <div class="invoice-total">
-                                <div class="total-row">
-                                    <span>Subtotal:</span>
-                                    <span id="invoice-subtotal">Rp0</span>
-                                </div>
-                                <div class="total-row discount-row" id="invoice-discount-row" style="display: none;">
-                                    <span>Diskon:</span>
-                                    <span id="invoice-discount">-Rp0</span>
-                                </div>
-                                <div class="total-row">
-                                    <span>Ongkos Kirim:</span>
-                                    <span id="invoice-shipping">Rp0</span>
-                                </div>
-                                <div class="total-row final">
-                                    <span>TOTAL:</span>
-                                    <span id="invoice-total">Rp0</span>
-                                </div>
-                            </div>
+                          <!-- Total Section -->
+                          <div class="invoice-total">
+                              <div class="total-row">
+                                  <span>Subtotal:</span>
+                                  <span id="invoice-subtotal">Rp0</span>
+                              </div>
+                              <div class="total-row discount-row" id="invoice-discount-row" style="display: none;">
+                                  <span>Diskon:</span>
+                                  <span id="invoice-discount">-Rp0</span>
+                              </div>
+                              <div class="total-row">
+                                  <span>Ongkos Kirim:</span>
+                                  <span id="invoice-shipping">Rp0</span>
+                              </div>
+                              <div class="total-row final">
+                                  <span>TOTAL:</span>
+                                  <span id="invoice-total">Rp0</span>
+                              </div>
+                          </div>
 
-                            <!-- Payment Instructions -->
-                            <div class="payment-instructions">
-                                <h3>Instruksi Pembayaran - Bank Nusantara</h3>
-                                <div class="virtual-account">
-                                    <p>Virtual Account Number</p>
-                                    <div class="va-number" id="va-number">-</div>
-                                    <p class="va-amount">Jumlah Transfer: <span id="va-amount">Rp0</span></p>
-                                </div>
-                                
-                                <div class="instructions">
-                                    <h4>Cara Pembayaran:</h4>
-                                    <ol>
-                                        <li>Buka aplikasi mobile banking/ATM Bank Nusantara</li>
-                                        <li>Pilih menu "Transfer" → "Virtual Account"</li>
-                                        <li>Masukkan Virtual Account: <strong id="instruction-va">-</strong></li>
-                                        <li>Masukkan jumlah yang ditunjukkan</li>
-                                        <li>Konfirmasi dan selesaikan pembayaran</li>
-                                        <li>Pembayaran akan diverifikasi otomatis dalam 5-10 menit</li>
-                                    </ol>
-                                </div>
+                          <!-- Payment Instructions -->
+                          <div class="payment-instructions">
+                              <h3>Instruksi Pembayaran - Bank Nusantara</h3>
+                              <div class="virtual-account">
+                                  <p>Virtual Account Number</p>
+                                  <div class="va-number" id="va-number">-</div>
+                                  <p class="va-amount">Jumlah Transfer: <span id="va-amount">Rp0</span></p>
+                              </div>
+                              
+                              <div class="instructions">
+                                  <h4>Cara Pembayaran:</h4>
+                                  <ol>
+                                      <li>Buka aplikasi mobile banking/ATM Bank Nusantara</li>
+                                      <li>Pilih menu "Transfer" → "Virtual Account"</li>
+                                      <li>Masukkan Virtual Account: <strong id="instruction-va">-</strong></li>
+                                      <li>Masukkan jumlah yang ditunjukkan</li>
+                                      <li>Konfirmasi dan selesaikan pembayaran</li>
+                                      <li>Pembayaran akan diverifikasi otomatis dalam 5-10 menit</li>
+                                  </ol>
+                              </div>
 
-                                <div class="important-notes">
-                                    <p>⚠️ <strong>Penting:</strong></p>
-                                    <ul>
-                                        <li>Transfer tepat sesuai jumlah di atas</li>
-                                        <li>Batas waktu pembayaran: <strong id="expiry-time">-</strong></li>
-                                        <li>Simpan bukti transfer untuk konfirmasi</li>
-                                        <li>Invoice ini sah sebagai bukti pemesanan</li>
-                                    </ul>
-                                </div>
-                            </div>
+                              <div class="important-notes">
+                                  <p>⚠️ <strong>Penting:</strong></p>
+                                  <ul>
+                                      <li>Transfer tepat sesuai jumlah di atas</li>
+                                      <li>Batas waktu pembayaran: <strong id="expiry-time">-</strong></li>
+                                      <li>Simpan bukti transfer untuk konfirmasi</li>
+                                      <li>Invoice ini sah sebagai bukti pemesanan</li>
+                                  </ul>
+                              </div>
+                          </div>
 
-                            <!-- Footer -->
-                            <div class="invoice-footer">
-                                <p>Terima kasih telah berbelanja di SeMart Store</p>
-                                <p>Barang akan diproses setelah pembayaran dikonfirmasi</p>
-                            </div>
-                        </div>
-                    </div>
+                          <!-- Footer -->
+                          <div class="invoice-footer">
+                              <p>Terima kasih telah berbelanja di SeMart Store</p>
+                              <p>Barang akan diproses setelah pembayaran dikonfirmasi</p>
+                          </div>
+                      </div>
+                  </div>
 
-                                        <!-- Right: Actions -->
-                    <div class="payment-actions-section">
-                        <div class="actions-card">
-                            <h3>Langkah Selanjutnya</h3>
-                            
-                            <div class="action-item">
-                                <div class="action-icon">📄</div>
-                                <div class="action-content">
-                                    <h4>Download Invoice</h4>
-                                    <p>Simpan invoice sebagai bukti pemesanan</p>
-                                    <button class="btn-download" id="download-pdf">
-                                        Download PDF Invoice
-                                    </button>
-                                    <!-- 🔥 TAMBAHKAN: Print fallback button -->
-                                    <button class="btn-print" id="print-invoice" style="
-                                        background: #6c757d;
-                                        color: white;
-                                        border: none;
-                                        padding: 0.5rem 1rem;
-                                        border-radius: 6px;
-                                        cursor: pointer;
-                                        margin-top: 0.5rem;
-                                        width: 100%;
-                                        font-size: 0.9rem;
-                                    ">
-                                        🖨️ Print Halaman
-                                    </button>
-                                </div>
-                            </div>
+                  <!-- Right: Actions -->
+                  <div class="payment-actions-section">
+                      <div class="actions-card">
+                          <h3>Langkah Selanjutnya</h3>
+                          
+                          <div class="action-item">
+                              <div class="action-icon">📄</div>
+                              <div class="action-content">
+                                  <h4>Download Invoice</h4>
+                                  <p>Simpan invoice sebagai bukti pemesanan</p>
+                                  <button class="btn-download" id="download-pdf">
+                                      Download PDF Invoice
+                                  </button>
+                                  <button class="btn-print" id="print-invoice" style="
+                                      background: #6c757d;
+                                      color: white;
+                                      border: none;
+                                      padding: 0.5rem 1rem;
+                                      border-radius: 6px;
+                                      cursor: pointer;
+                                      margin-top: 0.5rem;
+                                      width: 100%;
+                                      font-size: 0.9rem;
+                                  ">
+                                      🖨️ Print Halaman
+                                  </button>
+                              </div>
+                          </div>
 
-                            <div class="action-item">
-                                <div class="action-icon">💳</div>
-                                <div class="action-content">
-                                    <h4>Lakukan Pembayaran</h4>
-                                    <p>Transfer ke Virtual Account Bank Nusantara</p>
-                                    <div class="payment-timer">
-                                        <span class="timer-label">Batas waktu:</span>
-                                        <span class="timer" id="payment-timer">23:59:59</span>
-                                    </div>
-                                </div>
-                            </div>
+                          <div class="action-item">
+                              <div class="action-icon">💳</div>
+                              <div class="action-content">
+                                  <h4>Lakukan Pembayaran</h4>
+                                  <p>Transfer ke Virtual Account Bank Nusantara</p>
+                                  <div class="payment-timer">
+                                      <span class="timer-label">Batas waktu:</span>
+                                      <span class="timer" id="payment-timer">23:59:59</span>
+                                  </div>
+                              </div>
+                          </div>
 
-                            <div class="action-item">
-                                <div class="action-icon">🔄</div>
-                                <div class="action-content">
-                                    <h4>Status Pembayaran</h4>
-                                    <p>Pantau status pembayaran Anda</p>
-                                    <button class="btn-check-status" id="check-status">
-                                        Cek Status Pembayaran
-                                    </button>
-                                </div>
-                            </div>
+                          <div class="action-item">
+                              <div class="action-icon">🔄</div>
+                              <div class="action-content">
+                                  <h4>Status Pembayaran</h4>
+                                  <p>Pantau status pembayaran Anda</p>
+                                  <button class="btn-check-status" id="check-status">
+                                      Cek Status Pembayaran
+                                  </button>
+                              </div>
+                          </div>
 
-                            <div class="action-buttons">
-                                <a href="cart.html" class="btn-back">Kembali ke Keranjang</a>
-                                <a href="index.html" class="btn-continue">Lanjutkan Belanja</a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-    </main>
+                          <div class="action-buttons">
+                              <a href="cart.html" class="btn-back">Kembali ke Keranjang</a>
+                              <a href="index.html" class="btn-continue">Lanjutkan Belanja</a>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+          </div>
+      </section>
+  </main>
 
-    <footer>
-        <div class="container">
-            <div class="footer-content">
-                <div class="footer-logo">
-                    <section style="display: flex; align-items: center; gap: 10px;">
-                        <img src="logo2.png" alt="SeMart" style="width: 30px;">
-                        <h2 style="font-size: 20px;">SeMart</h2>
-                    </section>
-                    <p>Belanja cerdas, dukung produk lokal bersama SeMart.</p>
-                </div>
-            </div>
-            <div class="footer-copyright">
-                <p>&copy; 2025 SeMart Store</p>
-            </div>
-        </div>
-    </footer>
-<!-- DI payment.html -->
-    <script type="module" src="js/firebase-auth.js"></script>
-    <script type="module" src="js/firebase-db.js"></script> <!-- jika ada -->
-    <script type="module" src="js/payment.js"></script>
+  <footer>
+      <div class="container">
+          <div class="footer-content">
+              <div class="footer-logo">
+                  <section style="display: flex; align-items: center; gap: 10px;">
+                      <img src="logo2.png" alt="SeMart" style="width: 30px;">
+                      <h2 style="font-size: 20px;">SeMart</h2>
+                  </section>
+                  <p>Belanja cerdas, dukung produk lokal bersama SeMart.</p>
+              </div>
+          </div>
+          <div class="footer-copyright">
+              <p>&copy; 2025 SeMart Store</p>
+          </div>
+      </div>
+  </footer>
+
+  <!-- 🔥 LOAD SCRIPT DENGAN CHECK DOUBLE LOADING -->
+  <script>
+      // Cek apakah auth.js sudah di-load
+      if (!window.authSystem) {
+          const authScript = document.createElement('script');
+          authScript.type = 'module';
+          authScript.src = 'js/firebase-auth.js';
+          document.head.appendChild(authScript);
+          console.log('📥 Loading auth.js...');
+      } else {
+          console.log('✅ auth.js already loaded');
+      }
+  </script>
+  
+  <!-- Load payment system -->
+  <script type="module" src="js/payment.js"></script>
 </body>
 </html>
- 
