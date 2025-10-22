@@ -1,3 +1,6 @@
+// payment.js - Kirim data lengkap ke Firebase
+import firebaseDB from './firebase-db.js';
+
 class PaymentSystem {
     constructor() {
         this.checkoutData = null;
@@ -10,9 +13,143 @@ class PaymentSystem {
         this.loadCheckoutData();
         this.setupEventListeners();
         this.startPaymentTimer();
+        
+        // Simpan ke Firebase dengan data lengkap
+        this.saveCompleteOrderToFirebase();
+    }
+
+    // 🔥 METHOD BARU: Simpan data lengkap ke Firebase
+    async saveCompleteOrderToFirebase() {
+        try {
+            if (!this.checkoutData) {
+                console.log('💳 No checkout data available for Firebase');
+                return;
+            }
+
+            // Cek jika user sudah login
+            const user = window.authSystem?.currentUser;
+            if (!user) {
+                console.warn('💳 User not logged in, skipping Firebase save');
+                return;
+            }
+
+            // Cek jika order sudah disimpan sebelumnya
+            const existingOrder = localStorage.getItem(`order-${this.checkoutData.orderId}-saved`);
+            if (existingOrder) {
+                console.log('💳 Order already saved to Firebase');
+                return;
+            }
+
+            // 🔥 SIAPKAN DATA LENGKAP DARI PAYMENT PAGE
+            const completeOrderData = {
+                orderId: this.checkoutData.orderId,
+                userId: user.uid,
+                userEmail: user.email,
+                userName: user.displayName || this.checkoutData.shippingInfo.recipientName,
+                
+                // 🔥 INFORMASI PENERIMA (dari form pengiriman)
+                shippingInfo: {
+                    recipientName: this.checkoutData.shippingInfo.recipientName,
+                    recipientPhone: this.checkoutData.shippingInfo.recipientPhone,
+                    shippingAddress: this.checkoutData.shippingInfo.shippingAddress,
+                    city: this.checkoutData.shippingInfo.city,
+                    postalCode: this.checkoutData.shippingInfo.postalCode,
+                    orderNotes: this.checkoutData.shippingInfo.orderNotes || ''
+                },
+                
+                // 🔥 BARANG YANG DIBELI (dari cart)
+                items: this.checkoutData.cart.map(item => ({
+                    id: item.id,
+                    name: item.name,
+                    price: item.price,
+                    quantity: item.quantity,
+                    image: item.image,
+                    // Bisa tambah info lain seperti category, weight, dll
+                })),
+                
+                // 🔥 INFORMASI PEMBAYARAN (dari payment page)
+                paymentInfo: {
+                    virtualAccount: this.checkoutData.virtualAccount,
+                    subtotal: this.getTotalAmount(),
+                    discount: this.checkoutData.discount || 0,
+                    shippingCost: 0, // Bisa dikembangkan dengan kalkulasi ongkir
+                    finalAmount: this.getTotalAmount() - (this.checkoutData.discount || 0)
+                },
+                
+                // 🔥 INFORMASI PROMO (jika ada)
+                promoCode: this.checkoutData.shippingInfo.promoCode || '',
+                discountPercentage: this.calculateDiscountPercentage(),
+                
+                // Timestamp dan expiry
+                expiryTime: this.checkoutData.expiryTime
+            };
+
+            console.log('💳 Complete order data for Firebase:', completeOrderData);
+
+            // Simpan ke Firebase
+            const result = await firebaseDB.saveOrder(completeOrderData);
+            
+            // Tandai sudah disimpan
+            localStorage.setItem(`order-${this.checkoutData.orderId}-saved`, 'true');
+            
+            console.log('💳 Complete order successfully saved to Firebase:', result);
+            
+            // Update UI untuk menunjukkan data tersimpan
+            this.showFirebaseSaveStatus(result);
+
+        } catch (error) {
+            console.error('💳 Error saving complete order to Firebase:', error);
+            this.showMessage(
+                'Pesanan berhasil dibuat, tetapi terjadi kesalahan saat menyimpan data server. Silakan screenshot halaman ini sebagai bukti.', 
+                'warning'
+            );
+        }
+    }
+
+    // 🔥 METHOD BARU: Hitung persentase diskon
+    calculateDiscountPercentage() {
+        if (!this.checkoutData.discount || !this.checkoutData.cart.length) return 0;
+        
+        const subtotal = this.getTotalAmount();
+        return Math.round((this.checkoutData.discount / subtotal) * 100);
+    }
+
+    // 🔥 METHOD BARU: Tunjukkan status save ke Firebase
+    showFirebaseSaveStatus(result) {
+        // Tambahkan indicator di UI bahwa data tersimpan
+        const saveStatus = document.createElement('div');
+        saveStatus.style.cssText = `
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: #28a745;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            z-index: 1000;
+            animation: slideInLeft 0.3s ease;
+        `;
+        saveStatus.innerHTML = `✅ Data pesanan tersimpan #${this.checkoutData.orderId}`;
+        
+        document.body.appendChild(saveStatus);
+        
+        setTimeout(() => {
+            saveStatus.remove();
+        }, 5000);
     }
 
 
+
+    getTotalAmount() {
+        if (!this.checkoutData) return 0;
+        
+        return this.checkoutData.cart.reduce((total, item) => {
+            return total + (item.price * item.quantity);
+        }, 0);
+    }
+
+    // 🔥 UPDATE: Method loadCheckoutData untuk pastikan data lengkap
     loadCheckoutData() {
         try {
             const checkoutData = localStorage.getItem('semart-checkout');
@@ -23,7 +160,7 @@ class PaymentSystem {
             }
 
             this.checkoutData = JSON.parse(checkoutData);
-            console.log('💳 Checkout data loaded:', this.checkoutData);
+            console.log('💳 Complete checkout data loaded:', this.checkoutData);
             this.renderInvoice();
             
         } catch (error) {
@@ -31,6 +168,7 @@ class PaymentSystem {
             this.showError('Terjadi kesalahan saat memuat data pembayaran.');
         }
     }
+}
 
     renderInvoice() {
         if (!this.checkoutData) return;
