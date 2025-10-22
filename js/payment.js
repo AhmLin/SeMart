@@ -573,89 +573,221 @@ class PaymentSystem {
     /**
      * 📄 Download invoice sebagai PDF
      */
-    async downloadPDF() {
-        try {
-            const invoiceContent = document.getElementById('invoice-content');
-            if (!invoiceContent) {
-                throw new Error('Invoice content not found');
+async downloadPDF() {
+    try {
+        const invoiceContent = document.getElementById('invoice-content');
+        if (!invoiceContent) {
+            throw new Error('Invoice content not found');
+        }
+
+        // Show loading
+        const downloadBtn = document.getElementById('download-pdf');
+        const originalText = downloadBtn?.textContent || 'Download PDF Invoice';
+        if (downloadBtn) {
+            downloadBtn.textContent = 'Membuat PDF...';
+            downloadBtn.disabled = true;
+        }
+
+        // Check jika libraries tersedia
+        if (typeof html2canvas === 'undefined') {
+            throw new Error('html2canvas library tidak tersedia');
+        }
+
+        if (typeof jspdf === 'undefined' && typeof window.jspdf === 'undefined') {
+            throw new Error('jsPDF library tidak tersedia');
+        }
+
+        console.log('💾 Starting optimized PDF generation...');
+
+        // 🔥 OPTIMASI 1: Buat clone element untuk PDF saja
+        const pdfContainer = this.createOptimizedPDFContainer(invoiceContent);
+        document.body.appendChild(pdfContainer);
+
+        // 🔥 OPTIMASI 2: Gunakan scale yang lebih rendah dan optimasi kualitas
+        const canvas = await html2canvas(pdfContainer, {
+            scale: 1.5, // Turunkan dari 2 ke 1.5
+            useCORS: true,
+            logging: false,
+            backgroundColor: '#ffffff',
+            removeContainer: true,
+            width: pdfContainer.scrollWidth,
+            height: pdfContainer.scrollHeight,
+            // 🔥 OPTIMASI 3: Kurani kualitas gambar
+            onclone: (clonedDoc) => {
+                this.optimizeForPDF(clonedDoc);
             }
+        });
 
-            // Show loading
-            const downloadBtn = document.getElementById('download-pdf');
-            const originalText = downloadBtn?.textContent || 'Download PDF Invoice';
-            if (downloadBtn) {
-                downloadBtn.textContent = 'Membuat PDF...';
-                downloadBtn.disabled = true;
-            }
+        // Hapus container temporary
+        document.body.removeChild(pdfContainer);
 
-            // Check jika libraries tersedia
-            if (typeof html2canvas === 'undefined') {
-                throw new Error('html2canvas library tidak tersedia');
-            }
+        // 🔥 OPTIMASI 4: Kompres gambar dengan kualitas lebih rendah
+        const imgData = canvas.toDataURL('image/jpeg', 0.7); // Gunakan JPEG dengan kualitas 70%
+        
+        console.log('📊 Canvas size:', canvas.width, 'x', canvas.height);
+        console.log('📦 Image data size:', Math.round(imgData.length / 1024), 'KB');
 
-            if (typeof jspdf === 'undefined' && typeof window.jspdf === 'undefined') {
-                throw new Error('jsPDF library tidak tersedia');
-            }
+        // Handle jsPDF
+        let pdf;
+        if (typeof jspdf !== 'undefined') {
+            pdf = new jspdf.jsPDF('p', 'mm', 'a4');
+        } else if (typeof window.jspdf !== 'undefined') {
+            pdf = new window.jspdf.jsPDF('p', 'mm', 'a4');
+        } else {
+            throw new Error('jsPDF tidak tersedia');
+        }
 
-            // Use html2canvas untuk capture invoice
-            const canvas = await html2canvas(invoiceContent, {
-                scale: 2,
-                useCORS: true,
-                logging: false,
-                backgroundColor: '#ffffff'
-            });
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = pdf.internal.pageSize.getHeight();
+        
+        // 🔥 OPTIMASI 5: Hitung aspect ratio yang tepat
+        const imgWidth = pdfWidth - 10; // Margin 5mm each side
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-            const imgData = canvas.toDataURL('image/png');
-            
-            // Handle jsPDF yang berbeda-beda
-            let pdf;
-            if (typeof jspdf !== 'undefined') {
-                pdf = new jspdf.jsPDF('p', 'mm', 'a4');
-            } else if (typeof window.jspdf !== 'undefined') {
-                pdf = new window.jspdf.jsPDF('p', 'mm', 'a4');
-            } else {
-                throw new Error('jsPDF tidak tersedia');
-            }
+        console.log('📐 PDF dimensions:', { pdfWidth, pdfHeight, imgWidth, imgHeight });
 
-            const imgWidth = 210;
-            const pageHeight = 295;
-            const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        // 🔥 OPTIMASI 6: Cek jika perlu multiple pages
+        if (imgHeight > pdfHeight) {
+            // Jika terlalu tinggi, bagi menjadi beberapa halaman
             let heightLeft = imgHeight;
-            let position = 0;
+            let position = 5; // Start dengan margin top 5mm
+            
+            pdf.addImage(imgData, 'JPEG', 5, position, imgWidth, imgHeight);
+            heightLeft -= pdfHeight;
 
-            // Add first page
-            pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-            heightLeft -= pageHeight;
-
-            // Add additional pages if needed
-            while (heightLeft >= 0) {
+            while (heightLeft > 0) {
                 position = heightLeft - imgHeight;
                 pdf.addPage();
-                pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-                heightLeft -= pageHeight;
+                pdf.addImage(imgData, 'JPEG', 5, position, imgWidth, imgHeight);
+                heightLeft -= pdfHeight;
             }
+        } else {
+            // Muat dalam 1 halaman
+            pdf.addImage(imgData, 'JPEG', 5, 5, imgWidth, imgHeight);
+        }
 
-            // Save PDF
-            const orderId = this.checkoutData?.orderId || 'invoice';
-            const fileName = `invoice-${orderId}.pdf`;
-            pdf.save(fileName);
+        // Save PDF
+        const orderId = this.checkoutData?.orderId || 'invoice';
+        const fileName = `invoice-${orderId}.pdf`;
+        pdf.save(fileName);
 
-            // Show success message
-            this.showMessage('PDF berhasil didownload!', 'success');
+        // Show success message
+        this.showMessage('PDF berhasil didownload! (Size optimized)', 'success');
 
-        } catch (error) {
-            console.error('💳 Error downloading PDF:', error);
-            this.handlePDFError(error);
-            
-        } finally {
-            // Reset button state
-            const downloadBtn = document.getElementById('download-pdf');
-            if (downloadBtn) {
-                downloadBtn.textContent = 'Download PDF Invoice';
-                downloadBtn.disabled = false;
-            }
+    } catch (error) {
+        console.error('💳 Error downloading PDF:', error);
+        this.handlePDFError(error);
+        
+    } finally {
+        // Reset button state
+        const downloadBtn = document.getElementById('download-pdf');
+        if (downloadBtn) {
+            downloadBtn.textContent = 'Download PDF Invoice';
+            downloadBtn.disabled = false;
         }
     }
+}
+
+/**
+ * 🔥 Buat container teroptimasi untuk PDF
+ */
+createOptimizedPDFContainer(originalElement) {
+    const container = document.createElement('div');
+    container.style.cssText = `
+        position: fixed;
+        left: -9999px;
+        top: -9999px;
+        width: 800px; /* Fixed width untuk konsistensi */
+        background: white;
+        padding: 20px;
+        box-sizing: border-box;
+        font-family: 'Poppins', sans-serif;
+        transform: scale(0.8);
+        transform-origin: top left;
+    `;
+    
+    // Clone dan optimasi element
+    const clonedElement = originalElement.cloneNode(true);
+    this.optimizeElementForPDF(clonedElement);
+    container.appendChild(clonedElement);
+    
+    return container;
+}
+
+/**
+ * 🔥 Optimasi element untuk PDF
+ */
+optimizeElementForPDF(element) {
+    // Hapus element yang tidak perlu untuk PDF
+    const elementsToRemove = element.querySelectorAll(
+        '.payment-actions-section, .btn-download, .btn-print, .btn-check-status, .action-buttons, .backpage, .navbar, footer'
+    );
+    elementsToRemove.forEach(el => el.remove());
+
+    // Optimasi styles untuk PDF
+    const stylesToOptimize = [
+        '.invoice-card { padding: 15px !important; margin: 0 !important; }',
+        '.invoice-header { margin-bottom: 15px !important; }',
+        '.invoice-info-grid { margin-bottom: 15px !important; }',
+        '.invoice-products table { font-size: 10px !important; }',
+        '.invoice-total { margin-top: 15px !important; }',
+        '.payment-instructions { margin-top: 15px !important; font-size: 10px !important; }',
+        'h1 { font-size: 18px !important; }',
+        'h2 { font-size: 16px !important; }',
+        'h3 { font-size: 14px !important; }',
+        'p, span { font-size: 10px !important; }',
+        'table { width: 100% !important; }',
+        'td, th { padding: 4px 6px !important; }',
+        '.va-number { font-size: 12px !important; padding: 8px !important; }'
+    ].join(' ');
+
+    const styleElement = document.createElement('style');
+    styleElement.textContent = stylesToOptimize;
+    element.appendChild(styleElement);
+
+    // Batasi jumlah produk yang ditampilkan jika terlalu banyak
+    const productRows = element.querySelectorAll('#invoice-products-body tr');
+    if (productRows.length > 10) {
+        const tbody = element.querySelector('#invoice-products-body');
+        const visibleRows = Array.from(productRows).slice(0, 10);
+        const summaryRow = document.createElement('tr');
+        summaryRow.innerHTML = `
+            <td colspan="4" style="text-align: center; font-style: italic; padding: 10px;">
+                ... dan ${productRows.length - 10} produk lainnya
+            </td>
+        `;
+        
+        tbody.innerHTML = '';
+        visibleRows.forEach(row => tbody.appendChild(row));
+        tbody.appendChild(summaryRow);
+    }
+}
+
+/**
+ * 🔥 Optimasi saat cloning untuk PDF
+ */
+optimizeForPDF(clonedDoc) {
+    // Hapus element interaktif
+    const interactiveElements = clonedDoc.querySelectorAll(
+        'button, a, .btn, .actions-card, .payment-actions-section'
+    );
+    interactiveElements.forEach(el => el.remove());
+
+    // Optimasi teks
+    const allTextElements = clonedDoc.querySelectorAll('*');
+    allTextElements.forEach(el => {
+        if (el.textContent && el.textContent.length > 200) {
+            el.textContent = el.textContent.substring(0, 200) + '...';
+        }
+    });
+
+    // Kompres gambar
+    const images = clonedDoc.querySelectorAll('img');
+    images.forEach(img => {
+        img.style.maxWidth = '100px';
+        img.style.height = 'auto';
+    });
+}
 
     /**
      * 🖨️ Handle PDF error dengan fallback
