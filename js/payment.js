@@ -1,133 +1,156 @@
-// payment.js - Final Version dengan Firebase Integration
+// payment.js - Final Version dengan Firebase Integration & Auth System
 class PaymentSystem {
     constructor() {
         this.checkoutData = null;
         this.paymentTimer = null;
+        this.isAuthReady = false;
         this.init();
     }
 
-    init() {
+    async init() {
         console.log('💳 Initializing payment system');
-        this.loadCheckoutData();
         
-        // Cek login status dan setup
-        if (this.checkLoginStatus()) {
+        try {
+            // Tunggu auth system ready
+            await this.waitForAuthSystem();
+            this.isAuthReady = true;
+            
+            console.log('💳 Auth system ready, current user:', window.authSystem?.currentUser);
+            
+            this.loadCheckoutData();
+            
+            // Setup UI berdasarkan login status
+            this.setupAuthBasedUI();
             this.setupEventListeners();
             this.startPaymentTimer();
-            this.saveCompleteOrderToFirebase();
+            
+            // Simpan ke Firebase jika user login
+            if (this.isUserLoggedIn()) {
+                await this.saveCompleteOrderToFirebase();
+            }
+            
+        } catch (error) {
+            console.error('💳 Error during payment initialization:', error);
+            // Fallback: lanjutkan tanpa auth
+            this.loadCheckoutData();
+            this.setupEventListeners();
+            this.startPaymentTimer();
         }
     }
 
     // ==================== AUTHENTICATION & FIREBASE ====================
 
     /**
-     * 🔐 Cek status login user
-     * @returns {boolean} - Login status
+     * 🔐 Tunggu auth system siap
      */
-    checkLoginStatus() {
-        // Tunggu sebentar untuk memastikan auth system terload
-        setTimeout(() => {
-            const user = window.authSystem?.currentUser;
+    async waitForAuthSystem(maxWait = 10000) {
+        return new Promise((resolve) => {
+            const startTime = Date.now();
             
-            if (!user) {
-                console.warn('💳 User not logged in');
-                this.showLoginRequiredModal();
-                return false;
-            }
+            const checkAuth = () => {
+                if (window.authSystem !== undefined) {
+                    console.log('💳 Auth system loaded after', Date.now() - startTime, 'ms');
+                    resolve();
+                } else if (Date.now() - startTime > maxWait) {
+                    console.warn('💳 Auth system timeout, continuing without auth');
+                    resolve(); // Lanjut tanpa auth
+                } else {
+                    setTimeout(checkAuth, 100);
+                }
+            };
             
-            console.log('💳 User is logged in:', user.email);
-            return true;
-        }, 1000);
-        
-        return true;
+            checkAuth();
+        });
     }
 
     /**
-     * 🔐 Tampilkan modal login required
+     * 🔍 Cek apakah user login
      */
-    showLoginRequiredModal() {
-        const modal = document.createElement('div');
-        modal.style.cssText = `
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.9);
-            z-index: 10000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            animation: fadeIn 0.3s ease;
-        `;
+    isUserLoggedIn() {
+        return this.isAuthReady && 
+               window.authSystem?.currentUser !== null && 
+               window.authSystem?.currentUser !== undefined;
+    }
 
-        modal.innerHTML = `
-            <div style="
-                background: white;
-                padding: 2.5rem;
-                border-radius: 16px;
-                max-width: 450px;
-                width: 90%;
-                text-align: center;
-                box-shadow: 0 20px 40px rgba(0,0,0,0.3);
-            ">
-                <div style="font-size: 4rem; margin-bottom: 1.5rem;">🔒</div>
-                <h3 style="color: #e74c3c; margin-bottom: 1rem; font-size: 1.5rem;">Login Diperlukan</h3>
-                <p style="margin-bottom: 2rem; color: #555; line-height: 1.6;">
-                    Anda perlu login untuk menyimpan data pesanan dan melanjutkan pembayaran.
-                    Data pesanan Anda akan aman tersimpan setelah login.
-                </p>
-                
-                <div style="display: flex; flex-direction: column; gap: 1rem;">
-                    <button onclick="window.location.href='login.html?redirect=payment'" style="
-                        background: #007bff;
-                        color: white;
-                        border: none;
-                        padding: 1rem 2rem;
-                        border-radius: 8px;
-                        cursor: pointer;
-                        font-weight: 600;
-                        font-size: 1.1rem;
-                        transition: background-color 0.3s ease;
-                    " onmouseover="this.style.background='#0056b3'" 
-                       onmouseout="this.style.background='#007bff'">
-                        🔑 Login Sekarang
-                    </button>
-                    
-                    <button onclick="window.location.href='cart.html'" style="
-                        background: #6c757d;
-                        color: white;
-                        border: none;
-                        padding: 0.75rem 1.5rem;
-                        border-radius: 6px;
-                        cursor: pointer;
-                        font-weight: 500;
-                        transition: background-color 0.3s ease;
-                    " onmouseover="this.style.background='#5a6268'" 
-                       onmouseout="this.style.background='#6c757d'">
-                        ← Kembali ke Keranjang
-                    </button>
-                </div>
-                
-                <div style="margin-top: 1.5rem; padding: 1rem; background: #f8f9fa; border-radius: 8px;">
-                    <p style="margin: 0; color: #666; font-size: 0.9rem;">
-                        <strong>Info:</strong> Virtual Account dan invoice tetap bisa digunakan tanpa login, 
-                        tetapi riwayat pesanan tidak akan tersimpan.
-                    </p>
-                </div>
-            </div>
-        `;
+    /**
+     * 🎨 Setup UI berdasarkan status login
+     */
+    setupAuthBasedUI() {
+        if (this.isUserLoggedIn()) {
+            console.log('💳 User is logged in, showing secure features');
+            this.showLoggedInFeatures();
+        } else {
+            console.log('💳 User is not logged in, showing guest features');
+            this.showGuestFeatures();
+        }
+    }
 
-        document.body.appendChild(modal);
+    /**
+     * 🔐 Tampilkan fitur untuk user login
+     */
+    showLoggedInFeatures() {
+        const user = window.authSystem.currentUser;
+        console.log('💳 Logged in user:', user.email);
+        this.updateInvoiceWithUserInfo(user);
+        this.showFirebaseSaveStatus();
+    }
+
+    /**
+     * 🎭 Tampilkan fitur untuk guest
+     */
+    showGuestFeatures() {
+        this.showGuestReminder();
+    }
+
+    /**
+     * 💬 Tampilkan reminder untuk guest
+     */
+    showGuestReminder() {
+        const reminder = document.createElement('div');
+        reminder.style.cssText = `
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        `;
+        reminder.innerHTML = `
+            <p style="margin: 0 0 0.5rem 0;">
+                <strong>💡 Tips:</strong> 
+                <a href="login.html?redirect=payment" style="color: #007bff; text-decoration: underline;">
+                    Login
+                </a> 
+                untuk menyimpan riwayat pesanan dan notifikasi status pembayaran otomatis.
+            </p>
+            <small>Pesanan tetap bisa diproses tanpa login</small>
+        `;
         
-        // Prevent closing modal
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-                // Tetap tampilkan modal, user harus memilih action
-            }
-        });
+        const actionsSection = document.querySelector('.payment-actions-section');
+        if (actionsSection) {
+            actionsSection.insertBefore(reminder, actionsSection.firstChild);
+        }
+    }
 
-        return modal;
+    /**
+     * 📝 Update invoice dengan info user
+     */
+    updateInvoiceWithUserInfo(user) {
+        const customerName = document.getElementById('customer-name');
+        if (customerName && user.displayName) {
+            customerName.textContent = user.displayName;
+        }
+        
+        const customerInfo = document.querySelector('.invoice-customer');
+        if (customerInfo && user.email) {
+            const emailElement = document.createElement('p');
+            emailElement.textContent = `Email: ${user.email}`;
+            emailElement.style.margin = '0.25rem 0';
+            emailElement.style.fontSize = '0.9rem';
+            emailElement.style.color = '#666';
+            customerInfo.appendChild(emailElement);
+        }
     }
 
     /**
@@ -140,15 +163,14 @@ class PaymentSystem {
                 return;
             }
 
-            // Tunggu auth system terload
-            await this.waitForAuthSystem();
-            
-            const user = window.authSystem?.currentUser;
-            if (!user) {
-                console.warn('💳 User not logged in, saving temporarily');
+            if (!this.isUserLoggedIn()) {
+                console.log('💳 User not logged in, skipping Firebase save');
                 this.saveOrderTemporarily();
                 return;
             }
+
+            const user = window.authSystem.currentUser;
+            console.log('💳 Saving order to Firebase for user:', user.email);
 
             // Cek jika order sudah disimpan sebelumnya
             const existingOrder = localStorage.getItem(`order-${this.checkoutData.orderId}-saved`);
@@ -201,7 +223,8 @@ class PaymentSystem {
                 // STATUS & TIMESTAMP
                 status: 'pending_payment',
                 expiryTime: this.checkoutData.expiryTime,
-                createdAt: new Date().toISOString()
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
             };
 
             console.log('💳 Complete order data for Firebase:', completeOrderData);
@@ -225,7 +248,7 @@ class PaymentSystem {
             console.log('💳 Complete order successfully saved to Firebase:', result);
             
             // Update UI untuk menunjukkan data tersimpan
-            this.showFirebaseSaveStatus(result);
+            this.showFirebaseSaveStatus();
 
         } catch (error) {
             console.error('💳 Error saving complete order to Firebase:', error);
@@ -241,26 +264,12 @@ class PaymentSystem {
     }
 
     /**
-     * ⏳ Tunggu auth system terload
-     */
-    async waitForAuthSystem() {
-        return new Promise((resolve) => {
-            const checkAuth = () => {
-                if (window.authSystem) {
-                    resolve();
-                } else {
-                    setTimeout(checkAuth, 100);
-                }
-            };
-            checkAuth();
-        });
-    }
-
-    /**
      * 💾 Simpan data sementara di localStorage
      */
     saveOrderTemporarily() {
         try {
+            if (!this.checkoutData) return;
+            
             const tempOrderData = {
                 ...this.checkoutData,
                 savedAt: new Date().toISOString(),
@@ -271,27 +280,8 @@ class PaymentSystem {
             localStorage.setItem(`temp-order-${this.checkoutData.orderId}`, JSON.stringify(tempOrderData));
             console.log('💳 Order saved temporarily:', this.checkoutData.orderId);
             
-            // Schedule retry untuk 10 detik lagi
-            setTimeout(() => {
-                this.retrySaveToFirebase();
-            }, 10000);
-            
         } catch (error) {
             console.error('💳 Error saving temporary order:', error);
-        }
-    }
-
-    /**
-    �� Coba save ulang ke Firebase
-     */
-    async retrySaveToFirebase() {
-        const user = window.authSystem?.currentUser;
-        if (user && typeof firebaseDB !== 'undefined' && firebaseDB.initialized) {
-            console.log('💳 Retrying Firebase save...');
-            await this.saveCompleteOrderToFirebase();
-        } else {
-            // Coba lagi nanti
-            console.log('💳 Conditions not met for retry, will try again later');
         }
     }
 
@@ -422,9 +412,11 @@ class PaymentSystem {
 
             // Show loading
             const downloadBtn = document.getElementById('download-pdf');
-            const originalText = downloadBtn.textContent;
-            downloadBtn.textContent = 'Membuat PDF...';
-            downloadBtn.disabled = true;
+            const originalText = downloadBtn?.textContent || 'Download PDF Invoice';
+            if (downloadBtn) {
+                downloadBtn.textContent = 'Membuat PDF...';
+                downloadBtn.disabled = true;
+            }
 
             // Check jika libraries tersedia
             if (typeof html2canvas === 'undefined') {
@@ -673,14 +665,6 @@ class PaymentSystem {
                 window.print();
             });
         }
-
-        // Login button (jika ada)
-        const loginBtn = document.getElementById('login-from-payment');
-        if (loginBtn) {
-            loginBtn.addEventListener('click', () => {
-                window.location.href = 'login.html?redirect=payment';
-            });
-        }
     }
 
     // ==================== HELPER METHODS ====================
@@ -724,7 +708,9 @@ class PaymentSystem {
     /**
      * 💬 Tunjukkan status save ke Firebase
      */
-    showFirebaseSaveStatus(result) {
+    showFirebaseSaveStatus() {
+        if (!this.checkoutData) return;
+        
         const saveStatus = document.createElement('div');
         saveStatus.style.cssText = `
             position: fixed;
@@ -856,14 +842,56 @@ class PaymentSystem {
 // ==================== INITIALIZATION ====================
 
 // Initialize payment system when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     console.log('💳 DOM loaded, initializing payment system');
+    
     try {
+        // Tunggu sedikit untuk memastikan auth system sudah di-load
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
         window.paymentSystem = new PaymentSystem();
+        
+        // Debug info
+        console.log('💳 Payment system initialized');
+        console.log('💳 Auth system available:', typeof window.authSystem !== 'undefined');
+        console.log('💳 Current user:', window.authSystem?.currentUser);
+        
     } catch (error) {
         console.error('💳 Error initializing payment system:', error);
+        
+        // Fallback: tetap inisialisasi tanpa auth
+        window.paymentSystem = new PaymentSystem();
     }
 });
+
+// 🔥 TAMBAHKAN: Event listener untuk auth state changes
+document.addEventListener('authStateChanged', (event) => {
+    console.log('💳 Auth state changed detected in payment system:', event.detail);
+    
+    if (window.paymentSystem && event.detail.user) {
+        console.log('💳 User logged in, retrying Firebase save...');
+        window.paymentSystem.saveCompleteOrderToFirebase().catch(console.error);
+    }
+});
+
+// ==================== DEBUGGING HELPERS ====================
+
+/**
+ * 🐛 Debug helper untuk payment system
+ */
+function debugPaymentSystem() {
+    console.log('💳=== PAYMENT SYSTEM DEBUG ===');
+    console.log('💳 Auth system available:', typeof window.authSystem !== 'undefined');
+    console.log('💳 Current user:', window.authSystem?.currentUser);
+    console.log('💳 Payment system:', window.paymentSystem);
+    console.log('💳 User logged in:', window.paymentSystem?.isUserLoggedIn());
+    console.log('💳 Auth ready:', window.paymentSystem?.isAuthReady);
+    console.log('💳 Checkout data:', window.paymentSystem?.checkoutData);
+    console.log('💳============================');
+}
+
+// Expose untuk debugging di console
+window.debugPayment = debugPaymentSystem;
 
 // Add CSS animations if not exists
 if (!document.querySelector('#payment-animations')) {
