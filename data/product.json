@@ -7147,6 +7147,66 @@
     "discount": 6,
     "isFeatured": "false",
     "tags": [ "Clear Sleeves" , "Map L" , "monotaro.id" , "A4" , "Map Plastik" , "Tempat Dokumen" ]
-  }  
+  }, 
+    {
+    "id": "463",
+    "name": "KIS Permen",
+    "price": 13000,
+    "category": "Makanan & Minuman",
+    "image": "img/kiss.avif",
+    "description": "KIS adalah pelopor permen mint dengan rasa mint yang menyegarkan dan dikemas dalam 'Packaging Emoticon' yang unik untuk mengekspresikan perasaan Anda.",
+    "longdescription": "KIS adalah pelopor permen mint dengan rasa mint yang menyegarkan dan dikemas dalam 'Packaging Emoticon' yang unik untuk mengekspresikan perasaan Anda.",
+    "stock": 42,
+    "rating": 4.2,
+    "sold": 89,
+    "discount": 6,
+    "isFeatured": "false",
+    "tags": [ "Permen" , "makanan" , "kiss" , "A4"  ]
+  },
+    {
+    "id": "464",
+    "name": "Le Minerale Air Mineral Botol 330ml 1 dus",
+    "price": 44000,
+    "category": "Makanan & Minuman",
+    "image": "img/lee minerale.avif",
+    "description": "Le Mineral air mineral dengan kualitas premium dan harga yang terjangkau, diambil dari mata air alami, memiliki kesegaran khas mineral pegunungan ditandai dengan adanya rasa manis dan tingkat mineral yang baik untuk kesehatan tubuh.",
+    "longdescription": "Le Mineral air mineral dengan kualitas premium dan harga yang terjangkau, diambil dari mata air alami, memiliki kesegaran khas mineral pegunungan ditandai dengan adanya rasa manis dan tingkat mineral yang baik untuk kesehatan tubuh. Dikemas menggunakan teknologi tanpa sentuh sehingga menjamin mineral alaminya. Kemasan botol menggunakan pengamanan ganda sehingga tidak mudah dipalsukan. Le Minerale ini memiliki 3 kemasan untuk memudahkan menyesuaikan dengan kebutuhan.",
+    "stock": 42,
+    "rating": 4.2,
+    "sold": 89,
+    "discount": 6,
+    "isFeatured": "false",
+    "tags": [ "lee minerale" , "minuman" , "air putih" ]
+  },
+    {
+    "id": "465"
+    "name": "Aoka Roti",
+    "price": 18000,
+    "category": "Alat Tulis",
+    "image": "img/aoka.jpg",
+    "description": "Roti Aoka Varian Rasa Roti Viral yang banyak disukai orang. Kalori yang terkandung 140 dalam setiap kemasan. Varian Rasa 1. Blueberry 2. Stroberi 3. Cokelat 4. Durian 5. Keju 6. Nanas 7. Vanilla 8 Gulung Keju",
+    "longdescription": "Roti Aoka Varian Rasa Roti Viral yang banyak disukai orang. Kalori yang terkandung 140 dalam setiap kemasan. Varian Rasa 1. Blueberry 2. Stroberi 3. Cokelat 4. Durian 5. Keju 6. Nanas 7. Vanilla 8 Gulung Keju",
+    "stock": 42,
+    "rating": 4.2,
+    "sold": 89,
+    "discount": 6,
+    "isFeatured": "false",
+    "tags": [ "Clear Sleeves" , "Map L" , "monotaro.id" , "A4" , "Map Plastik" , "Tempat Dokumen" ]
+  },
+  {
+    "id": "465"
+    "name": "Fullo Wafer Stick (1 pak isi 24pcs) - Cokelat Vanila",
+    "price": 14000,
+    "category": "Makanan & Minuman",
+    "image": "img/fullo.jpg",
+    "description": "Astor Mio Fullo hadir dalam kemasan box isi 24 pcs @ 8 gram. Pilihan rasa yang lezat: Coklat Original, Vanilla, Coklat Strawberry, dan Coklat Vanilla. Silakan cantumkan varian yang diinginkan dan cadangan.",
+    "longdescription": "Astor Mio Fullo hadir dalam kemasan box isi 24 pcs @ 8 gram. Pilihan rasa yang lezat: Coklat Original, Vanilla, Coklat Strawberry, dan Coklat Vanilla. Silakan cantumkan varian yang diinginkan dan cadangan.",
+    "stock": 42,
+    "rating": 4.2,
+    "sold": 89,
+    "discount": 6,
+    "isFeatured": "false",
+    "tags": [ "makanan ringan" , "Makanan" , "fullo" , "wafer"]
+  }
 
 ]
