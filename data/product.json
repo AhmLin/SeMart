@@ -7179,7 +7179,7 @@
     "tags": [ "lee minerale" , "minuman" , "air putih" ]
   },
     {
-    "id": "465"
+    "id": "465",
     "name": "Aoka Roti",
     "price": 18000,
     "category": "Alat Tulis",
@@ -7194,7 +7194,7 @@
     "tags": [ "Clear Sleeves" , "Map L" , "monotaro.id" , "A4" , "Map Plastik" , "Tempat Dokumen" ]
   },
   {
-    "id": "465"
+    "id": "465",
     "name": "Fullo Wafer Stick (1 pak isi 24pcs) - Cokelat Vanila",
     "price": 14000,
     "category": "Makanan & Minuman",
@@ -7210,3 +7210,4 @@
   }
 
 ]
+
