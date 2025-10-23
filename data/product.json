@@ -7154,8 +7154,8 @@
     "price": 13000,
     "category": "Makanan & Minuman",
     "image": "img/kiss.avif",
-    "description": "KIS adalah pelopor permen mint dengan rasa mint yang menyegarkan dan dikemas dalam 'Packaging Emoticon' yang unik untuk mengekspresikan perasaan Anda.",
-    "longdescription": "KIS adalah pelopor permen mint dengan rasa mint yang menyegarkan dan dikemas dalam 'Packaging Emoticon' yang unik untuk mengekspresikan perasaan Anda.",
+    "description": "KIS adalah pelopor permen mint dengan rasa mint yang menyegarkan dan dikemas dalam Packaging Emoticon yang unik untuk mengekspresikan perasaan Anda.",
+    "longdescription": "KIS adalah pelopor permen mint dengan rasa mint yang menyegarkan dan dikemas dalam Packaging Emoticon yang unik untuk mengekspresikan perasaan Anda.",
     "stock": 42,
     "rating": 4.2,
     "sold": 89,
@@ -7210,4 +7210,5 @@
   }
 
 ]
+
 
