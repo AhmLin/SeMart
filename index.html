@@ -282,18 +282,20 @@ Dukung produk lokal, nikmati layanan digital, dan temukan promo menarik setiap h
         const res = await fetch("data/product.json");
         const products = await res.json();
 
-        // Filter produk unggulan (isFeatured = true)
-        const featured = products.filter(p => p.isFeatured);
+        // 🔹 PERBAIKAN: Filter produk unggulan (handle string "true" dan boolean true)
+        const featured = products.filter(p => p.isFeatured === true || p.isFeatured === "true");
         console.log("Jumlah produk unggulan:", featured.length);
 
         if (featured.length === 0) {
           featuredContainer.innerHTML = "<p style='text-align: center; padding: 2rem;'>Tidak ada produk unggulan saat ini.</p>";
         } else {
-          // Tampilkan produk unggulan (maksimal 6)
+          // Tampilkan produk unggulan (maksimal 12)
           const limit = 12;
           const limitedFeatured = featured.slice(0, limit);
 
           limitedFeatured.forEach(p => {
+            // 🔹 PERBAIKAN: Parse price ke number
+            const price = parseInt(p.price);
             const card = document.createElement("div");
             card.classList.add("product-card");
             card.innerHTML = `
@@ -304,7 +306,7 @@ Dukung produk lokal, nikmati layanan digital, dan temukan promo menarik setiap h
                   ${generateStars(p.rating)} <span>${p.rating.toFixed(1)}</span>
                 </div>
               <div class="product-bottom">
-                <p class="price">Rp${p.price.toLocaleString("id-ID")}</p>
+                <p class="price">Rp${price.toLocaleString("id-ID")}</p>
                 <a href="product.html?id=${p.id}" class="btn-secondary">Lihat Detail</a>
               </div>
             `;
@@ -312,8 +314,8 @@ Dukung produk lokal, nikmati layanan digital, dan temukan promo menarik setiap h
           });
         }
 
-        // Filter produk promo (isPromo = true)
-        const promoProducts = products.filter(p => p.isPromo);
+        // 🔹 PERBAIKAN: Filter produk promo (handle string "true" dan boolean true)
+        const promoProducts = products.filter(p => p.isPromo === true || p.isPromo === "true");
         console.log("Jumlah produk promo:", promoProducts.length);
 
         if (promoProducts.length === 0) {
@@ -324,7 +326,21 @@ Dukung produk lokal, nikmati layanan digital, dan temukan promo menarik setiap h
           const limitedPromo = promoProducts.slice(0, limit);
 
           limitedPromo.forEach(p => {
-            const discountPercentage = Math.round(((p.originalPrice - p.price) / p.originalPrice) * 100);
+            // 🔹 PERBAIKAN: Hitung originalPrice dari discount
+            const price = parseInt(p.price);
+            const discount = parseInt(p.discount) || 0;
+            
+            // Jika ada discount, hitung originalPrice
+            let originalPrice = price;
+            let discountPercentage = discount;
+            
+            if (discount > 0) {
+              originalPrice = Math.round(price / (1 - discount / 100));
+            } else {
+              // Default 20% discount jika tidak ada discount
+              originalPrice = Math.round(price * 1.2);
+              discountPercentage = 20;
+            }
             
             const card = document.createElement("div");
             card.classList.add("product-card-promo");
@@ -335,8 +351,8 @@ Dukung produk lokal, nikmati layanan digital, dan temukan promo menarik setiap h
                 <h3>${p.name}</h3>
                 <p>Terjual ${p.sold}</p>
                 <div class="price-container">
-                  <span class="original-price">Rp${p.originalPrice.toLocaleString("id-ID")}</span>
-                  <span class="discount-price">Rp${p.price.toLocaleString("id-ID")}</span>
+                  <span class="original-price">Rp${originalPrice.toLocaleString("id-ID")}</span>
+                  <span class="discount-price">Rp${price.toLocaleString("id-ID")}</span>
                   <span class="discount-percentage">${discountPercentage}%</span>
                 </div>
                 <div class="rating">
@@ -360,132 +376,114 @@ Dukung produk lokal, nikmati layanan digital, dan temukan promo menarik setiap h
             </button>
           </div>
         `;
+        promoContainer.innerHTML = "";
       }
     });
 
-    // 🔹 FALLBACK PRODUCTS
+    // 🔹 FALLBACK PRODUCTS - Diperbarui sesuai format data Anda
     function loadSampleProducts() {
       const featuredContainer = document.getElementById("featured-products");
       const promoContainer = document.getElementById("promo-products");
       
       const sampleProducts = [
         {
-          id: 1,
-          name: "Beras Premium 5kg",
-          price: 65000,
-          originalPrice: 75000,
-          image: "https://via.placeholder.com/300x200?text=Beras+Premium",
-          sold: 1250,
-          rating: 4.8,
-          isFeatured: true,
-          isPromo: true
+          id: "1",
+          name: "Bagus Sapu Lantai",
+          price: 25000,
+          category: "Peralatan Rumah",
+          image: "img/Bagus Sapu Lantai.jpg",
+          description: "Sapu lantai dengan gagang kuat dan serat halus untuk pembersihan maksimal.",
+          stock: 30,
+          rating: 4.06,
+          sold: 120,
+          discount: 10,
+          isPromo: true,
+          isFeatured: "true",
+          tags: ["sapu", "kebersihan", "rumah"]
         },
         {
-          id: 2,
+          id: "2",
           name: "Minyak Goreng 2L",
           price: 28000,
-          originalPrice: 32000,
+          category: "Bahan Pokok",
           image: "https://via.placeholder.com/300x200?text=Minyak+Goreng",
-          sold: 890,
+          description: "Minyak goreng berkualitas untuk memasak sehari-hari",
+          stock: 50,
           rating: 4.5,
-          isFeatured: true,
-          isPromo: true
+          sold: 890,
+          discount: 15,
+          isPromo: true,
+          isFeatured: "true",
+          tags: ["minyak", "masak", "bahan pokok"]
         },
         {
-          id: 3,
-          name: "Gula Pasir 1kg",
-          price: 15000,
-          originalPrice: 18000,
-          image: "https://via.placeholder.com/300x200?text=Gula+Pasir",
-          sold: 750,
-          rating: 4.6,
-          isFeatured: true,
-          isPromo: true
+          id: "3",
+          name: "Beras Premium 5kg",
+          price: 65000,
+          category: "Bahan Pokok",
+          image: "https://via.placeholder.com/300x200?text=Beras+Premium",
+          description: "Beras premium kualitas terbaik",
+          stock: 25,
+          rating: 4.8,
+          sold: 1250,
+          discount: 0,
+          isPromo: false,
+          isFeatured: "true",
+          tags: ["beras", "makanan pokok"]
         },
         {
-          id: 4,
-          name: "Telur Ayam 1kg",
-          price: 28000,
-          originalPrice: 32000,
-          image: "https://via.placeholder.com/300x200?text=Telur+Ayam",
-          sold: 620,
-          rating: 4.7,
-          isFeatured: true,
-          isPromo: true
-        },
-        {
-          id: 5,
+          id: "4",
           name: "Sabun Mandi 90g",
           price: 5000,
-          originalPrice: 6000,
+          category: "Kecantikan",
           image: "https://via.placeholder.com/300x200?text=Sabun+Mandi",
-          sold: 450,
+          description: "Sabun mandi dengan wangi segar",
+          stock: 100,
           rating: 4.4,
-          isFeatured: true,
-          isPromo: true
+          sold: 450,
+          discount: 20,
+          isPromo: true,
+          isFeatured: false,
+          tags: ["sabun", "mandi", "kebersihan"]
         },
         {
-          id: 6,
+          id: "5",
           name: "Shampoo 200ml",
           price: 18000,
-          originalPrice: 22000,
+          category: "Kecantikan",
           image: "https://via.placeholder.com/300x200?text=Shampoo",
-          sold: 380,
+          description: "Shampoo untuk rambut sehat berkilau",
+          stock: 40,
           rating: 4.5,
-          isFeatured: true,
-          isPromo: true
+          sold: 380,
+          discount: 25,
+          isPromo: true,
+          isFeatured: false,
+          tags: ["shampoo", "rambut", "perawatan"]
         },
         {
-          id: 7,
-          name: "Kopi Bubuk 200g",
-          price: 25000,
-          originalPrice: 30000,
-          image: "https://via.placeholder.com/300x200?text=Kopi+Bubuk",
-          sold: 320,
+          id: "6",
+          name: "Gula Pasir 1kg",
+          price: 15000,
+          category: "Bahan Pokok",
+          image: "https://via.placeholder.com/300x200?text=Gula+Pasir",
+          description: "Gula pasir kualitas premium",
+          stock: 60,
           rating: 4.6,
-          isFeatured: false,
-          isPromo: true
-        },
-        {
-          id: 8,
-          name: "Susu Kental Manis 380g",
-          price: 12000,
-          originalPrice: 15000,
-          image: "https://via.placeholder.com/300x200?text=Susu+Kental",
-          sold: 280,
-          rating: 4.3,
-          isFeatured: false,
-          isPromo: true
-        },
-        {
-          id: 9,
-          name: "Mie Instan 1 Dus",
-          price: 45000,
-          originalPrice: 55000,
-          image: "https://via.placeholder.com/300x200?text=Mie+Instan",
-          sold: 410,
-          rating: 4.7,
-          isFeatured: false,
-          isPromo: true
-        },
-        {
-          id: 10,
-          name: "Biskuit 500g",
-          price: 18000,
-          originalPrice: 22000,
-          image: "https://via.placeholder.com/300x200?text=Biskuit",
-          sold: 290,
-          rating: 4.4,
-          isFeatured: false,
-          isPromo: true
+          sold: 750,
+          discount: 10,
+          isPromo: true,
+          isFeatured: "true",
+          tags: ["gula", "pemanis", "bahan masak"]
         }
       ];
 
       // Load featured products
-      const featuredProducts = sampleProducts.filter(p => p.isFeatured);
+      const featuredProducts = sampleProducts.filter(p => p.isFeatured === true || p.isFeatured === "true");
       featuredContainer.innerHTML = '';
       
       featuredProducts.forEach(p => {
+        const price = parseInt(p.price);
         const card = document.createElement("div");
         card.classList.add("product-card");
         card.innerHTML = `
@@ -496,7 +494,7 @@ Dukung produk lokal, nikmati layanan digital, dan temukan promo menarik setiap h
               ${generateStars(p.rating)} <span>${p.rating.toFixed(1)}</span>
             </div>
           <div class="product-bottom">
-            <p class="price">Rp${p.price.toLocaleString("id-ID")}</p>
+            <p class="price">Rp${price.toLocaleString("id-ID")}</p>
             <a href="product.html?id=${p.id}" class="btn-secondary">Lihat Detail</a>
           </div>
         `;
@@ -504,11 +502,24 @@ Dukung produk lokal, nikmati layanan digital, dan temukan promo menarik setiap h
       });
       
       // Load promo products
-      const promoProducts = sampleProducts.filter(p => p.isPromo);
+      const promoProducts = sampleProducts.filter(p => p.isPromo === true || p.isPromo === "true");
       promoContainer.innerHTML = '';
       
       promoProducts.forEach(p => {
-        const discountPercentage = Math.round(((p.originalPrice - p.price) / p.originalPrice) * 100);
+        const price = parseInt(p.price);
+        const discount = parseInt(p.discount) || 0;
+        
+        // Hitung originalPrice dari discount
+        let originalPrice = price;
+        let discountPercentage = discount;
+        
+        if (discount > 0) {
+          originalPrice = Math.round(price / (1 - discount / 100));
+        } else {
+          // Default 20% discount jika tidak ada discount
+          originalPrice = Math.round(price * 1.2);
+          discountPercentage = 20;
+        }
         
         const card = document.createElement("div");
         card.classList.add("product-card-promo");
@@ -519,8 +530,8 @@ Dukung produk lokal, nikmati layanan digital, dan temukan promo menarik setiap h
             <h3>${p.name}</h3>
             <p>Terjual ${p.sold}</p>
             <div class="price-container">
-              <span class="original-price">Rp${p.originalPrice.toLocaleString("id-ID")}</span>
-              <span class="discount-price">Rp${p.price.toLocaleString("id-ID")}</span>
+              <span class="original-price">Rp${originalPrice.toLocaleString("id-ID")}</span>
+              <span class="discount-price">Rp${price.toLocaleString("id-ID")}</span>
               <span class="discount-percentage">${discountPercentage}%</span>
             </div>
             <div class="rating">
