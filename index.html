@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="css/style.css" />
   <link rel="stylesheet" href="css/cart.css">
   <link rel="stylesheet" href="css/kategori.css">
+  <link rel="stylesheet" href="css/promo-products.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
@@ -187,6 +188,21 @@ Dukung produk lokal, nikmati layanan digital, dan temukan promo menarik setiap h
     </div>
   </section>
 
+  <!-- 🔹 NEW: Promo Products Section -->
+  <section class="promo-products">
+    <div class="container">
+      <div class="promo-header">
+        <h2>Promo Spesial <span class="promo-badge">DISKON</span></h2>
+      </div>
+      <div class="product-grid-promo" id="promo-products">
+        <!-- Produk promo akan dimuat otomatis lewat JS -->
+      </div>
+      <div class="view-all-container">
+        <a href="promo-products.html" class="btn-view-all">Lihat Semua Promo</a>
+      </div>
+    </div>
+  </section>
+
   <!-- 🔹 Footer -->
   <footer>
     <div class="footer-content">
@@ -259,7 +275,8 @@ Dukung produk lokal, nikmati layanan digital, dan temukan promo menarik setiap h
       // Inisialisasi search
       setupSearch();
       
-      const container = document.getElementById("featured-products");
+      const featuredContainer = document.getElementById("featured-products");
+      const promoContainer = document.getElementById("promo-products");
 
       try {
         const res = await fetch("data/product.json");
@@ -270,35 +287,71 @@ Dukung produk lokal, nikmati layanan digital, dan temukan promo menarik setiap h
         console.log("Jumlah produk unggulan:", featured.length);
 
         if (featured.length === 0) {
-          container.innerHTML = "<p style='text-align: center; padding: 2rem;'>Tidak ada produk unggulan saat ini.</p>";
-          return;
+          featuredContainer.innerHTML = "<p style='text-align: center; padding: 2rem;'>Tidak ada produk unggulan saat ini.</p>";
+        } else {
+          // Tampilkan produk unggulan (maksimal 6)
+          const limit = 12;
+          const limitedFeatured = featured.slice(0, limit);
+
+          limitedFeatured.forEach(p => {
+            const card = document.createElement("div");
+            card.classList.add("product-card");
+            card.innerHTML = `
+              <img src="${p.image}" alt="${p.name}" loading="lazy" onerror="this.src='images/placeholder-product.jpg'">
+              <h3>${p.name}</h3>
+              <p>Terjual ${p.sold}</p>
+              <div class="rating">
+                  ${generateStars(p.rating)} <span>${p.rating.toFixed(1)}</span>
+                </div>
+              <div class="product-bottom">
+                <p class="price">Rp${p.price.toLocaleString("id-ID")}</p>
+                <a href="product.html?id=${p.id}" class="btn-secondary">Lihat Detail</a>
+              </div>
+            `;
+            featuredContainer.appendChild(card);
+          });
         }
 
-        // Tampilkan produk unggulan (maksimal 6)
-        const limit = 12;
-        const limitedFeatured = featured.slice(0, limit);
+        // Filter produk promo (isPromo = true)
+        const promoProducts = products.filter(p => p.isPromo);
+        console.log("Jumlah produk promo:", promoProducts.length);
 
-        limitedFeatured.forEach(p => {
-          const card = document.createElement("div");
-          card.classList.add("product-card");
-          card.innerHTML = `
-            <img src="${p.image}" alt="${p.name}" loading="lazy" onerror="this.src='images/placeholder-product.jpg'">
-            <h3>${p.name}</h3>
-            <p>Terjual ${p.sold}</p>
-            <div class="rating">
-                ${generateStars(p.rating)} <span>${p.rating.toFixed(1)}</span>
+        if (promoProducts.length === 0) {
+          promoContainer.innerHTML = "<p style='text-align: center; padding: 2rem;'>Tidak ada produk promo saat ini.</p>";
+        } else {
+          // Tampilkan produk promo (maksimal 10)
+          const limit = 10;
+          const limitedPromo = promoProducts.slice(0, limit);
+
+          limitedPromo.forEach(p => {
+            const discountPercentage = Math.round(((p.originalPrice - p.price) / p.originalPrice) * 100);
+            
+            const card = document.createElement("div");
+            card.classList.add("product-card-promo");
+            card.innerHTML = `
+              <div class="promo-ribbon">${discountPercentage}% OFF</div>
+              <img src="${p.image}" alt="${p.name}" loading="lazy" onerror="this.src='images/placeholder-product.jpg'">
+              <div class="product-info">
+                <h3>${p.name}</h3>
+                <p>Terjual ${p.sold}</p>
+                <div class="price-container">
+                  <span class="original-price">Rp${p.originalPrice.toLocaleString("id-ID")}</span>
+                  <span class="discount-price">Rp${p.price.toLocaleString("id-ID")}</span>
+                  <span class="discount-percentage">${discountPercentage}%</span>
+                </div>
+                <div class="rating">
+                  ${generateStars(p.rating)} <span>${p.rating.toFixed(1)}</span>
+                </div>
+                <a href="product.html?id=${p.id}" class="btn-secondary">Lihat Detail</a>
               </div>
-            <div class="product-bottom">
-              <p class="price">Rp${p.price.toLocaleString("id-ID")}</p>
-              <a href="product.html?id=${p.id}" class="btn-secondary">Lihat Detail</a>
-            </div>
-          `;
-          container.appendChild(card);
-        });
+            `;
+            promoContainer.appendChild(card);
+          });
+        }
 
       } catch (error) {
         console.error("Gagal memuat produk:", error);
-        container.innerHTML = `
+        featuredContainer.innerHTML = `
           <div style="text-align: center; padding: 2rem; color: #666;">
             <p>⚠️ Gagal memuat data produk.</p>
             <p style="font-size: 0.9rem; margin-top: 0.5rem;">${error.message}</p>
@@ -312,68 +365,127 @@ Dukung produk lokal, nikmati layanan digital, dan temukan promo menarik setiap h
 
     // 🔹 FALLBACK PRODUCTS
     function loadSampleProducts() {
-      const container = document.getElementById("featured-products");
+      const featuredContainer = document.getElementById("featured-products");
+      const promoContainer = document.getElementById("promo-products");
       
       const sampleProducts = [
         {
           id: 1,
           name: "Beras Premium 5kg",
           price: 65000,
+          originalPrice: 75000,
           image: "https://via.placeholder.com/300x200?text=Beras+Premium",
           sold: 1250,
           rating: 4.8,
-          isFeatured: true
+          isFeatured: true,
+          isPromo: true
         },
         {
           id: 2,
           name: "Minyak Goreng 2L",
           price: 28000,
+          originalPrice: 32000,
           image: "https://via.placeholder.com/300x200?text=Minyak+Goreng",
           sold: 890,
           rating: 4.5,
-          isFeatured: true
+          isFeatured: true,
+          isPromo: true
         },
         {
           id: 3,
           name: "Gula Pasir 1kg",
           price: 15000,
+          originalPrice: 18000,
           image: "https://via.placeholder.com/300x200?text=Gula+Pasir",
           sold: 750,
           rating: 4.6,
-          isFeatured: true
+          isFeatured: true,
+          isPromo: true
         },
         {
           id: 4,
           name: "Telur Ayam 1kg",
           price: 28000,
+          originalPrice: 32000,
           image: "https://via.placeholder.com/300x200?text=Telur+Ayam",
           sold: 620,
           rating: 4.7,
-          isFeatured: true
+          isFeatured: true,
+          isPromo: true
         },
         {
           id: 5,
           name: "Sabun Mandi 90g",
           price: 5000,
+          originalPrice: 6000,
           image: "https://via.placeholder.com/300x200?text=Sabun+Mandi",
           sold: 450,
           rating: 4.4,
-          isFeatured: true
+          isFeatured: true,
+          isPromo: true
         },
         {
           id: 6,
           name: "Shampoo 200ml",
           price: 18000,
+          originalPrice: 22000,
           image: "https://via.placeholder.com/300x200?text=Shampoo",
           sold: 380,
           rating: 4.5,
-          isFeatured: true
+          isFeatured: true,
+          isPromo: true
+        },
+        {
+          id: 7,
+          name: "Kopi Bubuk 200g",
+          price: 25000,
+          originalPrice: 30000,
+          image: "https://via.placeholder.com/300x200?text=Kopi+Bubuk",
+          sold: 320,
+          rating: 4.6,
+          isFeatured: false,
+          isPromo: true
+        },
+        {
+          id: 8,
+          name: "Susu Kental Manis 380g",
+          price: 12000,
+          originalPrice: 15000,
+          image: "https://via.placeholder.com/300x200?text=Susu+Kental",
+          sold: 280,
+          rating: 4.3,
+          isFeatured: false,
+          isPromo: true
+        },
+        {
+          id: 9,
+          name: "Mie Instan 1 Dus",
+          price: 45000,
+          originalPrice: 55000,
+          image: "https://via.placeholder.com/300x200?text=Mie+Instan",
+          sold: 410,
+          rating: 4.7,
+          isFeatured: false,
+          isPromo: true
+        },
+        {
+          id: 10,
+          name: "Biskuit 500g",
+          price: 18000,
+          originalPrice: 22000,
+          image: "https://via.placeholder.com/300x200?text=Biskuit",
+          sold: 290,
+          rating: 4.4,
+          isFeatured: false,
+          isPromo: true
         }
       ];
 
-      container.innerHTML = '';
+      // Load featured products
+      const featuredProducts = sampleProducts.filter(p => p.isFeatured);
+      featuredContainer.innerHTML = '';
       
-      sampleProducts.forEach(p => {
+      featuredProducts.forEach(p => {
         const card = document.createElement("div");
         card.classList.add("product-card");
         card.innerHTML = `
@@ -388,7 +500,36 @@ Dukung produk lokal, nikmati layanan digital, dan temukan promo menarik setiap h
             <a href="product.html?id=${p.id}" class="btn-secondary">Lihat Detail</a>
           </div>
         `;
-        container.appendChild(card);
+        featuredContainer.appendChild(card);
+      });
+      
+      // Load promo products
+      const promoProducts = sampleProducts.filter(p => p.isPromo);
+      promoContainer.innerHTML = '';
+      
+      promoProducts.forEach(p => {
+        const discountPercentage = Math.round(((p.originalPrice - p.price) / p.originalPrice) * 100);
+        
+        const card = document.createElement("div");
+        card.classList.add("product-card-promo");
+        card.innerHTML = `
+          <div class="promo-ribbon">${discountPercentage}% OFF</div>
+          <img src="${p.image}" alt="${p.name}" loading="lazy">
+          <div class="product-info">
+            <h3>${p.name}</h3>
+            <p>Terjual ${p.sold}</p>
+            <div class="price-container">
+              <span class="original-price">Rp${p.originalPrice.toLocaleString("id-ID")}</span>
+              <span class="discount-price">Rp${p.price.toLocaleString("id-ID")}</span>
+              <span class="discount-percentage">${discountPercentage}%</span>
+            </div>
+            <div class="rating">
+              ${generateStars(p.rating)} <span>${p.rating.toFixed(1)}</span>
+            </div>
+            <a href="product.html?id=${p.id}" class="btn-secondary">Lihat Detail</a>
+          </div>
+        `;
+        promoContainer.appendChild(card);
       });
     }
 
@@ -434,49 +575,5 @@ Dukung produk lokal, nikmati layanan digital, dan temukan promo menarik setiap h
     // otomatis slideshow
     setInterval(() => { plusSlides(1); }, 5000);
   </script>
-
-  <!-- 🔹 DEBUG SCRIPT (Optional) -->
-  <script>
-    // Debug functions untuk testing (bisa di-comment di production)
-    console.log('=== SeMart Index Loaded ===');
-    
-    // Manual control functions untuk testing
-    window.debugAuthStatus = () => {
-      console.log('🔍 Debug Auth Status:');
-      console.log('- Navbar Elements:', {
-        navAuth: document.getElementById('nav-auth'),
-        userMenu: document.getElementById('user-menu'),
-        userEmail: document.getElementById('user-email'),
-        userName: document.getElementById('user-name')
-      });
-      console.log('- Display Styles:', {
-        navAuthDisplay: document.getElementById('nav-auth').style.display,
-        userMenuDisplay: document.getElementById('user-menu').style.display
-      });
-      
-      // Check if auth system is available
-      if (window.authSystem) {
-        console.log('- Auth System:', {
-          initialized: window.authSystem.isInitialized,
-          currentUser: window.authSystem.currentUser,
-          isLoggedIn: window.authSystem.isLoggedIn()
-        });
-      } else {
-        console.log('- Auth System: Not available yet');
-      }
-    };
-    
-    // Auto debug setelah 3 detik
-    setTimeout(() => {
-      console.log('🔄 Auto-checking auth system...');
-      debugAuthStatus();
-    }, 3000);
-  </script>
 </body>
 </html>
-
-
-
-
-
-
