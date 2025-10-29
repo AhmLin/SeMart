@@ -1,4 +1,4 @@
-// payment.js - FINAL VERSION dengan Firebase Integration
+// payment.js - FINAL VERSION dengan Firebase Integration (Tanpa VA)
 import firebaseDB from './firebase-db.js';
 
 class PaymentSystem {
@@ -76,8 +76,8 @@ class PaymentSystem {
             'customer-city',
             'invoice-products-body',
             'invoice-subtotal',
-            'invoice-total',
-            'va-number'
+            'invoice-total'
+            // VA number dihapus dari required elements
         ];
 
         const allElementsExist = requiredElements.every(id => {
@@ -280,9 +280,9 @@ class PaymentSystem {
                 
                 // ========== INFORMASI PEMBAYARAN LENGKAP ==========
                 paymentInfo: {
-                    method: 'bank_nusantara',
-                    virtualAccount: this.checkoutData.virtualAccount || this.generateVirtualAccount(),
-                    bankName: 'Bank Nusantara',
+                    method: 'transfer_manual', // Diubah dari 'bank_nusantara'
+                    // Virtual Account dihapus
+                    bankName: 'Transfer Manual',
                     
                     // Breakdown harga
                     subtotal: this.getTotalAmount(),
@@ -318,8 +318,8 @@ class PaymentSystem {
                     {
                         status: 'pending_payment',
                         timestamp: new Date().toISOString(),
-                        note: 'Menunggu pembayaran via Bank Nusantara',
-                        description: 'Pesanan dibuat dan menunggu pembayaran'
+                        note: 'Menunggu konfirmasi pembayaran manual',
+                        description: 'Pesanan dibuat dan menunggu konfirmasi pembayaran'
                     }
                 ],
                 
@@ -427,7 +427,7 @@ class PaymentSystem {
                 
                 // GENERATE jika tidak ada
                 orderId: checkoutData.orderId || `INV-${Date.now()}`,
-                virtualAccount: checkoutData.virtualAccount || this.generateVirtualAccount(),
+                // Virtual Account dihapus
                 expiryTime: checkoutData.expiryTime || this.getExpiryTime(),
                 discount: checkoutData.discount || 0
             };
@@ -462,7 +462,7 @@ class PaymentSystem {
     }
 
     /**
-     * 🎨 Render invoice ke HTML - FIXED VERSION
+     * 🎨 Render invoice ke HTML - FIXED VERSION (Tanpa VA)
      */
     renderInvoice() {
         if (!this.checkoutData) {
@@ -473,7 +473,7 @@ class PaymentSystem {
         try {
             console.log('💳 Starting invoice rendering with data:', this.checkoutData);
             
-            const { cart, discount, shippingInfo, orderId, virtualAccount, expiryTime } = this.checkoutData;
+            const { cart, discount, shippingInfo, orderId, expiryTime } = this.checkoutData;
             
             // Debug info
             console.log('💳 Cart items:', cart);
@@ -540,11 +540,8 @@ class PaymentSystem {
                 }
             }
 
-            // Virtual Account
-            const vaNumber = virtualAccount || this.generateVirtualAccount();
-            document.getElementById('va-number').textContent = vaNumber;
-            document.getElementById('instruction-va').textContent = vaNumber;
-            document.getElementById('va-amount').textContent = `Rp${total.toLocaleString('id-ID')}`;
+            // Hapus bagian Virtual Account dari UI
+            this.removeVASections();
 
             // Expiry time
             const expiryDate = new Date(expiryTime);
@@ -565,6 +562,97 @@ class PaymentSystem {
         } catch (error) {
             console.error('💳 Error rendering invoice:', error);
             this.showError(`Gagal menampilkan invoice: ${error.message}`);
+        }
+    }
+
+    /**
+     * 🗑️ Hapus semua bagian yang terkait dengan Virtual Account
+     */
+    removeVASections() {
+        // Hapus element VA dari DOM jika ada
+        const vaElements = [
+            'va-number',
+            'instruction-va', 
+            'va-amount',
+            'payment-instructions',
+            'va-section'
+        ];
+        
+        vaElements.forEach(id => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.remove();
+            }
+        });
+
+        // Hapus section instruksi pembayaran VA
+        const paymentInstructions = document.querySelector('.payment-instructions');
+        if (paymentInstructions) {
+            paymentInstructions.remove();
+        }
+
+        // Update teks instruksi pembayaran
+        this.updatePaymentInstructions();
+    }
+
+    /**
+     * 📝 Update instruksi pembayaran (tanpa VA)
+     */
+    updatePaymentInstructions() {
+        // Cari container instruksi pembayaran
+        const instructionsContainer = document.querySelector('.payment-info-section');
+        
+        if (instructionsContainer) {
+            // Buat instruksi pembayaran manual
+            const manualInstructions = document.createElement('div');
+            manualInstructions.className = 'payment-instructions-manual';
+            manualInstructions.style.cssText = `
+                background: #f8f9fa;
+                border-radius: 8px;
+                padding: 1.5rem;
+                margin: 1.5rem 0;
+                border-left: 4px solid #007b5e;
+            `;
+            
+            manualInstructions.innerHTML = `
+                <h3 style="color: #007b5e; margin-bottom: 1rem; font-size: 1.2rem;">
+                    💳 Instruksi Pembayaran Manual
+                </h3>
+                <div style="line-height: 1.6;">
+                    <p style="margin-bottom: 1rem;">
+                        <strong>Silakan lakukan transfer manual ke rekening berikut:</strong>
+                    </p>
+                    <div style="background: white; padding: 1rem; border-radius: 6px; margin-bottom: 1rem;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                            <span>Bank:</span>
+                            <strong>Bank Nusantara</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                            <span>Nomor Rekening:</span>
+                            <strong>1234 5678 9012</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                            <span>Atas Nama:</span>
+                            <strong>SeMart Store</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span>Jumlah Transfer:</span>
+                            <strong style="color: #e74c3c;">Rp${this.getTotalAmount().toLocaleString('id-ID')}</strong>
+                        </div>
+                    </div>
+                    <p style="margin-bottom: 0.5rem;">
+                        <strong>Langkah-langkah:</strong>
+                    </p>
+                    <ol style="margin: 0; padding-left: 1.2rem;">
+                        <li>Lakukan transfer sesuai total pesanan</li>
+                        <li>Simpan bukti transfer</li>
+                        <li>Konfirmasi pembayaran melalui WhatsApp/Email</li>
+                        <li>Pesanan akan diproses setelah pembayaran dikonfirmasi</li>
+                    </ol>
+                </div>
+            `;
+            
+            instructionsContainer.appendChild(manualInstructions);
         }
     }
 
@@ -954,8 +1042,8 @@ class PaymentSystem {
      */
     showPaymentStatus(status) {
         const statusMessages = {
-            'pending': '⏳ Menunggu pembayaran',
-            'paid': '✅ Pembayaran berhasil',
+            'pending': '⏳ Menunggu konfirmasi pembayaran',
+            'paid': '✅ Pembayaran berhasil dikonfirmasi',
             'failed': '❌ Pembayaran gagal',
             'expired': '⏰ Waktu pembayaran habis'
         };
@@ -1053,15 +1141,6 @@ class PaymentSystem {
         if (!this.checkoutData.discount || !this.checkoutData.cart.length) return 0;
         const subtotal = this.getTotalAmount();
         return Math.round((this.checkoutData.discount / subtotal) * 100);
-    }
-
-    /**
-     * 🔢 Generate virtual account
-     */
-    generateVirtualAccount() {
-        const bankCode = '888';
-        const random = Math.floor(Math.random() * 1000000000).toString().padStart(9, '0');
-        return `${bankCode}${random}`;
     }
 
     /**
