@@ -11,6 +11,7 @@
     "rating": 4.06,
     "sold": 120,
     "discount": 10,
+    "isPromo": true,
     "isFeatured": "true",
     "tags": [ "sapu" , "kebersihan" , "rumah" ]
   },
@@ -26,6 +27,7 @@
     "rating": 4.08,
     "sold": 250,
     "discount": 0,
+    "isPromo": true,
     "isFeatured": "true",
     "tags": [ "permen" , "manis" , "snack" ]
   },
@@ -41,6 +43,7 @@
     "rating": 4.04,
     "sold": 180,
     "discount": 5,
+    "isPromo": true,
     "isFeatured": "true",
     "tags": [ "permen" , "mint" , "snack" ]
   },
@@ -56,6 +59,7 @@
     "rating": 4.07,
     "sold": 340,
     "discount": 15,
+    "isPromo": true,
     "isFeatured": "true",
     "tags": [ "snack" , "kentang" , "ringan" ]
   },
@@ -71,6 +75,7 @@
     "rating": 4.05,
     "sold": 75,
     "discount": 10,
+    "isPromo": true,
     "isFeatured": "true",
     "tags": [ "kebersihan" , "alat-rumah" ]
   },
@@ -86,6 +91,7 @@
     "rating": 4.06,
     "sold": 65,
     "discount": 5,
+    "isPromo": true,
     "isFeatured": "true",
     "tags": [ "pel" , "kebersihan" , "rumah" ]
   },
@@ -101,6 +107,7 @@
     "rating": 4.04,
     "sold": 95,
     "discount": 8,
+    "isPromo": true,
     "isFeatured": "true",
     "tags": [ "sikat" , "kebersihan" , "lantai" ]
   },
@@ -116,6 +123,7 @@
     "rating": 4.07,
     "sold": 410,
     "discount": 12,
+    "isPromo": true,
     "isFeatured": "true",
     "tags": [ "kentang" , "snack" , "goreng" ]
   },
@@ -131,6 +139,7 @@
     "rating": 4.08,
     "sold": 500,
     "discount": 10,
+    "isPromo": true,
     "isFeatured": "true",
     "tags": [ "kacang" , "snack" , "gurih" ]
   },
@@ -146,6 +155,7 @@
     "rating": 4.06,
     "sold": 310,
     "discount": 0,
+    "isPromo": true,
     "isFeatured": "true",
     "tags": [ "permen" , "kacang" , "manis" ]
   },
@@ -161,6 +171,7 @@
     "rating": 4.06,
     "sold": 180,
     "discount": 10,
+    "isPromo": true,
     "isFeatured": "true",
     "tags": [ "sabun" , "cuci piring" , "kebersihan" ]
   },
@@ -176,6 +187,7 @@
     "rating": 4.08,
     "sold": 250,
     "discount": 5,
+    "isPromo": true,
     "isFeatured": "false",
     "tags": [ "deterjen" , "cuci" , "pakaian" ]
   },
@@ -206,6 +218,7 @@
     "rating": 4.09,
     "sold": 210,
     "discount": 12,
+    "isPromo": true,
     "isFeatured": "false",
     "tags": [ "deterjen" , "anti noda" , "bubuk" ]
   },
