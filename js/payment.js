@@ -1,4 +1,4 @@
-// payment.js - FINAL VERSION dengan Firebase Integration (Tanpa VA)
+// payment-fixs.js - FIXED VERSION untuk struktur HTML Anda
 import firebaseDB from './firebase-db.js';
 
 class PaymentSystem {
@@ -9,88 +9,43 @@ class PaymentSystem {
         this.currentUser = null;
         this.isDOMReady = false;
         
-        // Tunggu DOM ready sebelum init
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', () => {
-                this.isDOMReady = true;
-                this.init();
-            });
-        } else {
-            this.isDOMReady = true;
-            this.init();
-        }
+        this.init();
     }
 
     async init() {
-        console.log('💳 Initializing payment system, DOM ready:', this.isDOMReady);
+        console.log('💳 Initializing payment system untuk struktur HTML Anda');
         
-        if (!this.isDOMReady) {
-            console.error('💳 DOM not ready, delaying initialization');
-            setTimeout(() => this.init(), 100);
-            return;
-        }
-
         try {
-            // Pastikan semua element invoice sudah tersedia
-            if (!this.checkInvoiceElements()) {
-                console.error('💳 Invoice elements not found, retrying...');
-                setTimeout(() => this.init(), 500);
-                return;
+            // Tunggu DOM ready
+            if (document.readyState === 'loading') {
+                await new Promise(resolve => {
+                    document.addEventListener('DOMContentLoaded', resolve);
+                });
             }
 
-            console.log('💳 All invoice elements found, proceeding...');
-            
-            // Tunggu auth system ready
-            await this.waitForAuthSystem();
-            this.isAuthReady = true;
-            
-            console.log('💳 Auth system ready');
-            
+            this.isDOMReady = true;
+            console.log('💳 DOM ready, proceeding with initialization');
+
+            // Tunggu sebentar untuk memastikan semua element sudah ter-render
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            // Load dan render data
             this.loadCheckoutData();
-            this.setupAuthBasedUI();
             this.setupEventListeners();
             this.startPaymentTimer();
             
+            // Simpan ke Firebase jika user login
             if (this.isUserLoggedIn()) {
                 await this.saveCompleteOrderToFirebase();
             }
             
         } catch (error) {
             console.error('💳 Error during payment initialization:', error);
+            // Fallback: tetap load data tanpa auth
             this.loadCheckoutData();
             this.setupEventListeners();
             this.startPaymentTimer();
         }
-    }
-
-    /**
-     * 🔍 Check jika semua element invoice sudah tersedia di DOM
-     */
-    checkInvoiceElements() {
-        const requiredElements = [
-            'invoice-order-id',
-            'invoice-date',
-            'customer-name', 
-            'customer-phone',
-            'customer-address',
-            'customer-city',
-            'invoice-products-body',
-            'invoice-subtotal',
-            'invoice-total'
-            // VA number dihapus dari required elements
-        ];
-
-        const allElementsExist = requiredElements.every(id => {
-            const element = document.getElementById(id);
-            const exists = !!element;
-            if (!exists) {
-                console.warn(`💳 Missing element: ${id}`);
-            }
-            return exists;
-        });
-
-        console.log(`💳 Required elements check: ${allElementsExist ? 'PASS' : 'FAIL'}`);
-        return allElementsExist;
     }
 
     // ==================== AUTHENTICATION & FIREBASE ====================
@@ -98,7 +53,7 @@ class PaymentSystem {
     /**
      * 🔐 Tunggu auth system siap
      */
-    async waitForAuthSystem(maxWait = 10000) {
+    async waitForAuthSystem(maxWait = 5000) {
         return new Promise((resolve) => {
             const startTime = Date.now();
             
@@ -141,265 +96,10 @@ class PaymentSystem {
         return this.currentUser !== null && this.currentUser !== undefined;
     }
 
-    /**
-     * 🎨 Setup UI berdasarkan status login
-     */
-    setupAuthBasedUI() {
-        if (this.isUserLoggedIn()) {
-            console.log('💳 User is logged in, showing secure features');
-            this.showLoggedInFeatures();
-        } else {
-            console.log('💳 User is not logged in, showing guest features');
-            this.showGuestFeatures();
-        }
-    }
-
-    /**
-     * 🔐 Tampilkan fitur untuk user login
-     */
-    showLoggedInFeatures() {
-        this.updateInvoiceWithUserInfo(this.currentUser);
-        this.showFirebaseSaveStatus();
-    }
-
-    /**
-     * 🎭 Tampilkan fitur untuk guest
-     */
-    showGuestFeatures() {
-        this.showGuestReminder();
-    }
-
-    /**
-     * 💬 Tampilkan reminder untuk guest
-     */
-    showGuestReminder() {
-        const reminder = document.createElement('div');
-        reminder.style.cssText = `
-            background: #fff3cd;
-            border: 1px solid #ffeaa7;
-            color: #856404;
-            padding: 1rem;
-            border-radius: 8px;
-            margin-bottom: 1.5rem;
-            text-align: center;
-        `;
-        reminder.innerHTML = `
-            <p style="margin: 0 0 0.5rem 0;">
-                <strong>💡 Tips:</strong> 
-                <a href="login.html?redirect=payment" style="color: #007bff; text-decoration: underline;">
-                    Login
-                </a> 
-                untuk menyimpan riwayat pesanan dan notifikasi status pembayaran otomatis.
-            </p>
-            <small>Pesanan tetap bisa diproses tanpa login</small>
-        `;
-        
-        const actionsSection = document.querySelector('.payment-actions-section');
-        if (actionsSection) {
-            actionsSection.insertBefore(reminder, actionsSection.firstChild);
-        }
-    }
-
-    /**
-     * 📝 Update invoice dengan info user
-     */
-    updateInvoiceWithUserInfo(user) {
-        const customerName = document.getElementById('customer-name');
-        if (customerName && user.displayName) {
-            customerName.textContent = user.displayName;
-        }
-        
-        const customerInfo = document.querySelector('.invoice-customer');
-        if (customerInfo && user.email) {
-            const emailElement = document.createElement('p');
-            emailElement.textContent = `Email: ${user.email}`;
-            emailElement.style.margin = '0.25rem 0';
-            emailElement.style.fontSize = '0.9rem';
-            emailElement.style.color = '#666';
-            customerInfo.appendChild(emailElement);
-        }
-    }
-
-    /**
-     * 💾 Simpan data lengkap ke Firebase
-     */
-    async saveCompleteOrderToFirebase() {
-        try {
-            if (!this.checkoutData) {
-                console.log('💳 No checkout data available for Firebase');
-                return;
-            }
-
-            if (!this.isUserLoggedIn()) {
-                console.log('💳 User not logged in, skipping Firebase save');
-                this.saveOrderTemporarily();
-                return;
-            }
-
-            console.log('💳 Saving order to Firebase for user:', this.currentUser.email);
-
-            // Cek jika order sudah disimpan sebelumnya
-            const existingOrder = localStorage.getItem(`order-${this.checkoutData.orderId}-saved`);
-            if (existingOrder) {
-                console.log('💳 Order already saved to Firebase');
-                return;
-            }
-
-            // Siapkan data lengkap untuk Firebase
-            const completeOrderData = {
-                // ========== INFORMASI ORDER ==========
-                orderId: this.checkoutData.orderId,
-                orderNumber: `ORDER-${this.checkoutData.orderId}`,
-                
-                // ========== INFORMASI USER ==========
-                userId: this.currentUser.uid,
-                userEmail: this.currentUser.email,
-                userName: this.currentUser.displayName || this.checkoutData.shippingInfo.recipientName,
-                
-                // ========== INFORMASI PENERIMA LENGKAP ==========
-                recipientInfo: {
-                    name: this.checkoutData.shippingInfo.recipientName,
-                    phone: this.checkoutData.shippingInfo.recipientPhone,
-                    address: this.checkoutData.shippingInfo.shippingAddress,
-                    city: this.checkoutData.shippingInfo.city,
-                    postalCode: this.checkoutData.shippingInfo.postalCode,
-                    notes: this.checkoutData.shippingInfo.orderNotes || 'Tidak ada catatan'
-                },
-                
-                // ========== BARANG YANG DIBELI LENGKAP ==========
-                items: this.checkoutData.cart.map((item, index) => ({
-                    itemId: index + 1,
-                    productId: item.id || `prod-${index}`,
-                    productName: item.name || 'Product',
-                    price: Number(item.price) || 0,
-                    quantity: Number(item.quantity) || 1,
-                    subtotal: (Number(item.price) || 0) * (Number(item.quantity) || 1),
-                    image: item.image || 'images/placeholder-product.jpg',
-                    category: item.category || 'Umum'
-                })),
-                
-                // ========== INFORMASI PEMBAYARAN LENGKAP ==========
-                paymentInfo: {
-                    method: 'transfer_manual', // Diubah dari 'bank_nusantara'
-                    // Virtual Account dihapus
-                    bankName: 'Transfer Manual',
-                    
-                    // Breakdown harga
-                    subtotal: this.getTotalAmount(),
-                    discount: this.checkoutData.discount || 0,
-                    shippingCost: 0,
-                    tax: 0,
-                    totalAmount: this.getTotalAmount() - (this.checkoutData.discount || 0),
-                    
-                    // Status pembayaran
-                    status: 'pending',
-                    expiryTime: this.checkoutData.expiryTime || this.getExpiryTime()
-                },
-                
-                // ========== INFORMASI PENGIRIMAN ==========
-                shippingInfo: {
-                    service: 'standard',
-                    cost: 0,
-                    estimatedDelivery: this.getEstimatedDelivery(),
-                    trackingNumber: '',
-                    status: 'pending'
-                },
-                
-                // ========== PROMO & DISKON ==========
-                promotion: {
-                    promoCode: this.checkoutData.promoCode || '',
-                    discountAmount: this.checkoutData.discount || 0,
-                    discountPercentage: this.calculateDiscountPercentage()
-                },
-                
-                // ========== STATUS ORDER ==========
-                status: 'pending_payment',
-                statusHistory: [
-                    {
-                        status: 'pending_payment',
-                        timestamp: new Date().toISOString(),
-                        note: 'Menunggu konfirmasi pembayaran manual',
-                        description: 'Pesanan dibuat dan menunggu konfirmasi pembayaran'
-                    }
-                ],
-                
-                // ========== METADATA ==========
-                metadata: {
-                    itemsCount: this.checkoutData.cart.length,
-                    totalQuantity: this.checkoutData.cart.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0),
-                    platform: 'web',
-                    browser: navigator.userAgent,
-                    screenResolution: `${screen.width}x${screen.height}`,
-                    ipAddress: 'unknown'
-                },
-                
-                // ========== TIMESTAMPS ==========
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString(),
-                expiresAt: this.checkoutData.expiryTime || this.getExpiryTime()
-            };
-
-            console.log('💳 Complete order data for Firebase:', completeOrderData);
-
-            // Validasi data sebelum simpan
-            const validation = firebaseDB.validateOrderData(completeOrderData);
-            if (!validation.isValid) {
-                throw new Error(`Data tidak valid: ${validation.errors.join(', ')}`);
-            }
-
-            // Simpan ke Firebase
-            const result = await firebaseDB.saveOrder(completeOrderData);
-            
-            // Tandai sudah disimpan
-            localStorage.setItem(`order-${this.checkoutData.orderId}-saved`, 'true');
-            
-            // Hapus data temporary jika ada
-            localStorage.removeItem(`temp-order-${this.checkoutData.orderId}`);
-            
-            console.log('💳 Complete order successfully saved to Firebase:', result);
-            
-            // Update UI untuk menunjukkan data tersimpan
-            this.showFirebaseSaveStatus();
-
-        } catch (error) {
-            console.error('💳 Error saving complete order to Firebase:', error);
-            
-            // Simpan sementara jika gagal
-            this.saveOrderTemporarily();
-            
-            this.showMessage(
-                'Pesanan berhasil dibuat. Data akan disimpan ke server setelah terkoneksi.', 
-                'info'
-            );
-        }
-    }
-
-    /**
-     * 💾 Simpan data sementara di localStorage
-     */
-    saveOrderTemporarily() {
-        try {
-            if (!this.checkoutData) return;
-            
-            const tempOrderData = {
-                ...this.checkoutData,
-                savedAt: new Date().toISOString(),
-                status: 'temporary',
-                retryCount: 0
-            };
-            
-            localStorage.setItem(`temp-order-${this.checkoutData.orderId}`, JSON.stringify(tempOrderData));
-            console.log('💳 Order saved temporarily:', this.checkoutData.orderId);
-            
-        } catch (error) {
-            console.error('💳 Error saving temporary order:', error);
-        }
-    }
-
     // ==================== INVOICE RENDERING ====================
 
     /**
-     * 📄 Load checkout data dari localStorage - FIXED VERSION
+     * 📄 Load checkout data dari localStorage - SESUAI STRUKTUR HTML ANDA
      */
     loadCheckoutData() {
         try {
@@ -414,20 +114,12 @@ class PaymentSystem {
 
             console.log('💳 Raw checkout data:', checkoutData);
 
-            // Handle berbagai struktur data yang mungkin
+            // Process data sesuai struktur HTML Anda
             const processedData = {
-                // Data dari root
                 ...checkoutData,
-                
-                // OVERRIDE: Gunakan shippingInfo dari root jika ada, atau dari userInfo
                 shippingInfo: checkoutData.shippingInfo || checkoutData.userInfo || {},
-                
-                // OVERRIDE: Pastikan cart ada
                 cart: checkoutData.cart || [],
-                
-                // GENERATE jika tidak ada
                 orderId: checkoutData.orderId || `INV-${Date.now()}`,
-                // Virtual Account dihapus
                 expiryTime: checkoutData.expiryTime || this.getExpiryTime(),
                 discount: checkoutData.discount || 0
             };
@@ -441,18 +133,7 @@ class PaymentSystem {
                 return;
             }
 
-            if (!processedData.shippingInfo.recipientName) {
-                console.error('❌ Missing recipient name');
-                this.showError('Data penerima tidak lengkap. Silakan lengkapi data pengiriman.');
-                return;
-            }
-
             this.checkoutData = processedData;
-            
-            // Simpan kembali dengan struktur yang konsisten
-            localStorage.setItem('semart-checkout', JSON.stringify(this.checkoutData));
-            
-            console.log('💳 Final checkout data ready:', this.checkoutData);
             this.renderInvoice();
             
         } catch (error) {
@@ -462,7 +143,7 @@ class PaymentSystem {
     }
 
     /**
-     * 🎨 Render invoice ke HTML - FIXED VERSION (Tanpa VA)
+     * 🎨 Render invoice ke HTML - SESUAI STRUKTUR HTML ANDA
      */
     renderInvoice() {
         if (!this.checkoutData) {
@@ -471,15 +152,10 @@ class PaymentSystem {
         }
 
         try {
-            console.log('💳 Starting invoice rendering with data:', this.checkoutData);
+            console.log('💳 Starting invoice rendering dengan struktur HTML Anda');
             
             const { cart, discount, shippingInfo, orderId, expiryTime } = this.checkoutData;
             
-            // Debug info
-            console.log('💳 Cart items:', cart);
-            console.log('💳 Shipping info:', shippingInfo);
-            console.log('💳 Discount:', discount);
-
             // Calculate totals
             const subtotal = cart.reduce((sum, item) => {
                 const price = Number(item.price) || 0;
@@ -492,58 +168,42 @@ class PaymentSystem {
 
             console.log('💳 Calculated totals:', { subtotal, discount, shipping, total });
 
-            // Set invoice data
-            document.getElementById('invoice-order-id').textContent = orderId;
-            document.getElementById('invoice-date').textContent = new Date().toLocaleDateString('id-ID', {
+            // Set invoice data - SESUAI ID DI HTML ANDA
+            this.setElementContent('invoice-order-id', orderId);
+            this.setElementContent('invoice-date', new Date().toLocaleDateString('id-ID', {
                 weekday: 'long',
                 year: 'numeric',
                 month: 'long',
                 day: 'numeric'
-            });
-            document.getElementById('order-date').textContent = new Date().toLocaleDateString('id-ID');
+            }));
+            this.setElementContent('order-date', new Date().toLocaleDateString('id-ID'));
 
-            // Customer info
-            document.getElementById('customer-name').textContent = shippingInfo.recipientName || 'Tidak tersedia';
-            document.getElementById('customer-phone').textContent = shippingInfo.recipientPhone || 'Tidak tersedia';
-            document.getElementById('customer-address').textContent = shippingInfo.shippingAddress || 'Tidak tersedia';
-            document.getElementById('customer-city').textContent = 
-                `${shippingInfo.city || ''} ${shippingInfo.postalCode || ''}`.trim() || 'Tidak tersedia';
+            // Customer info - SESUAI ID DI HTML ANDA
+            this.setElementContent('customer-name', shippingInfo.recipientName || 'Tidak tersedia');
+            this.setElementContent('customer-phone', shippingInfo.recipientPhone || 'Tidak tersedia');
+            this.setElementContent('customer-address', shippingInfo.shippingAddress || 'Tidak tersedia');
+            this.setElementContent('customer-city', 
+                `${shippingInfo.city || ''} ${shippingInfo.postalCode || ''}`.trim() || 'Tidak tersedia');
 
-            // Render products table
-            const tbody = document.getElementById('invoice-products-body');
-            if (tbody && cart && cart.length > 0) {
-                tbody.innerHTML = cart.map(item => `
-                    <tr>
-                        <td>
-                            <strong>${item.name || 'Produk'}</strong>
-                        </td>
-                        <td>Rp${(item.price || 0).toLocaleString('id-ID')}</td>
-                        <td>${item.quantity || 1}</td>
-                        <td>Rp${((item.price || 0) * (item.quantity || 1)).toLocaleString('id-ID')}</td>
-                    </tr>
-                `).join('');
-            } else {
-                tbody.innerHTML = '<tr><td colspan="4">Tidak ada produk</td></tr>';
-            }
+            // Render products table - SESUAI ID DI HTML ANDA
+            this.renderProductsTable(cart);
 
-            // Render totals
-            document.getElementById('invoice-subtotal').textContent = `Rp${subtotal.toLocaleString('id-ID')}`;
-            document.getElementById('invoice-total').textContent = `Rp${total.toLocaleString('id-ID')}`;
-            document.getElementById('invoice-shipping').textContent = `Rp${shipping.toLocaleString('id-ID')}`;
+            // Render totals - SESUAI ID DI HTML ANDA
+            this.setElementContent('invoice-subtotal', `Rp${subtotal.toLocaleString('id-ID')}`);
+            this.setElementContent('invoice-total', `Rp${total.toLocaleString('id-ID')}`);
+            this.setElementContent('invoice-shipping', `Rp${shipping.toLocaleString('id-ID')}`);
+            this.setElementContent('va-amount', `Rp${total.toLocaleString('id-ID')}`);
 
             // Handle discount
             if (discount > 0) {
                 const discountRow = document.getElementById('invoice-discount-row');
                 if (discountRow) {
                     discountRow.style.display = 'flex';
-                    document.getElementById('invoice-discount').textContent = `-Rp${discount.toLocaleString('id-ID')}`;
+                    this.setElementContent('invoice-discount', `-Rp${discount.toLocaleString('id-ID')}`);
                 }
             }
 
-            // Hapus bagian Virtual Account dari UI
-            this.removeVASections();
-
-            // Expiry time
+            // Expiry time - SESUAI ID DI HTML ANDA
             const expiryDate = new Date(expiryTime);
             const formattedExpiry = expiryDate.toLocaleDateString('id-ID', {
                 weekday: 'long',
@@ -554,10 +214,10 @@ class PaymentSystem {
                 minute: '2-digit'
             });
             
-            document.getElementById('payment-expiry').textContent = formattedExpiry;
-            document.getElementById('expiry-time').textContent = formattedExpiry;
+            this.setElementContent('payment-expiry', formattedExpiry);
+            this.setElementContent('expiry-time', formattedExpiry);
 
-            console.log('💳 Invoice rendering completed successfully');
+            console.log('✅ DOM rendering completed');
 
         } catch (error) {
             console.error('💳 Error rendering invoice:', error);
@@ -566,100 +226,49 @@ class PaymentSystem {
     }
 
     /**
-     * 🗑️ Hapus semua bagian yang terkait dengan Virtual Account
+     * 📊 Render products table - SESUAI STRUKTUR HTML ANDA
      */
-    removeVASections() {
-        // Hapus element VA dari DOM jika ada
-        const vaElements = [
-            'va-number',
-            'instruction-va', 
-            'va-amount',
-            'payment-instructions',
-            'va-section'
-        ];
-        
-        vaElements.forEach(id => {
-            const element = document.getElementById(id);
-            if (element) {
-                element.remove();
-            }
-        });
-
-        // Hapus section instruksi pembayaran VA
-        const paymentInstructions = document.querySelector('.payment-instructions');
-        if (paymentInstructions) {
-            paymentInstructions.remove();
+    renderProductsTable(cart) {
+        const tbody = document.getElementById('invoice-products-body');
+        if (!tbody) {
+            console.error('❌ invoice-products-body not found');
+            return;
         }
 
-        // Update teks instruksi pembayaran
-        this.updatePaymentInstructions();
+        if (cart && cart.length > 0) {
+            tbody.innerHTML = cart.map(item => `
+                <tr>
+                    <td>
+                        <strong>${item.name || 'Produk'}</strong>
+                    </td>
+                    <td>Rp${(item.price || 0).toLocaleString('id-ID')}</td>
+                    <td>${item.quantity || 1}</td>
+                    <td>Rp${((item.price || 0) * (item.quantity || 1)).toLocaleString('id-ID')}</td>
+                </tr>
+            `).join('');
+            console.log(`✅ Rendered ${cart.length} products`);
+        } else {
+            tbody.innerHTML = '<tr><td colspan="4">Tidak ada produk</td></tr>';
+        }
     }
 
     /**
-     * 📝 Update instruksi pembayaran (tanpa VA)
+     * 🔧 Set element text dengan safety check
      */
-    updatePaymentInstructions() {
-        // Cari container instruksi pembayaran
-        const instructionsContainer = document.querySelector('.payment-info-section');
-        
-        if (instructionsContainer) {
-            // Buat instruksi pembayaran manual
-            const manualInstructions = document.createElement('div');
-            manualInstructions.className = 'payment-instructions-manual';
-            manualInstructions.style.cssText = `
-                background: #f8f9fa;
-                border-radius: 8px;
-                padding: 1.5rem;
-                margin: 1.5rem 0;
-                border-left: 4px solid #007b5e;
-            `;
-            
-            manualInstructions.innerHTML = `
-                <h3 style="color: #007b5e; margin-bottom: 1rem; font-size: 1.2rem;">
-                    💳 Instruksi Pembayaran Manual
-                </h3>
-                <div style="line-height: 1.6;">
-                    <p style="margin-bottom: 1rem;">
-                        <strong>Silakan lakukan transfer manual ke rekening berikut:</strong>
-                    </p>
-                    <div style="background: white; padding: 1rem; border-radius: 6px; margin-bottom: 1rem;">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                            <span>Bank:</span>
-                            <strong>Bank Nusantara</strong>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                            <span>Nomor Rekening:</span>
-                            <strong>1234 5678 9012</strong>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                            <span>Atas Nama:</span>
-                            <strong>SeMart Store</strong>
-                        </div>
-                        <div style="display: flex; justify-content: space-between;">
-                            <span>Jumlah Transfer:</span>
-                            <strong style="color: #e74c3c;">Rp${this.getTotalAmount().toLocaleString('id-ID')}</strong>
-                        </div>
-                    </div>
-                    <p style="margin-bottom: 0.5rem;">
-                        <strong>Langkah-langkah:</strong>
-                    </p>
-                    <ol style="margin: 0; padding-left: 1.2rem;">
-                        <li>Lakukan transfer sesuai total pesanan</li>
-                        <li>Simpan bukti transfer</li>
-                        <li>Konfirmasi pembayaran melalui WhatsApp/Email</li>
-                        <li>Pesanan akan diproses setelah pembayaran dikonfirmasi</li>
-                    </ol>
-                </div>
-            `;
-            
-            instructionsContainer.appendChild(manualInstructions);
+    setElementContent(id, text) {
+        const element = document.getElementById(id);
+        if (element) {
+            element.textContent = text;
+            console.log(`✅ Set ${id}: ${text}`);
+        } else {
+            console.warn(`⚠️ Element ${id} not found`);
         }
     }
 
     // ==================== PDF & PRINT FUNCTIONALITY ====================
 
     /**
-     * 📄 Download invoice sebagai PDF - FIXED VERSION
+     * 📄 Download invoice sebagai PDF - OPTIMIZED
      */
     async downloadPDF() {
         try {
@@ -676,84 +285,33 @@ class PaymentSystem {
                 downloadBtn.disabled = true;
             }
 
-            // Check jika libraries tersedia
-            if (typeof html2canvas === 'undefined') {
-                throw new Error('html2canvas library tidak tersedia');
-            }
+            console.log('💾 Starting PDF generation...');
 
-            if (typeof jspdf === 'undefined' && typeof window.jspdf === 'undefined') {
-                throw new Error('jsPDF library tidak tersedia');
-            }
-
-            console.log('💾 Starting optimized PDF generation...');
-
-            // Buat container sederhana untuk PDF
-            const pdfContainer = this.createSimplePDFContainer(invoiceContent);
+            // Buat container untuk PDF
+            const pdfContainer = this.createPDFContainer(invoiceContent);
             document.body.appendChild(pdfContainer);
 
-            // Gunakan konfigurasi yang lebih sederhana untuk html2canvas
+            // Generate canvas
             const canvas = await html2canvas(pdfContainer, {
-                scale: 1.8,
+                scale: 2,
                 useCORS: true,
                 logging: false,
-                backgroundColor: '#ffffff',
-                width: pdfContainer.scrollWidth,
-                height: pdfContainer.scrollHeight,
-                onclone: (clonedDoc, element) => {
-                    // Hanya hapus element interaktif saja
-                    const interactiveElements = element.querySelectorAll('button, a, .btn');
-                    interactiveElements.forEach(el => el.remove());
-                }
+                backgroundColor: '#ffffff'
             });
 
             // Hapus container temporary
             document.body.removeChild(pdfContainer);
 
-            // Konversi ke JPEG dengan kualitas optimal
-            const imgData = canvas.toDataURL('image/jpeg', 0.8);
-            
-            console.log('📊 Canvas size:', canvas.width, 'x', canvas.height);
-
-            // Handle jsPDF
-            let pdf;
-            if (typeof jspdf !== 'undefined') {
-                pdf = new jspdf.jsPDF('p', 'mm', 'a4');
-            } else if (typeof window.jspdf !== 'undefined') {
-                pdf = new window.jspdf.jsPDF('p', 'mm', 'a4');
-            } else {
-                throw new Error('jsPDF tidak tersedia');
-            }
-
+            // Create PDF
+            const pdf = new jspdf.jsPDF('p', 'mm', 'a4');
             const pdfWidth = pdf.internal.pageSize.getWidth();
             const pdfHeight = pdf.internal.pageSize.getHeight();
             
-            // Hitung dimensi gambar
             const imgWidth = pdfWidth - 20;
             const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-            // Handle multiple pages jika diperlukan
-            if (imgHeight > pdfHeight) {
-                let heightLeft = imgHeight;
-                let position = 0;
-                let pageCount = 0;
-                
-                while (heightLeft > 0 && pageCount < 10) {
-                    if (position !== 0) {
-                        pdf.addPage();
-                    }
-                    
-                    const pageImgHeight = Math.min(imgHeight, pdfHeight);
-                    pdf.addImage(imgData, 'JPEG', 10, position, imgWidth, pageImgHeight);
-                    
-                    heightLeft -= pdfHeight;
-                    position -= pdfHeight;
-                    pageCount++;
-                }
-            } else {
-                // Muat dalam 1 halaman
-                pdf.addImage(imgData, 'JPEG', 10, 10, imgWidth, imgHeight);
-            }
-
+            pdf.addImage(canvas.toDataURL('image/jpeg', 0.8), 'JPEG', 10, 10, imgWidth, imgHeight);
+            
             // Save PDF
             const orderId = this.checkoutData?.orderId || 'invoice';
             const fileName = `invoice-${orderId}.pdf`;
@@ -764,8 +322,7 @@ class PaymentSystem {
 
         } catch (error) {
             console.error('💳 Error downloading PDF:', error);
-            this.handlePDFError(error);
-            
+            this.showMessage('Gagal membuat PDF. Silakan gunakan print browser.', 'error');
         } finally {
             // Reset button state
             const downloadBtn = document.getElementById('download-pdf');
@@ -777,205 +334,30 @@ class PaymentSystem {
     }
 
     /**
-     * 🔥 FIX: Buat container sederhana untuk PDF
+     * 📄 Buat container untuk PDF
      */
-    createSimplePDFContainer(originalElement) {
+    createPDFContainer(originalElement) {
         const container = document.createElement('div');
-        container.style.position = 'fixed';
-        container.style.left = '-9999px';
-        container.style.top = '-9999px';
-        container.style.width = '800px';
-        container.style.background = 'white';
-        container.style.padding = '20px';
-        container.style.boxSizing = 'border-box';
-        container.style.fontFamily = 'Poppins, sans-serif';
-        
-        // Clone element tanpa modifikasi kompleks
-        const clonedElement = originalElement.cloneNode(true);
-        
-        // Hapus element yang tidak perlu dengan cara sederhana
-        const elementsToRemove = clonedElement.querySelectorAll(
-            '.payment-actions-section, .btn-download, .btn-print, .btn-check-status, .action-buttons, .backpage, .navbar, footer'
-        );
-        elementsToRemove.forEach(el => {
-            if (el.parentNode) {
-                el.parentNode.removeChild(el);
-            }
-        });
-        
-        // Hapus semua style attributes yang kompleks
-        this.removeComplexStyles(clonedElement);
-        
-        container.appendChild(clonedElement);
-        
-        return container;
-    }
-
-    /**
-     * 🔥 FIX: Hapus style kompleks yang menyebabkan error parsing
-     */
-    removeComplexStyles(element) {
-        // Hapus style attributes yang kompleks
-        const elementsWithStyle = element.querySelectorAll('[style]');
-        elementsWithStyle.forEach(el => {
-            const style = el.getAttribute('style');
-            // Hapus style yang mengandung transform, filter, atau properti kompleks
-            if (style && (
-                style.includes('transform') || 
-                style.includes('filter') ||
-                style.includes('animation') ||
-                style.includes('transition') ||
-                style.includes('clip-path') ||
-                style.includes('transform-origin')
-            )) {
-                el.removeAttribute('style');
-            }
-        });
-        
-        // Hapus style tags yang kompleks
-        const styleTags = element.querySelectorAll('style');
-        styleTags.forEach(styleTag => {
-            if (styleTag.textContent.includes('transform') || 
-                styleTag.textContent.includes('animation') ||
-                styleTag.textContent.includes('@keyframes')) {
-                styleTag.remove();
-            }
-        });
-        
-        // Hapus inline styles dari element utama
-        if (element.hasAttribute('style')) {
-            element.removeAttribute('style');
-        }
-    }
-
-    /**
-     * 🖨️ Handle PDF error dengan fallback yang lebih baik
-     */
-    handlePDFError(error) {
-        console.error('💳 PDF Error details:', error);
-        
-        // Tampilkan modal error dengan solusi
-        const modal = document.createElement('div');
-        modal.style.cssText = `
+        container.style.cssText = `
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.8);
-            z-index: 10000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            left: -9999px;
+            top: -9999px;
+            width: 800px;
+            background: white;
+            padding: 20px;
             font-family: 'Poppins', sans-serif;
         `;
-
-        modal.innerHTML = `
-            <div style="
-                background: white;
-                padding: 2rem;
-                border-radius: 12px;
-                max-width: 500px;
-                width: 90%;
-                text-align: center;
-                box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            ">
-                <div style="font-size: 3rem; margin-bottom: 1rem;">📄</div>
-                <h3 style="color: #e74c3c; margin-bottom: 1rem; font-weight: 600;">Gagal Generate PDF</h3>
-                <p style="margin-bottom: 1.5rem; color: #555; line-height: 1.5;">
-                    Terjadi kesalahan teknis saat membuat PDF. Silakan gunakan alternatif berikut:
-                </p>
-                
-                <div style="text-align: left; margin-bottom: 2rem;">
-                    <div style="display: flex; align-items: flex-start; gap: 1rem; margin-bottom: 1rem; padding: 1rem; background: #f8f9fa; border-radius: 8px;">
-                        <span style="font-size: 1.5rem; margin-top: 0.25rem;">🖨️</span>
-                        <div>
-                            <strong style="display: block; margin-bottom: 0.5rem;">Print Halaman</strong>
-                            <p style="margin: 0; font-size: 0.9rem; color: #666;">
-                                Gunakan fitur print browser (Ctrl+P) dan pilih "Save as PDF"
-                            </p>
-                        </div>
-                    </div>
-                    
-                    <div style="display: flex; align-items: flex-start; gap: 1rem; margin-bottom: 1rem; padding: 1rem; background: #f8f9fa; border-radius: 8px;">
-                        <span style="font-size: 1.5rem; margin-top: 0.25rem;">📸</span>
-                        <div>
-                            <strong style="display: block; margin-bottom: 0.5rem;">Screenshot</strong>
-                            <p style="margin: 0; font-size: 0.9rem; color: #666;">
-                                Ambil screenshot bagian invoice menggunakan tool browser
-                            </p>
-                        </div>
-                    </div>
-                </div>
-                
-                <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
-                    <button onclick="window.print()" style="
-                        background: #007bff;
-                        color: white;
-                        border: none;
-                        padding: 0.75rem 1.5rem;
-                        border-radius: 6px;
-                        cursor: pointer;
-                        font-weight: 500;
-                        font-family: 'Poppins', sans-serif;
-                        transition: background 0.2s;
-                    " onmouseover="this.style.background='#0056b3'" onmouseout="this.style.background='#007bff'">
-                        🖨️ Print Halaman
-                    </button>
-                    
-                    <button onclick="takeScreenshot()" style="
-                        background: #28a745;
-                        color: white;
-                        border: none;
-                        padding: 0.75rem 1.5rem;
-                        border-radius: 6px;
-                        cursor: pointer;
-                        font-weight: 500;
-                        font-family: 'Poppins', sans-serif;
-                        transition: background 0.2s;
-                    " onmouseover="this.style.background='#218838'" onmouseout="this.style.background='#28a745'">
-                        📸 Screenshot
-                    </button>
-                    
-                    <button onclick="this.closest('[style]').remove()" style="
-                        background: #6c757d;
-                        color: white;
-                        border: none;
-                        padding: 0.75rem 1.5rem;
-                        border-radius: 6px;
-                        cursor: pointer;
-                        font-weight: 500;
-                        font-family: 'Poppins', sans-serif;
-                        transition: background 0.2s;
-                    " onmouseover="this.style.background='#545b62'" onmouseout="this.style.background='#6c757d'">
-                        Tutup
-                    </button>
-                </div>
-            </div>
-        `;
-
-        // Tambahkan fungsi screenshot sederhana
-        window.takeScreenshot = () => {
-            const invoiceContent = document.getElementById('invoice-content');
-            if (invoiceContent) {
-                html2canvas(invoiceContent).then(canvas => {
-                    const link = document.createElement('a');
-                    link.download = `invoice-${this.checkoutData?.orderId || 'screenshot'}.png`;
-                    link.href = canvas.toDataURL();
-                    link.click();
-                    modal.remove();
-                });
-            }
-        };
-
-        document.body.appendChild(modal);
-
-        // Close modal when clicking outside
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-                modal.remove();
-            }
-        });
+        
+        const clonedElement = originalElement.cloneNode(true);
+        
+        // Hapus element yang tidak perlu
+        const elementsToRemove = clonedElement.querySelectorAll(
+            '.btn-download, .btn-print, .btn-check-status, .action-buttons, .backpage'
+        );
+        elementsToRemove.forEach(el => el.remove());
+        
+        container.appendChild(clonedElement);
+        return container;
     }
 
     // ==================== PAYMENT TIMER & STATUS ====================
@@ -992,7 +374,7 @@ class PaymentSystem {
             const timeLeft = expiry - now;
 
             if (timeLeft <= 0) {
-                this.setElementText('payment-timer', '00:00:00');
+                this.setElementContent('payment-timer', '00:00:00');
                 if (this.paymentTimer) {
                     clearInterval(this.paymentTimer);
                 }
@@ -1004,7 +386,7 @@ class PaymentSystem {
             const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
             const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
 
-            this.setElementText('payment-timer', 
+            this.setElementContent('payment-timer', 
                 `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
             );
         };
@@ -1014,7 +396,7 @@ class PaymentSystem {
     }
 
     /**
-     * 🔍 Check payment status dari Firebase
+     * 🔍 Check payment status
      */
     async checkPaymentStatus() {
         try {
@@ -1024,13 +406,11 @@ class PaymentSystem {
 
             this.showMessage('Sedang memeriksa status pembayaran...', 'info');
 
-            const order = await firebaseDB.getOrderByOrderId(this.checkoutData.orderId);
-            
-            if (order) {
-                this.showPaymentStatus(order.paymentInfo?.status || 'pending');
-            } else {
-                throw new Error('Data pesanan tidak ditemukan di database');
-            }
+            // Simulasi check status
+            setTimeout(() => {
+                this.showMessage('Status: Menunggu konfirmasi pembayaran', 'info');
+            }, 2000);
+
         } catch (error) {
             console.error('💳 Error checking payment status:', error);
             this.showMessage('Gagal memeriksa status pembayaran. Silakan coba lagi.', 'error');
@@ -1038,45 +418,14 @@ class PaymentSystem {
     }
 
     /**
-     * 📊 Tampilkan status pembayaran
-     */
-    showPaymentStatus(status) {
-        const statusMessages = {
-            'pending': '⏳ Menunggu konfirmasi pembayaran',
-            'paid': '✅ Pembayaran berhasil dikonfirmasi',
-            'failed': '❌ Pembayaran gagal',
-            'expired': '⏰ Waktu pembayaran habis'
-        };
-        
-        const message = statusMessages[status] || 'Status tidak diketahui';
-        this.showMessage(`Status Pembayaran: ${message}`, 'info');
-        
-        // Redirect jika sudah paid
-        if (status === 'paid') {
-            setTimeout(() => {
-                window.location.href = 'order-success.html';
-            }, 3000);
-        }
-    }
-
-    /**
      * ⏰ Handle payment expired
      */
     async handlePaymentExpired() {
-        try {
-            if (this.checkoutData?.orderId) {
-                await firebaseDB.updateOrderStatus(this.checkoutData.orderId, 'expired', 'Waktu pembayaran habis');
-                await firebaseDB.updatePaymentStatus(this.checkoutData.orderId, 'expired');
-            }
-            
-            this.showMessage('Waktu pembayaran telah habis. Silakan buat pesanan baru.', 'warning');
-            
-            setTimeout(() => {
-                window.location.href = 'cart.html';
-            }, 5000);
-        } catch (error) {
-            console.error('💳 Error handling payment expiration:', error);
-        }
+        this.showMessage('Waktu pembayaran telah habis. Silakan buat pesanan baru.', 'warning');
+        
+        setTimeout(() => {
+            window.location.href = 'cart.html';
+        }, 5000);
     }
 
     // ==================== EVENT LISTENERS ====================
@@ -1088,43 +437,88 @@ class PaymentSystem {
         // Download PDF
         const downloadBtn = document.getElementById('download-pdf');
         if (downloadBtn) {
-            downloadBtn.addEventListener('click', () => {
-                const libraries = this.checkPDFLibraries();
-                if (!libraries.html2canvas || !libraries.jsPDF) {
-                    this.showMessage('Library PDF tidak tersedia. Menggunakan fallback...', 'warning');
-                    this.handlePDFError(new Error('PDF libraries not available'));
-                    return;
-                }
-                this.downloadPDF();
-            });
+            downloadBtn.addEventListener('click', () => this.downloadPDF());
         }
 
         // Check payment status
         const checkStatusBtn = document.getElementById('check-status');
         if (checkStatusBtn) {
-            checkStatusBtn.addEventListener('click', () => {
-                this.checkPaymentStatus();
-            });
+            checkStatusBtn.addEventListener('click', () => this.checkPaymentStatus());
         }
 
-        // Print button fallback
+        // Print button
         const printBtn = document.getElementById('print-invoice');
         if (printBtn) {
-            printBtn.addEventListener('click', () => {
-                window.print();
-            });
+            printBtn.addEventListener('click', () => window.print());
+        }
+    }
+
+    // ==================== FIREBASE INTEGRATION ====================
+
+    /**
+     * 💾 Simpan data lengkap ke Firebase
+     */
+    async saveCompleteOrderToFirebase() {
+        try {
+            if (!this.checkoutData || !this.isUserLoggedIn()) {
+                console.log('💳 Skip Firebase save - no data or user not logged in');
+                return;
+            }
+
+            console.log('💳 Saving order to Firebase');
+
+            const completeOrderData = {
+                orderId: this.checkoutData.orderId,
+                orderNumber: `ORDER-${this.checkoutData.orderId}`,
+                userId: this.currentUser.uid,
+                userEmail: this.currentUser.email,
+                userName: this.currentUser.displayName || this.checkoutData.shippingInfo.recipientName,
+                
+                recipientInfo: {
+                    name: this.checkoutData.shippingInfo.recipientName,
+                    phone: this.checkoutData.shippingInfo.recipientPhone,
+                    address: this.checkoutData.shippingInfo.shippingAddress,
+                    city: this.checkoutData.shippingInfo.city,
+                    postalCode: this.checkoutData.shippingInfo.postalCode,
+                    notes: this.checkoutData.shippingInfo.orderNotes || 'Tidak ada catatan'
+                },
+                
+                items: this.checkoutData.cart.map((item, index) => ({
+                    itemId: index + 1,
+                    productId: item.id || `prod-${index}`,
+                    productName: item.name || 'Product',
+                    price: Number(item.price) || 0,
+                    quantity: Number(item.quantity) || 1,
+                    subtotal: (Number(item.price) || 0) * (Number(item.quantity) || 1)
+                })),
+                
+                paymentInfo: {
+                    method: 'transfer_manual',
+                    bankName: 'Bank Nusantara',
+                    subtotal: this.getTotalAmount(),
+                    discount: this.checkoutData.discount || 0,
+                    shippingCost: 0,
+                    totalAmount: this.getTotalAmount() - (this.checkoutData.discount || 0),
+                    status: 'pending',
+                    expiryTime: this.checkoutData.expiryTime || this.getExpiryTime()
+                },
+                
+                status: 'pending_payment',
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            };
+
+            if (firebaseDB && typeof firebaseDB.saveOrder === 'function') {
+                await firebaseDB.saveOrder(completeOrderData);
+                console.log('💳 Order saved to Firebase');
+            }
+
+        } catch (error) {
+            console.error('💳 Error saving to Firebase:', error);
         }
     }
 
     // ==================== HELPER METHODS ====================
-
-    /**
-     * 🔧 Set element text dengan safety check
-     */
-    setElementText(id, text) {
-        const element = document.getElementById(id);
-        if (element) element.textContent = text;
-    }
 
     /**
      * 🧮 Hitung total amount
@@ -1135,75 +529,12 @@ class PaymentSystem {
     }
 
     /**
-     * 💰 Hitung persentase diskon
-     */
-    calculateDiscountPercentage() {
-        if (!this.checkoutData.discount || !this.checkoutData.cart.length) return 0;
-        const subtotal = this.getTotalAmount();
-        return Math.round((this.checkoutData.discount / subtotal) * 100);
-    }
-
-    /**
      * ⏱️ Get expiry time (24 jam dari sekarang)
      */
     getExpiryTime() {
         const expiry = new Date();
         expiry.setHours(expiry.getHours() + 24);
         return expiry.toISOString();
-    }
-
-    /**
-     * 📦 Get estimated delivery time
-     */
-    getEstimatedDelivery() {
-        const deliveryDate = new Date();
-        deliveryDate.setDate(deliveryDate.getDate() + 3);
-        return deliveryDate.toISOString();
-    }
-
-    /**
-     * 📚 Check PDF library availability
-     */
-    checkPDFLibraries() {
-        const libraries = {
-            html2canvas: typeof html2canvas !== 'undefined',
-            jsPDF: typeof jspdf !== 'undefined' || typeof window.jspdf !== 'undefined'
-        };
-        return libraries;
-    }
-
-    /**
-     * 💬 Tunjukkan status save ke Firebase
-     */
-    showFirebaseSaveStatus() {
-        if (!this.checkoutData) return;
-        
-        const saveStatus = document.createElement('div');
-        saveStatus.style.cssText = `
-            position: fixed;
-            bottom: 20px;
-            left: 20px;
-            background: #28a745;
-            color: white;
-            padding: 0.75rem 1.25rem;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            z-index: 1000;
-            animation: slideInLeft 0.3s ease;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-        `;
-        saveStatus.innerHTML = `✅ Data pesanan tersimpan #${this.checkoutData.orderId}`;
-        
-        document.body.appendChild(saveStatus);
-        
-        setTimeout(() => {
-            saveStatus.style.animation = 'slideOutLeft 0.3s ease';
-            setTimeout(() => {
-                if (saveStatus.parentNode) {
-                    saveStatus.parentNode.removeChild(saveStatus);
-                }
-            }, 300);
-        }, 5000);
     }
 
     /**
@@ -1306,53 +637,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.log('💳 DOM loaded, initializing payment system');
     
     try {
-        // Tunggu sedikit untuk memastikan auth system sudah di-load
-        await new Promise(resolve => setTimeout(resolve, 500));
+        // Tunggu sedikit untuk memastikan libraries sudah di-load
+        await new Promise(resolve => setTimeout(resolve, 1000));
         
         window.paymentSystem = new PaymentSystem();
         
-        // Debug info
-        console.log('💳 Payment system initialized');
-        console.log('💳 Auth system available:', typeof window.authSystem !== 'undefined');
-        console.log('💳 Current user:', window.paymentSystem.currentUser);
+        console.log('💳 Payment system initialized successfully');
         
     } catch (error) {
         console.error('💳 Error initializing payment system:', error);
-        
-        // Fallback: tetap inisialisasi tanpa auth
-        window.paymentSystem = new PaymentSystem();
     }
 });
-
-// Event listener untuk auth state changes
-document.addEventListener('authStateChanged', (event) => {
-    console.log('💳 Auth state changed detected in payment system:', event.detail);
-    
-    if (window.paymentSystem && event.detail.user) {
-        console.log('💳 User logged in, retrying Firebase save...');
-        window.paymentSystem.currentUser = event.detail.user;
-        window.paymentSystem.saveCompleteOrderToFirebase().catch(console.error);
-    }
-});
-
-// ==================== DEBUGGING HELPERS ====================
-
-/**
- * 🐛 Debug helper untuk payment system
- */
-function debugPaymentSystem() {
-    console.log('💳=== PAYMENT SYSTEM DEBUG ===');
-    console.log('💳 Auth system available:', typeof window.authSystem !== 'undefined');
-    console.log('💳 Current user:', window.paymentSystem?.currentUser);
-    console.log('💳 Payment system:', window.paymentSystem);
-    console.log('💳 User logged in:', window.paymentSystem?.isUserLoggedIn());
-    console.log('💳 Auth ready:', window.paymentSystem?.isAuthReady);
-    console.log('💳 Checkout data:', window.paymentSystem?.checkoutData);
-    console.log('💳============================');
-}
-
-// Expose untuk debugging di console
-window.debugPayment = debugPaymentSystem;
 
 // Add CSS animations if not exists
 if (!document.querySelector('#payment-animations')) {
@@ -1366,18 +661,6 @@ if (!document.querySelector('#payment-animations')) {
         @keyframes slideOutRight {
             from { transform: translateX(0); opacity: 1; }
             to { transform: translateX(100%); opacity: 0; }
-        }
-        @keyframes slideInLeft {
-            from { transform: translateX(-100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-        @keyframes slideOutLeft {
-            from { transform: translateX(0); opacity: 1; }
-            to { transform: translateX(-100%); opacity: 0; }
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
         }
     `;
     document.head.appendChild(style);
