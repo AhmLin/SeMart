@@ -75,6 +75,9 @@
   font-size: 1rem;
   text-align: left;
   flex-grow: 1;
+  color: #007b5e;
+  font-weight: 700;
+  height: 30px;
 }
 
 .product-card-promo .price-container {
@@ -88,13 +91,13 @@
 .product-card-promo .original-price {
   text-decoration: line-through;
   color: #999;
-  font-size: 14px;
+  font-size: 10px;
 }
 
 .product-card-promo .discount-price {
   color: #e74c3c;
   font-weight: bold;
-  font-size: 16px;
+  font-size: 12px;
 }
 
 .product-card-promo .discount-percentage {
@@ -128,7 +131,7 @@
   text-decoration: none;
   transition: background 0.3s;
   font-size: 0.85rem;
-  width: 70%;
+  width: 100%;
   text-align: center;
   border: 1px solid #007b5e;
 }
