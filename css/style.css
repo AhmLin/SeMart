@@ -516,6 +516,7 @@ body {
 .btn-secondary:hover {
   background-color: #4bb2ff;
   color: #fff;
+
 }
 
 /*============ KATEGORI ================*/
@@ -677,7 +678,7 @@ body {
   text-decoration: none;
   transition: background 0.3s;
   font-size: 0.85rem;
-  width: 70%;
+  width: 100%;
   text-align: center;
   border: 1px solid #007b5e;
 }
@@ -1412,6 +1413,7 @@ input[type=number] {
         opacity: 0;
     }
 }
+
 
 
 
