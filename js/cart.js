@@ -668,7 +668,7 @@ class ShoppingCart {
 
             // Generate data checkout yang konsisten
             const checkoutData = {
-                cart: this.cart,
+                cart: JSON.parse(JSON.stringify(this.cart)), // Deep clone untuk menghindari reference issues
                 discount: this.currentDiscount || 0,
                 shippingInfo: this.getShippingInfo(),
                 userInfo: this.getUserInfo(),
@@ -680,15 +680,24 @@ class ShoppingCart {
 
             console.log('💳 Checkout data prepared:', checkoutData);
 
+            // Validasi cart sebelum save
+            if (!checkoutData.cart || checkoutData.cart.length === 0) {
+                throw new Error('Cart is empty');
+            }
+
             // Simpan ke localStorage dengan struktur yang konsisten
             localStorage.setItem('semart-checkout', JSON.stringify(checkoutData));
+            
+            // Clear cart setelah checkout
+            this.cart = [];
+            this.saveCartToStorage();
             
             // Redirect ke payment page
             window.location.href = 'payment.html';
             
         } catch (error) {
             console.error('🛒 Error during checkout:', error);
-            alert('Terjadi kesalahan saat checkout. Silakan coba lagi.');
+            alert('Terjadi kesalahan saat checkout: ' + error.message);
         }
     }
 
