@@ -1,4 +1,4 @@
-// firebase-db.js - Firebase Database Operations
+// firebase-db.js - Firebase Database Operations (FIXED VERSION)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { 
     getFirestore, 
@@ -14,7 +14,7 @@ import {
     onSnapshot
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// 🔥 Konfigurasi Firebase - GANTI DENGAN KONFIGURASI ANDA
+// 🔥 Konfigurasi Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyApFkWDpEodKPHLzePFe0cc9z5kiMZbrS4",
   authDomain: "semart-5da85.firebaseapp.com",
@@ -39,17 +39,26 @@ class FirebaseDB {
     // ==================== ORDER OPERATIONS ====================
 
     /**
-     * 🔥 Simpan pesanan lengkap ke Firebase
-     * @param {Object} orderData - Data pesanan lengkap
+     * 🔥 Simpan pesanan lengkap ke Firebase - SIMPLIFIED VERSION
+     * @param {Object} orderData - Data pesanan dari payment system
      * @returns {Promise<Object>} - Result penyimpanan
      */
     async saveOrder(orderData) {
         try {
-            console.log('🔥 Saving complete order to Firebase...');
-            
-            // Validasi data penting
-            if (!orderData.orderId || !orderData.userId || !orderData.shippingInfo) {
-                throw new Error('Data order tidak lengkap: orderId, userId, atau shippingInfo tidak ada');
+            console.log('🔥 [saveOrder] Starting to save order to Firebase...');
+            console.log('🔥 [saveOrder] Raw order data:', orderData);
+
+            // Validasi dasar
+            if (!orderData) {
+                throw new Error('Data order tidak boleh kosong');
+            }
+
+            if (!orderData.orderId) {
+                throw new Error('orderId tidak ditemukan');
+            }
+
+            if (!orderData.userId) {
+                throw new Error('userId tidak ditemukan');
             }
 
             // Validasi items
@@ -57,96 +66,62 @@ class FirebaseDB {
                 throw new Error('Data items tidak valid atau kosong');
             }
 
-            // Siapkan data lengkap untuk Firebase
-            const completeOrderData = {
-                // ========== INFORMASI ORDER ==========
+            // Siapkan data yang SIMPLE dan sesuai dengan struktur dari payment.js
+            const firebaseOrderData = {
+                // ========== BASIC ORDER INFO ==========
                 orderId: orderData.orderId,
-                orderNumber: `ORDER-${orderData.orderId}`,
+                orderNumber: orderData.orderNumber || `ORDER-${orderData.orderId}`,
                 
-                // ========== INFORMASI USER ==========
+                // ========== USER INFO ==========
                 userId: orderData.userId,
-                userEmail: orderData.userEmail || '',
-                userName: orderData.userName || orderData.shippingInfo.recipientName,
+                userEmail: orderData.userEmail || 'no-email',
+                userName: orderData.userName || orderData.recipientInfo?.name || 'Customer',
                 
-                // ========== INFORMASI PENERIMA LENGKAP ==========
+                // ========== RECIPIENT INFO ==========
                 recipientInfo: {
-                    name: orderData.shippingInfo.recipientName || '',
-                    phone: orderData.shippingInfo.recipientPhone || '',
-                    address: orderData.shippingInfo.shippingAddress || '',
-                    city: orderData.shippingInfo.city || '',
-                    postalCode: orderData.shippingInfo.postalCode || '',
-                    notes: orderData.shippingInfo.orderNotes || 'Tidak ada catatan'
+                    name: orderData.recipientInfo?.name || orderData.shippingInfo?.recipientName || 'Customer',
+                    phone: orderData.recipientInfo?.phone || orderData.shippingInfo?.recipientPhone || '081234567890',
+                    address: orderData.recipientInfo?.address || orderData.shippingInfo?.shippingAddress || 'Alamat tidak tersedia',
+                    city: orderData.recipientInfo?.city || orderData.shippingInfo?.city || 'Kota',
+                    postalCode: orderData.recipientInfo?.postalCode || orderData.shippingInfo?.postalCode || '12345',
+                    notes: orderData.recipientInfo?.notes || orderData.shippingInfo?.orderNotes || 'Tidak ada catatan'
                 },
                 
-                // ========== BARANG YANG DIBELI LENGKAP ==========
+                // ========== ITEMS ==========
                 items: orderData.items.map((item, index) => ({
                     itemId: index + 1,
-                    productId: item.id || `prod-${index}`,
-                    productName: item.name || 'Product',
+                    productId: item.productId || item.id || `prod-${index}`,
+                    productName: item.productName || item.name || 'Product',
                     price: Number(item.price) || 0,
                     quantity: Number(item.quantity) || 1,
                     subtotal: (Number(item.price) || 0) * (Number(item.quantity) || 1),
-                    image: item.image || 'images/placeholder-product.jpg',
-                    category: item.category || 'Umum'
+                    image: item.image || 'images/placeholder-product.jpg'
                 })),
                 
-                // ========== INFORMASI PEMBAYARAN LENGKAP ==========
+                // ========== PAYMENT INFO ==========
                 paymentInfo: {
-                    method: 'bank_nusantara',
-                    virtualAccount: orderData.paymentInfo?.virtualAccount || this.generateVirtualAccount(),
+                    method: 'bank_transfer',
                     bankName: 'Bank Nusantara',
+                    virtualAccount: orderData.paymentInfo?.virtualAccount || '233110005',
                     
-                    // Breakdown harga
+                    // Amount breakdown
                     subtotal: Number(orderData.paymentInfo?.subtotal) || this.calculateSubtotal(orderData.items),
                     discount: Number(orderData.paymentInfo?.discount) || 0,
                     shippingCost: Number(orderData.paymentInfo?.shippingCost) || 0,
-                    tax: Number(orderData.paymentInfo?.tax) || 0,
-                    totalAmount: Number(orderData.paymentInfo?.finalAmount) || this.calculateTotalAmount(orderData.items, orderData.paymentInfo?.discount),
+                    totalAmount: Number(orderData.paymentInfo?.totalAmount) || 
+                                this.calculateTotalAmount(
+                                    orderData.items, 
+                                    orderData.paymentInfo?.discount, 
+                                    orderData.paymentInfo?.shippingCost
+                                ),
                     
-                    // Status pembayaran
+                    // Status
                     status: 'pending',
-                    expiryTime: orderData.expiryTime || this.getExpiryTime()
+                    expiryTime: orderData.paymentInfo?.expiryTime || orderData.expiryTime || this.getExpiryTime()
                 },
                 
-                // ========== INFORMASI PENGIRIMAN ==========
-                shippingInfo: {
-                    service: 'standard',
-                    cost: Number(orderData.paymentInfo?.shippingCost) || 0,
-                    estimatedDelivery: this.getEstimatedDelivery(),
-                    trackingNumber: '',
-                    status: 'pending'
-                },
-                
-                // ========== PROMO & DISKON ==========
-                promotion: {
-                    promoCode: orderData.promoCode || '',
-                    discountAmount: Number(orderData.paymentInfo?.discount) || 0,
-                    discountPercentage: this.calculateDiscountPercentage(
-                        Number(orderData.paymentInfo?.subtotal) || this.calculateSubtotal(orderData.items),
-                        Number(orderData.paymentInfo?.discount) || 0
-                    )
-                },
-                
-                // ========== STATUS ORDER ==========
+                // ========== ORDER STATUS ==========
                 status: 'pending_payment',
-                statusHistory: [
-                    {
-                        status: 'pending_payment',
-                        timestamp: new Date().toISOString(),
-                        note: 'Menunggu pembayaran via Bank Nusantara',
-                        description: 'Pesanan dibuat dan menunggu pembayaran'
-                    }
-                ],
-                
-                // ========== METADATA ==========
-                metadata: {
-                    itemsCount: orderData.items.length,
-                    totalQuantity: orderData.items.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0),
-                    platform: 'web',
-                    browser: navigator.userAgent,
-                    screenResolution: `${screen.width}x${screen.height}`,
-                    ipAddress: 'unknown' // Di production bisa diisi dengan real IP
-                },
                 
                 // ========== TIMESTAMPS ==========
                 createdAt: new Date().toISOString(),
@@ -154,11 +129,17 @@ class FirebaseDB {
                 expiresAt: orderData.expiryTime || this.getExpiryTime()
             };
 
-            console.log('🔥 Complete order data prepared:', completeOrderData);
+            console.log('🔥 [saveOrder] Processed order data for Firebase:', firebaseOrderData);
 
-            // Simpan ke collection 'orders'
-            const docRef = await addDoc(collection(this.db, this.ordersCollection), completeOrderData);
-            console.log('✅ Order successfully saved with ID:', docRef.id);
+            // Validasi final sebelum save
+            const validation = this.validateOrderData(firebaseOrderData);
+            if (!validation.isValid) {
+                throw new Error(`Data tidak valid: ${validation.errors.join(', ')}`);
+            }
+
+            // Simpan ke Firebase
+            const docRef = await addDoc(collection(this.db, this.ordersCollection), firebaseOrderData);
+            console.log('✅ [saveOrder] Order successfully saved with Firebase ID:', docRef.id);
             
             return {
                 success: true,
@@ -168,8 +149,63 @@ class FirebaseDB {
             };
 
         } catch (error) {
-            console.error('❌ Error saving complete order to Firebase:', error);
-            throw new Error(`Gagal menyimpan pesanan: ${error.message}`);
+            console.error('❌ [saveOrder] Error saving order to Firebase:', error);
+            
+            // Return error object instead of throwing untuk compatibility dengan payment.js
+            return {
+                success: false,
+                error: error.message,
+                message: `Gagal menyimpan pesanan: ${error.message}`
+            };
+        }
+    }
+
+    /**
+     * 🔥 Save order dengan data dari cart/checkout (COMPATIBILITY METHOD)
+     * @param {Object} checkoutData - Data dari cart system
+     * @returns {Promise<Object>} - Result penyimpanan
+     */
+    async saveOrderFromCheckout(checkoutData) {
+        try {
+            console.log('🔥 [saveOrderFromCheckout] Saving order from checkout data:', checkoutData);
+
+            // Transform data dari cart/checkout format ke format Firebase
+            const orderData = {
+                orderId: checkoutData.orderId,
+                userId: checkoutData.userInfo?.uid || checkoutData.userId || 'unknown',
+                userEmail: checkoutData.userInfo?.email || '',
+                userName: checkoutData.userInfo?.name || checkoutData.shippingInfo?.recipientName || 'Customer',
+                
+                recipientInfo: {
+                    name: checkoutData.shippingInfo?.recipientName || 'Customer',
+                    phone: checkoutData.shippingInfo?.recipientPhone || '081234567890',
+                    address: checkoutData.shippingInfo?.shippingAddress || 'Alamat tidak tersedia',
+                    city: checkoutData.shippingInfo?.city || 'Kota',
+                    postalCode: checkoutData.shippingInfo?.postalCode || '12345',
+                    notes: checkoutData.shippingInfo?.orderNotes || ''
+                },
+                
+                items: checkoutData.cart || [],
+                
+                paymentInfo: {
+                    subtotal: this.calculateSubtotal(checkoutData.cart),
+                    discount: checkoutData.discount || 0,
+                    shippingCost: 0,
+                    totalAmount: this.calculateTotalAmount(checkoutData.cart, checkoutData.discount, 0)
+                },
+                
+                expiryTime: checkoutData.expiryTime || this.getExpiryTime()
+            };
+
+            return await this.saveOrder(orderData);
+
+        } catch (error) {
+            console.error('❌ [saveOrderFromCheckout] Error:', error);
+            return {
+                success: false,
+                error: error.message,
+                message: `Gagal menyimpan pesanan dari checkout: ${error.message}`
+            };
         }
     }
 
@@ -178,11 +214,11 @@ class FirebaseDB {
      * @param {string} orderId - ID pesanan
      * @param {string} newStatus - Status baru
      * @param {string} note - Catatan status (optional)
-     * @returns {Promise<boolean>} - Success status
+     * @returns {Promise<Object>} - Result update
      */
     async updateOrderStatus(orderId, newStatus, note = '') {
         try {
-            console.log('🔥 Updating order status:', { orderId, newStatus, note });
+            console.log('🔥 [updateOrderStatus] Updating order status:', { orderId, newStatus, note });
             
             const ordersRef = collection(this.db, this.ordersCollection);
             const q = query(ordersRef, where("orderId", "==", orderId));
@@ -198,35 +234,32 @@ class FirebaseDB {
                     updatedAt: new Date().toISOString()
                 };
                 
-                // Tambahkan ke status history
-                const statusUpdate = {
-                    status: newStatus,
-                    timestamp: new Date().toISOString(),
-                    note: note || this.getStatusNote(newStatus),
-                    description: this.getStatusDescription(newStatus)
-                };
-                
-                updateData.statusHistory = [...(orderDoc.statusHistory || []), statusUpdate];
-                
                 // Update payment status jika status berubah ke paid
-                if (newStatus === 'paid') {
+                if (newStatus === 'paid' || newStatus === 'completed') {
                     updateData.paymentInfo = {
                         ...orderDoc.paymentInfo,
-                        status: 'paid',
+                        status: newStatus === 'paid' ? 'paid' : 'completed',
                         paidAt: new Date().toISOString()
                     };
                 }
                 
                 await updateDoc(doc(this.db, this.ordersCollection, docId), updateData);
                 
-                console.log('✅ Order status updated successfully');
-                return true;
+                console.log('✅ [updateOrderStatus] Order status updated successfully');
+                return {
+                    success: true,
+                    message: 'Status pesanan berhasil diperbarui'
+                };
             } else {
                 throw new Error(`Order dengan ID ${orderId} tidak ditemukan`);
             }
         } catch (error) {
-            console.error('❌ Error updating order status:', error);
-            throw error;
+            console.error('❌ [updateOrderStatus] Error:', error);
+            return {
+                success: false,
+                error: error.message,
+                message: `Gagal memperbarui status: ${error.message}`
+            };
         }
     }
 
@@ -237,7 +270,7 @@ class FirebaseDB {
      */
     async getOrdersByUser(userId) {
         try {
-            console.log('🔥 Getting orders for user:', userId);
+            console.log('🔥 [getOrdersByUser] Getting orders for user:', userId);
             
             if (!userId) {
                 throw new Error('User ID tidak boleh kosong');
@@ -249,18 +282,31 @@ class FirebaseDB {
             
             const orders = [];
             querySnapshot.forEach((doc) => {
+                const data = doc.data();
                 orders.push({
                     id: doc.id,
                     firebaseId: doc.id,
-                    ...doc.data()
+                    ...data,
+                    // Format tanggal untuk display
+                    createdAtFormatted: this.formatDate(data.createdAt),
+                    expiresAtFormatted: this.formatDate(data.expiresAt)
                 });
             });
             
-            console.log(`✅ Found ${orders.length} orders for user ${userId}`);
-            return orders;
+            console.log(`✅ [getOrdersByUser] Found ${orders.length} orders for user ${userId}`);
+            return {
+                success: true,
+                data: orders,
+                count: orders.length
+            };
         } catch (error) {
-            console.error('❌ Error getting user orders:', error);
-            throw error;
+            console.error('❌ [getOrdersByUser] Error:', error);
+            return {
+                success: false,
+                error: error.message,
+                data: [],
+                count: 0
+            };
         }
     }
 
@@ -271,7 +317,7 @@ class FirebaseDB {
      */
     async getOrderByOrderId(orderId) {
         try {
-            console.log('🔥 Getting order by orderId:', orderId);
+            console.log('🔥 [getOrderByOrderId] Getting order by orderId:', orderId);
             
             const ordersRef = collection(this.db, this.ordersCollection);
             const q = query(ordersRef, where("orderId", "==", orderId));
@@ -279,17 +325,28 @@ class FirebaseDB {
             
             if (!querySnapshot.empty) {
                 const doc = querySnapshot.docs[0];
+                const data = doc.data();
+                
                 return {
-                    id: doc.id,
-                    firebaseId: doc.id,
-                    ...doc.data()
+                    success: true,
+                    data: {
+                        id: doc.id,
+                        firebaseId: doc.id,
+                        ...data,
+                        createdAtFormatted: this.formatDate(data.createdAt),
+                        expiresAtFormatted: this.formatDate(data.expiresAt)
+                    }
                 };
             } else {
                 throw new Error(`Order dengan ID ${orderId} tidak ditemukan`);
             }
         } catch (error) {
-            console.error('❌ Error getting order by orderId:', error);
-            throw error;
+            console.error('❌ [getOrderByOrderId] Error:', error);
+            return {
+                success: false,
+                error: error.message,
+                data: null
+            };
         }
     }
 
@@ -299,7 +356,7 @@ class FirebaseDB {
      */
     async getAllOrders() {
         try {
-            console.log('🔥 Getting all orders');
+            console.log('🔥 [getAllOrders] Getting all orders');
             
             const ordersRef = collection(this.db, this.ordersCollection);
             const q = query(ordersRef, orderBy("createdAt", "desc"));
@@ -307,18 +364,30 @@ class FirebaseDB {
             
             const orders = [];
             querySnapshot.forEach((doc) => {
+                const data = doc.data();
                 orders.push({
                     id: doc.id,
                     firebaseId: doc.id,
-                    ...doc.data()
+                    ...data,
+                    createdAtFormatted: this.formatDate(data.createdAt),
+                    expiresAtFormatted: this.formatDate(data.expiresAt)
                 });
             });
             
-            console.log(`✅ Found ${orders.length} total orders`);
-            return orders;
+            console.log(`✅ [getAllOrders] Found ${orders.length} total orders`);
+            return {
+                success: true,
+                data: orders,
+                count: orders.length
+            };
         } catch (error) {
-            console.error('❌ Error getting all orders:', error);
-            throw error;
+            console.error('❌ [getAllOrders] Error:', error);
+            return {
+                success: false,
+                error: error.message,
+                data: [],
+                count: 0
+            };
         }
     }
 
@@ -329,27 +398,51 @@ class FirebaseDB {
      * @returns {Function} - Unsubscribe function
      */
     onUserOrdersChange(userId, callback) {
-        if (!userId) {
-            console.error('User ID tidak boleh kosong untuk real-time listener');
+        try {
+            if (!userId) {
+                console.error('❌ [onUserOrdersChange] User ID tidak boleh kosong');
+                return () => {};
+            }
+            
+            console.log('🔥 [onUserOrdersChange] Setting up real-time listener for user:', userId);
+            
+            const ordersRef = collection(this.db, this.ordersCollection);
+            const q = query(ordersRef, where("userId", "==", userId), orderBy("createdAt", "desc"));
+            
+            return onSnapshot(q, 
+                (snapshot) => {
+                    const orders = [];
+                    snapshot.forEach((doc) => {
+                        const data = doc.data();
+                        orders.push({
+                            id: doc.id,
+                            firebaseId: doc.id,
+                            ...data,
+                            createdAtFormatted: this.formatDate(data.createdAt),
+                            expiresAtFormatted: this.formatDate(data.expiresAt)
+                        });
+                    });
+                    console.log(`🔥 [onUserOrdersChange] Real-time update: ${orders.length} orders`);
+                    callback({
+                        success: true,
+                        data: orders,
+                        count: orders.length
+                    });
+                }, 
+                (error) => {
+                    console.error('❌ [onUserOrdersChange] Error in real-time listener:', error);
+                    callback({
+                        success: false,
+                        error: error.message,
+                        data: [],
+                        count: 0
+                    });
+                }
+            );
+        } catch (error) {
+            console.error('❌ [onUserOrdersChange] Setup error:', error);
             return () => {};
         }
-        
-        const ordersRef = collection(this.db, this.ordersCollection);
-        const q = query(ordersRef, where("userId", "==", userId), orderBy("createdAt", "desc"));
-        
-        return onSnapshot(q, (snapshot) => {
-            const orders = [];
-            snapshot.forEach((doc) => {
-                orders.push({
-                    id: doc.id,
-                    firebaseId: doc.id,
-                    ...doc.data()
-                });
-            });
-            callback(orders);
-        }, (error) => {
-            console.error('❌ Error in orders real-time listener:', error);
-        });
     }
 
     // ==================== PAYMENT OPERATIONS ====================
@@ -357,11 +450,11 @@ class FirebaseDB {
     /**
      * 🔥 Simpan riwayat pembayaran
      * @param {Object} paymentData - Data pembayaran
-     * @returns {Promise<string>} - Payment ID
+     * @returns {Promise<Object>} - Payment result
      */
     async savePaymentHistory(paymentData) {
         try {
-            console.log('🔥 Saving payment history:', paymentData);
+            console.log('🔥 [savePaymentHistory] Saving payment history:', paymentData);
             
             const paymentWithTimestamp = {
                 ...paymentData,
@@ -370,12 +463,20 @@ class FirebaseDB {
             };
 
             const docRef = await addDoc(collection(this.db, this.paymentsCollection), paymentWithTimestamp);
-            console.log('✅ Payment history saved with ID:', docRef.id);
+            console.log('✅ [savePaymentHistory] Payment history saved with ID:', docRef.id);
             
-            return docRef.id;
+            return {
+                success: true,
+                paymentId: docRef.id,
+                message: 'Riwayat pembayaran berhasil disimpan'
+            };
         } catch (error) {
-            console.error('❌ Error saving payment history:', error);
-            throw error;
+            console.error('❌ [savePaymentHistory] Error:', error);
+            return {
+                success: false,
+                error: error.message,
+                message: `Gagal menyimpan riwayat pembayaran: ${error.message}`
+            };
         }
     }
 
@@ -383,20 +484,18 @@ class FirebaseDB {
      * 🔥 Update status pembayaran
      * @param {string} orderId - Order ID
      * @param {string} paymentStatus - Status pembayaran
-     * @returns {Promise<boolean>} - Success status
+     * @returns {Promise<Object>} - Update result
      */
     async updatePaymentStatus(orderId, paymentStatus) {
         try {
-            console.log('🔥 Updating payment status:', { orderId, paymentStatus });
+            console.log('🔥 [updatePaymentStatus] Updating payment status:', { orderId, paymentStatus });
             
-            // Update di collection orders
             const ordersRef = collection(this.db, this.ordersCollection);
             const q = query(ordersRef, where("orderId", "==", orderId));
             const querySnapshot = await getDocs(q);
             
             if (!querySnapshot.empty) {
                 const docId = querySnapshot.docs[0].id;
-                const orderDoc = querySnapshot.docs[0].data();
                 
                 await updateDoc(doc(this.db, this.ordersCollection, docId), {
                     "paymentInfo.status": paymentStatus,
@@ -404,28 +503,25 @@ class FirebaseDB {
                     updatedAt: new Date().toISOString()
                 });
                 
-                console.log('✅ Payment status updated successfully');
-                return true;
+                console.log('✅ [updatePaymentStatus] Payment status updated successfully');
+                return {
+                    success: true,
+                    message: 'Status pembayaran berhasil diperbarui'
+                };
             } else {
                 throw new Error(`Order dengan ID ${orderId} tidak ditemukan`);
             }
         } catch (error) {
-            console.error('❌ Error updating payment status:', error);
-            throw error;
+            console.error('❌ [updatePaymentStatus] Error:', error);
+            return {
+                success: false,
+                error: error.message,
+                message: `Gagal memperbarui status pembayaran: ${error.message}`
+            };
         }
     }
 
     // ==================== HELPER METHODS ====================
-
-    /**
-     * 🔥 Generate virtual account number
-     * @returns {string} - Virtual account number
-     */
-    generateVirtualAccount() {
-        const bankCode = '888'; // Bank Nusantara
-        const random = Math.floor(Math.random() * 1000000000).toString().padStart(9, '0');
-        return `${bankCode}${random}`;
-    }
 
     /**
      * 🔥 Hitung subtotal dari items
@@ -433,8 +529,12 @@ class FirebaseDB {
      * @returns {number} - Subtotal
      */
     calculateSubtotal(items) {
+        if (!items || !Array.isArray(items)) return 0;
+        
         return items.reduce((total, item) => {
-            return total + ((Number(item.price) || 0) * (Number(item.quantity) || 0));
+            const price = Number(item.price) || 0;
+            const quantity = Number(item.quantity) || 1;
+            return total + (price * quantity);
         }, 0);
     }
 
@@ -451,27 +551,6 @@ class FirebaseDB {
     }
 
     /**
-     * 🔥 Hitung persentase diskon
-     * @param {number} subtotal - Subtotal
-     * @param {number} discount - Diskon
-     * @returns {number} - Persentase diskon
-     */
-    calculateDiscountPercentage(subtotal, discount) {
-        if (!subtotal || !discount) return 0;
-        return Math.round((discount / subtotal) * 100);
-    }
-
-    /**
-     * 🔥 Dapatkan estimasi waktu pengiriman
-     * @returns {string} - ISO string tanggal estimasi
-     */
-    getEstimatedDelivery() {
-        const deliveryDate = new Date();
-        deliveryDate.setDate(deliveryDate.getDate() + 3); // 3 hari kerja
-        return deliveryDate.toISOString();
-    }
-
-    /**
      * 🔥 Dapatkan waktu expiry (24 jam dari sekarang)
      * @returns {string} - ISO string tanggal expiry
      */
@@ -482,39 +561,26 @@ class FirebaseDB {
     }
 
     /**
-     * 🔥 Dapatkan note untuk status
-     * @param {string} status - Status order
-     * @returns {string} - Note status
+     * 🔥 Format tanggal untuk display
+     * @param {string} dateString - ISO date string
+     * @returns {string} - Formatted date
      */
-    getStatusNote(status) {
-        const statusNotes = {
-            'pending_payment': 'Menunggu pembayaran',
-            'paid': 'Pembayaran diterima',
-            'processing': 'Pesanan sedang diproses',
-            'shipped': 'Pesanan dikirim',
-            'delivered': 'Pesanan diterima',
-            'completed': 'Pesanan selesai',
-            'cancelled': 'Pesanan dibatalkan'
-        };
-        return statusNotes[status] || 'Status diperbarui';
-    }
-
-    /**
-     * 🔥 Dapatkan deskripsi untuk status
-     * @param {string} status - Status order
-     * @returns {string} - Deskripsi status
-     */
-    getStatusDescription(status) {
-        const statusDescriptions = {
-            'pending_payment': 'Pesanan dibuat dan menunggu pembayaran',
-            'paid': 'Pembayaran berhasil dikonfirmasi',
-            'processing': 'Pesanan sedang disiapkan untuk pengiriman',
-            'shipped': 'Pesanan telah dikirim ke kurir',
-            'delivered': 'Pesanan telah diterima oleh customer',
-            'completed': 'Pesanan telah selesai',
-            'cancelled': 'Pesanan telah dibatalkan'
-        };
-        return statusDescriptions[status] || 'Status pesanan diperbarui';
+    formatDate(dateString) {
+        if (!dateString) return '-';
+        
+        try {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('id-ID', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        } catch (error) {
+            return dateString;
+        }
     }
 
     /**
@@ -527,9 +593,17 @@ class FirebaseDB {
         
         if (!orderData.orderId) errors.push('orderId is required');
         if (!orderData.userId) errors.push('userId is required');
-        if (!orderData.shippingInfo) errors.push('shippingInfo is required');
         if (!orderData.items || !Array.isArray(orderData.items)) errors.push('items is required and must be array');
+        if (orderData.items.length === 0) errors.push('items cannot be empty');
         
+        // Validasi setiap item
+        orderData.items.forEach((item, index) => {
+            if (!item.productId && !item.id) errors.push(`Item ${index + 1}: productId or id is required`);
+            if (!item.productName && !item.name) errors.push(`Item ${index + 1}: productName or name is required`);
+            if (Number(item.price) < 0) errors.push(`Item ${index + 1}: price cannot be negative`);
+            if (Number(item.quantity) < 1) errors.push(`Item ${index + 1}: quantity must be at least 1`);
+        });
+
         return {
             isValid: errors.length === 0,
             errors: errors
@@ -537,8 +611,39 @@ class FirebaseDB {
     }
 
     /**
+     * 🔥 Debug method untuk mengecek koneksi Firebase
+     * @returns {Promise<Object>} - Connection status
+     */
+    async checkConnection() {
+        try {
+            console.log('🔥 [checkConnection] Checking Firebase connection...');
+            
+            // Coba akses collection orders
+            const ordersRef = collection(this.db, this.ordersCollection);
+            const q = query(ordersRef, orderBy("createdAt", "desc"));
+            const querySnapshot = await getDocs(q);
+            
+            console.log('✅ [checkConnection] Firebase connection successful');
+            return {
+                success: true,
+                connected: true,
+                message: 'Firebase connection is working',
+                ordersCount: querySnapshot.size
+            };
+        } catch (error) {
+            console.error('❌ [checkConnection] Firebase connection failed:', error);
+            return {
+                success: false,
+                connected: false,
+                error: error.message,
+                message: 'Firebase connection failed'
+            };
+        }
+    }
+
+    /**
      * 🔥 Clean up expired orders (untuk admin)
-     * @returns {Promise<number>} - Jumlah order yang dihapus
+     * @returns {Promise<Object>} - Cleanup result
      */
     async cleanupExpiredOrders() {
         try {
@@ -558,11 +663,21 @@ class FirebaseDB {
             });
             
             await Promise.all(deletePromises);
-            console.log(`✅ Cleaned up ${deletePromises.length} expired orders`);
-            return deletePromises.length;
+            console.log(`✅ [cleanupExpiredOrders] Cleaned up ${deletePromises.length} expired orders`);
+            
+            return {
+                success: true,
+                deletedCount: deletePromises.length,
+                message: `Berhasil menghapus ${deletePromises.length} pesanan kedaluwarsa`
+            };
         } catch (error) {
-            console.error('❌ Error cleaning up expired orders:', error);
-            throw error;
+            console.error('❌ [cleanupExpiredOrders] Error:', error);
+            return {
+                success: false,
+                error: error.message,
+                deletedCount: 0,
+                message: `Gagal membersihkan pesanan kedaluwarsa: ${error.message}`
+            };
         }
     }
 }
