@@ -438,7 +438,7 @@ class ShoppingCart {
             const validPromoCodes = {
                 'DISKON10': { discount: 0.1, minPurchase: 50000 },
                 'SELAMAT15': { discount: 0.15, minPurchase: 100000 },
-                'WELCOME20': { discount: 0.2, minPurchase: 150000 }
+                'WELCOME20': { discount: 0.1, minPurchase: 150000 }
             };
             
             const promo = validPromoCodes[promoCode];
@@ -949,3 +949,4 @@ function debugCartSystem() {
 }
 
 window.debugCart = debugCartSystem;
+
