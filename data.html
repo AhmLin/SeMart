@@ -28,9 +28,53 @@
             padding: 20px;
         }
         
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .button:hover {
+            background-color: #45a049;
+        }
+        
+        .button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        
+        .button-excel {
+            background-color: #217346;
+        }
+        
+        .button-excel:hover {
+            background-color: #1e6a3e;
+        }
+        
+        .stats {
+            color: #666;
+            font-size: 14px;
+        }
+        
         .table-container {
             overflow-x: auto;
-            margin-top: 20px;
             border: 1px solid #e0e0e0;
             border-radius: 4px;
         }
@@ -112,11 +156,38 @@
             font-size: 0.85em;
             color: #6c757d;
         }
+        
+        @media (max-width: 768px) {
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .button {
+                justify-content: center;
+            }
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Data Orders dari Firestore</h1>
+        
+        <div class="controls">
+            <div class="stats">
+                Total Orders: <span id="totalOrders">0</span>
+            </div>
+            <button id="downloadExcel" class="button button-excel" disabled>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14,2 14,8 20,8"></polyline>
+                    <path d="M16 13H8"></path>
+                    <path d="M16 17H8"></path>
+                    <path d="M10 9H8"></path>
+                </svg>
+                Download Excel
+            </button>
+        </div>
         
         <div class="table-container">
             <table id="ordersTable">
@@ -155,12 +226,12 @@
 
         // Konfigurasi Firebase - GANTI DENGAN KONFIGURASI ANDA
         const firebaseConfig = {
-            apiKey: "AIzaSyApFkWDpEodKPHLzePFe0cc9z5kiMZbrS4",
-            authDomain: "semart-5da85.firebaseapp.com",
-            projectId: "semart-5da85",
-            storageBucket: "semart-5da85.firebasestorage.app",
-            messagingSenderId: "77585287575",
-            appId: "1:77585287575:web:5f58edd85981264da25cd2"
+            apiKey: "your-api-key",
+            authDomain: "your-project.firebaseapp.com",
+            projectId: "your-project-id",
+            storageBucket: "your-project.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "your-app-id"
         };
 
         // Inisialisasi Firebase
@@ -169,6 +240,9 @@
 
         // Referensi ke koleksi "orders"
         const ordersCollection = collection(db, "orders");
+
+        // Variabel untuk menyimpan data orders
+        let ordersData = [];
 
         // Fungsi untuk memformat timestamp
         function formatTimestamp(timestamp) {
@@ -218,6 +292,17 @@
         // Fungsi untuk memperbarui tabel dengan data dari Firestore
         function updateTable(orders) {
             const tableBody = document.getElementById('ordersTableBody');
+            const totalOrdersSpan = document.getElementById('totalOrders');
+            const downloadButton = document.getElementById('downloadExcel');
+            
+            // Simpan data untuk download Excel
+            ordersData = orders;
+            
+            // Update total orders
+            totalOrdersSpan.textContent = orders.length;
+            
+            // Enable/disable download button
+            downloadButton.disabled = orders.length === 0;
             
             if (orders.length === 0) {
                 tableBody.innerHTML = '<tr><td colspan="14" class="loading">Tidak ada data orders</td></tr>';
@@ -324,6 +409,71 @@
                 tableBody.appendChild(row);
             });
         }
+
+        // Fungsi untuk download data ke Excel
+        function downloadToExcel() {
+            if (ordersData.length === 0) {
+                alert('Tidak ada data untuk di-download');
+                return;
+            }
+
+            try {
+                // Siapkan data untuk Excel
+                const excelData = ordersData.map(order => ({
+                    'Document ID': order.id || '',
+                    'Created At': formatTimestamp(order.createdAt),
+                    'Expires At': formatTimestamp(order.expiresAt),
+                    'Items': formatObjectData(order.items),
+                    'Order ID': order.orderId || '',
+                    'Order Number': order.orderNumber || '',
+                    'Payment Info': formatObjectData(order.paymentInfo),
+                    'Recipient Info': formatObjectData(order.recipientInfo),
+                    'Shipping Info': formatObjectData(order.shippingInfo),
+                    'Status': order.status || '',
+                    'Updated At': formatTimestamp(order.updatedAt),
+                    'User Email': order.userEmail || '',
+                    'User ID': order.userId || '',
+                    'User Name': order.userName || ''
+                }));
+
+                // Konversi ke CSV
+                const headers = Object.keys(excelData[0]);
+                const csvContent = [
+                    headers.join(','), // Header
+                    ...excelData.map(row => 
+                        headers.map(header => {
+                            let cell = row[header] || '';
+                            // Escape quotes and wrap in quotes if contains comma or quote
+                            cell = String(cell).replace(/"/g, '""');
+                            if (cell.includes(',') || cell.includes('"') || cell.includes('\n')) {
+                                cell = `"${cell}"`;
+                            }
+                            return cell;
+                        }).join(',')
+                    )
+                ].join('\n');
+
+                // Buat blob dan download
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                const url = URL.createObjectURL(blob);
+                
+                link.setAttribute('href', url);
+                link.setAttribute('download', `orders_${new Date().toISOString().split('T')[0]}.csv`);
+                link.style.visibility = 'hidden';
+                
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+            } catch (error) {
+                console.error('Error generating Excel file:', error);
+                alert('Terjadi error saat membuat file Excel: ' + error.message);
+            }
+        }
+
+        // Event listener untuk tombol download Excel
+        document.getElementById('downloadExcel').addEventListener('click', downloadToExcel);
 
         // Mendengarkan perubahan real-time pada koleksi "orders"
         onSnapshot(ordersCollection, (snapshot) => {
