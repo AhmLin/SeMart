@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Orders dari Firestore</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+        
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+        
+        .table-container {
+            overflow-x: auto;
+            margin-top: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 1200px;
+        }
+        
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+            color: #2c3e50;
+            position: sticky;
+            top: 0;
+        }
+        
+        tr:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .status {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            font-weight: 500;
+        }
+        
+        .status-pending {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        
+        .status-completed {
+            background-color: #d1edff;
+            color: #0c5460;
+        }
+        
+        .status-shipped {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .json-data {
+            font-family: monospace;
+            font-size: 0.85em;
+            background-color: #f8f9fa;
+            padding: 4px 6px;
+            border-radius: 4px;
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #6c757d;
+        }
+        
+        .error {
+            text-align: center;
+            padding: 20px;
+            color: #dc3545;
+            background-color: #f8d7da;
+            border-radius: 4px;
+            margin-top: 20px;
+        }
+        
+        .timestamp {
+            font-size: 0.85em;
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Data Orders dari Firestore</h1>
+        
+        <div class="table-container">
+            <table id="ordersTable">
+                <thead>
+                    <tr>
+                        <th>Document ID</th>
+                        <th>Created At</th>
+                        <th>Expires At</th>
+                        <th>Items</th>
+                        <th>Order ID</th>
+                        <th>Order Number</th>
+                        <th>Payment Info</th>
+                        <th>Recipient Info</th>
+                        <th>Shipping Info</th>
+                        <th>Status</th>
+                        <th>Updated At</th>
+                        <th>User Email</th>
+                        <th>User ID</th>
+                        <th>User Name</th>
+                    </tr>
+                </thead>
+                <tbody id="ordersTableBody">
+                    <tr>
+                        <td colspan="14" class="loading">Memuat data...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        // Import Firebase functions
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // Konfigurasi Firebase - GANTI DENGAN KONFIGURASI ANDA
+        const firebaseConfig = {
+            apiKey: "AIzaSyApFkWDpEodKPHLzePFe0cc9z5kiMZbrS4",
+            authDomain: "semart-5da85.firebaseapp.com",
+            projectId: "semart-5da85",
+            storageBucket: "semart-5da85.firebasestorage.app",
+            messagingSenderId: "77585287575",
+            appId: "1:77585287575:web:5f58edd85981264da25cd2"
+        };
+
+        // Inisialisasi Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Referensi ke koleksi "orders"
+        const ordersCollection = collection(db, "orders");
+
+        // Fungsi untuk memformat timestamp
+        function formatTimestamp(timestamp) {
+            if (!timestamp) return '-';
+            
+            // Jika timestamp adalah objek Firestore Timestamp
+            if (timestamp.toDate) {
+                const date = timestamp.toDate();
+                return date.toLocaleString('id-ID');
+            }
+            
+            // Jika timestamp sudah dalam bentuk Date atau string
+            try {
+                const date = new Date(timestamp);
+                return date.toLocaleString('id-ID');
+            } catch (error) {
+                return '-';
+            }
+        }
+
+        // Fungsi untuk memformat data objek/array menjadi JSON string
+        function formatObjectData(data) {
+            if (!data) return '-';
+            
+            if (typeof data === 'object') {
+                try {
+                    return JSON.stringify(data);
+                } catch (error) {
+                    return 'Data tidak valid';
+                }
+            }
+            
+            return data;
+        }
+
+        // Fungsi untuk mendapatkan kelas CSS berdasarkan status
+        function getStatusClass(status) {
+            if (!status) return '';
+            
+            const statusLower = status.toLowerCase();
+            if (statusLower.includes('pending')) return 'status-pending';
+            if (statusLower.includes('completed')) return 'status-completed';
+            if (statusLower.includes('shipped')) return 'status-shipped';
+            return '';
+        }
+
+        // Fungsi untuk memperbarui tabel dengan data dari Firestore
+        function updateTable(orders) {
+            const tableBody = document.getElementById('ordersTableBody');
+            
+            if (orders.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="14" class="loading">Tidak ada data orders</td></tr>';
+                return;
+            }
+            
+            tableBody.innerHTML = '';
+            
+            orders.forEach(order => {
+                const row = document.createElement('tr');
+                
+                // Document ID
+                const docIdCell = document.createElement('td');
+                docIdCell.textContent = order.id || '-';
+                row.appendChild(docIdCell);
+                
+                // Created At
+                const createdAtCell = document.createElement('td');
+                createdAtCell.textContent = formatTimestamp(order.createdAt);
+                createdAtCell.className = 'timestamp';
+                row.appendChild(createdAtCell);
+                
+                // Expires At
+                const expiresAtCell = document.createElement('td');
+                expiresAtCell.textContent = formatTimestamp(order.expiresAt);
+                expiresAtCell.className = 'timestamp';
+                row.appendChild(expiresAtCell);
+                
+                // Items
+                const itemsCell = document.createElement('td');
+                const itemsSpan = document.createElement('span');
+                itemsSpan.textContent = formatObjectData(order.items);
+                itemsSpan.className = 'json-data';
+                itemsSpan.title = formatObjectData(order.items);
+                itemsCell.appendChild(itemsSpan);
+                row.appendChild(itemsCell);
+                
+                // Order ID
+                const orderIdCell = document.createElement('td');
+                orderIdCell.textContent = order.orderId || '-';
+                row.appendChild(orderIdCell);
+                
+                // Order Number
+                const orderNumberCell = document.createElement('td');
+                orderNumberCell.textContent = order.orderNumber || '-';
+                row.appendChild(orderNumberCell);
+                
+                // Payment Info
+                const paymentInfoCell = document.createElement('td');
+                const paymentInfoSpan = document.createElement('span');
+                paymentInfoSpan.textContent = formatObjectData(order.paymentInfo);
+                paymentInfoSpan.className = 'json-data';
+                paymentInfoSpan.title = formatObjectData(order.paymentInfo);
+                paymentInfoCell.appendChild(paymentInfoSpan);
+                row.appendChild(paymentInfoCell);
+                
+                // Recipient Info
+                const recipientInfoCell = document.createElement('td');
+                const recipientInfoSpan = document.createElement('span');
+                recipientInfoSpan.textContent = formatObjectData(order.recipientInfo);
+                recipientInfoSpan.className = 'json-data';
+                recipientInfoSpan.title = formatObjectData(order.recipientInfo);
+                recipientInfoCell.appendChild(recipientInfoSpan);
+                row.appendChild(recipientInfoCell);
+                
+                // Shipping Info
+                const shippingInfoCell = document.createElement('td');
+                const shippingInfoSpan = document.createElement('span');
+                shippingInfoSpan.textContent = formatObjectData(order.shippingInfo);
+                shippingInfoSpan.className = 'json-data';
+                shippingInfoSpan.title = formatObjectData(order.shippingInfo);
+                shippingInfoCell.appendChild(shippingInfoSpan);
+                row.appendChild(shippingInfoCell);
+                
+                // Status
+                const statusCell = document.createElement('td');
+                const statusSpan = document.createElement('span');
+                statusSpan.textContent = order.status || '-';
+                statusSpan.className = `status ${getStatusClass(order.status)}`;
+                statusCell.appendChild(statusSpan);
+                row.appendChild(statusCell);
+                
+                // Updated At
+                const updatedAtCell = document.createElement('td');
+                updatedAtCell.textContent = formatTimestamp(order.updatedAt);
+                updatedAtCell.className = 'timestamp';
+                row.appendChild(updatedAtCell);
+                
+                // User Email
+                const userEmailCell = document.createElement('td');
+                userEmailCell.textContent = order.userEmail || '-';
+                row.appendChild(userEmailCell);
+                
+                // User ID
+                const userIdCell = document.createElement('td');
+                userIdCell.textContent = order.userId || '-';
+                row.appendChild(userIdCell);
+                
+                // User Name
+                const userNameCell = document.createElement('td');
+                userNameCell.textContent = order.userName || '-';
+                row.appendChild(userNameCell);
+                
+                tableBody.appendChild(row);
+            });
+        }
+
+        // Mendengarkan perubahan real-time pada koleksi "orders"
+        onSnapshot(ordersCollection, (snapshot) => {
+            const orders = [];
+            
+            snapshot.forEach((doc) => {
+                const orderData = doc.data();
+                orders.push({
+                    id: doc.id,
+                    ...orderData
+                });
+            });
+            
+            updateTable(orders);
+        }, (error) => {
+            console.error("Error mengambil data:", error);
+            document.getElementById('ordersTableBody').innerHTML = 
+                '<tr><td colspan="14" class="error">Error mengambil data: ' + error.message + '</td></tr>';
+        });
+    </script>
+</body>
+</html>
